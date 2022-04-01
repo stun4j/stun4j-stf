@@ -6,6 +6,7 @@
 		<artifactId>stun4j-stf-parent</artifactId>
 		<version>${revision}</version>
 	</parent>
+	<groupId>com.stun4j.boot</groupId>
 	<artifactId>stun4j-stf-spring-boot-starter</artifactId>
 
 	<dependencies>
@@ -14,6 +15,12 @@
 			<groupId>com.stun4j</groupId>
 			<artifactId>stun4j-stf-core</artifactId>
 			<version>${project.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.stun4j.boot</groupId>
+			<artifactId>stun4j-guid-spring-boot-starter</artifactId>
+			<version>${stun4j-guid.version}</version>
 			<scope>provided</scope>
 		</dependency>
 		<!-- db -->

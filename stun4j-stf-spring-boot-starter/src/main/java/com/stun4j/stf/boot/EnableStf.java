@@ -1,13 +1,12 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
- * 
- *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ * Copyright 2022 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -25,15 +24,20 @@ import java.lang.annotation.Target;
 
 import org.springframework.context.annotation.Import;
 
+import com.stun4j.guid.boot.GuidAutoConfigure;
+
 /**
- * Enable Stf to quickly complete injection and use according to boot configuration
+ * Enable Stf to quickly complete injection and use according to boot configuration.
+ * <p>
+ * This automatically imports the stun4j-guid module first, so it is no need to use
+ * {@link com.stun4j.guid.boot.EnableGuid} to activate the module.
  * @author Jay Meng
  */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Inherited
-@Import({StfAutoConfigure.class})
+@Import({GuidAutoConfigure.class, StfAutoConfigure.class})
 public @interface EnableStf {
 
 }

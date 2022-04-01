@@ -1,13 +1,12 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
- * 
- *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ * Copyright 2022 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -29,6 +28,7 @@ import java.util.function.BiFunction;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -48,8 +48,9 @@ import org.springframework.core.io.ResourceLoader;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import com.stun4j.guid.utils.Asserts;
-import com.stun4j.guid.utils.Strings;
+import com.stun4j.guid.boot.GuidAutoConfigure;
+import com.stun4j.guid.core.utils.Asserts;
+import com.stun4j.guid.core.utils.Strings;
 import com.stun4j.stf.boot.Transaction.IsolationLevel;
 import com.stun4j.stf.boot.Transaction.Propagation;
 import com.stun4j.stf.core.StfContext;
@@ -76,7 +77,7 @@ import com.stun4j.stf.core.utils.Exceptions;
  */
 @Configuration
 @EnableConfigurationProperties(StfProperties.class)
-public class StfAutoConfigure implements ApplicationContextAware, BeanClassLoaderAware {
+public class StfAutoConfigure implements BeanClassLoaderAware, ApplicationContextAware {
   private static final Logger LOG = LoggerFactory.getLogger(StfAutoConfigure.class);
 
   private ClassLoader classLoader;
@@ -97,9 +98,7 @@ public class StfAutoConfigure implements ApplicationContextAware, BeanClassLoade
     return new StfTxnOps(rawTxnOps);
   }
 
-  @Override
-  public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-    this.applicationContext = applicationContext;
+  private void doEarlyInitialize() {
     DataSource dataSource = applicationContext.getBean(props.getDatasourceBeanName(), DataSource.class);
 
     // the initialization
@@ -217,6 +216,7 @@ public class StfAutoConfigure implements ApplicationContextAware, BeanClassLoade
   StfAutoConfigure(StfProperties props) {
     this.props = props;
 
+    // core function definition for configuring filtering and sorting for stf-flow
     this.flowConfFilterAndSortFn = (res, filesOfSpecifizedLoadOrder) -> {
       String name = null;
       if (res instanceof File) {
@@ -252,4 +252,10 @@ public class StfAutoConfigure implements ApplicationContextAware, BeanClassLoade
     this.classLoader = classLoader;
   }
 
+  @Override
+  public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+    this.applicationContext = applicationContext;
+    applicationContext.getBean(GuidAutoConfigure.class);// the stun4j-guid module must be initialized first
+    doEarlyInitialize();
+  }
 }

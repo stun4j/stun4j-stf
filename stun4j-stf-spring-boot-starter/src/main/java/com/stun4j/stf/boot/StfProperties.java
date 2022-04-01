@@ -1,13 +1,12 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
- * 
- *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ * Copyright 2022 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,16 +15,17 @@
  */
 package com.stun4j.stf.boot;
 
+import static com.stun4j.guid.core.utils.Asserts.argument;
+
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-import com.stun4j.guid.utils.Asserts;
 import com.stun4j.stf.core.support.BaseVo;
 
 /**
  * Base class for configuration of Stf.
  * @author Jay Meng
  */
-@ConfigurationProperties("stf")
+@ConfigurationProperties("stun4j.stf")
 public class StfProperties extends BaseVo {
 
   /**
@@ -56,7 +56,8 @@ public class StfProperties extends BaseVo {
    * </li>
    * <li>The configuration loaded first is parent, which can be overridden by the configuration loaded later.</li>
    * <li>
-   * Default(comparison behavior): Use comparator that orders String objects(will pick configuration's filename from File or URL)
+   * Default(comparison behavior): Use comparator that orders String objects(will pick configuration's filename from
+   * File or URL)
    * as by compareToIgnoreCase. Note that the Comparator does not
    * take locale into account, and will result in an unsatisfactory ordering for
    * certain locales. The java.text package provides Collators to allow locale-sensitive ordering.
@@ -66,7 +67,15 @@ public class StfProperties extends BaseVo {
    */
   private String[] confFullLoadOrder;
 
-  private Transaction transaction;
+  private Transaction transaction = new Transaction();
+
+  public void setConfRootPath(String confRootPath) {
+    argument(confRootPath.indexOf("*") == -1, "'*' is not supported in root path of stf-flow configurations");
+    if (confRootPath.endsWith("/")) {
+      confRootPath = confRootPath.substring(0, confRootPath.length() - 1);
+    }
+    this.confRootPath = confRootPath;
+  }
 
   public String getDatasourceBeanName() {
     return datasourceBeanName;
@@ -78,14 +87,6 @@ public class StfProperties extends BaseVo {
 
   public String getConfRootPath() {
     return confRootPath;
-  }
-
-  public void setConfRootPath(String confRootPath) {
-    Asserts.argument(confRootPath.indexOf("*") == -1, "'*' is not supported in root path of stf-flow configurations");
-    if (confRootPath.endsWith("/")) {
-      confRootPath = confRootPath.substring(0, confRootPath.length() - 1);
-    }
-    this.confRootPath = confRootPath;
   }
 
   public String[] getConfExcludeFilenames() {
