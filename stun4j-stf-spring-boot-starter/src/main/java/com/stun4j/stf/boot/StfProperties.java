@@ -31,14 +31,14 @@ public class StfProperties extends BaseVo {
   /**
    * The spring bean name of underlying sql datasource
    * <p>
-   * Default: "dataSource"
+   * Default: dataSource
    */
   private String datasourceBeanName = "dataSource";
 
   /**
    * The root path of stf-flow configurations, all of which are scanned and loaded by default
    * <p>
-   * Default: "classpath:stfs"
+   * Default: classpath:stfs
    */
   private String confRootPath = "classpath:stfs";
 
@@ -68,6 +68,10 @@ public class StfProperties extends BaseVo {
   private String[] confFullLoadOrder;
 
   private Transaction transaction = new Transaction();
+
+  private Job job = new Job();
+
+  private Monitor monitor = new Monitor();
 
   public void setConfRootPath(String confRootPath) {
     argument(confRootPath.indexOf("*") == -1, "'*' is not supported in root path of stf-flow configurations");
@@ -111,6 +115,22 @@ public class StfProperties extends BaseVo {
 
   public void setTransaction(Transaction transaction) {
     this.transaction = transaction;
+  }
+
+  public Job getJob() {
+    return job;
+  }
+
+  public void setJob(Job job) {
+    this.job = job;
+  }
+
+  public Monitor getMonitor() {
+    return monitor;
+  }
+
+  public void setMonitor(Monitor monitor) {
+    this.monitor = monitor;
   }
 
 }

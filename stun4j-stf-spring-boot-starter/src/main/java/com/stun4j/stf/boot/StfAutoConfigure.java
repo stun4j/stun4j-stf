@@ -28,7 +28,6 @@ import java.util.function.BiFunction;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
-import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -59,11 +58,12 @@ import com.stun4j.stf.core.StfTxnOps;
 import com.stun4j.stf.core.build.StfConfig;
 import com.stun4j.stf.core.build.StfConfigs;
 import com.stun4j.stf.core.job.BaseJobRunningTimeoutFixer;
-import com.stun4j.stf.core.job.JobFetcher;
+import com.stun4j.stf.core.job.JobLoader;
 import com.stun4j.stf.core.job.JobManager;
 import com.stun4j.stf.core.job.JobRunners;
 import com.stun4j.stf.core.job.JobRunningTimeoutFixerJdbc;
 import com.stun4j.stf.core.job.JobScannerJdbc;
+import com.stun4j.stf.core.monitor.StfMonitor;
 import com.stun4j.stf.core.spi.StfJdbcOps;
 import com.stun4j.stf.core.spi.StfRegistry;
 import com.stun4j.stf.core.store.StfCoreJdbc;
@@ -131,10 +131,15 @@ public class StfAutoConfigure implements BeanClassLoaderAware, ApplicationContex
 
     // stf start
     JobScannerJdbc scanner = JobScannerJdbc.of(jdbcOps);
-    JobFetcher fetcher = new JobFetcher(scanner);
+    JobLoader loader = new JobLoader(scanner);
     JobRunners runners = new JobRunners(stf);
     BaseJobRunningTimeoutFixer fixer = JobRunningTimeoutFixerJdbc.of(jdbcOps, scanner, runners);
-    JobManager jobMngr = new JobManager(fetcher, runners, fixer);
+    JobManager jobMngr = new JobManager(loader, runners, fixer);
+    // configure monitor->
+    Monitor mon;
+    jobMngr.setVmResCheckEnabled((mon = props.getMonitor()).isVmResCheckEnabled());
+    StfMonitor.INSTANCE.setConsiderSystemLoad(mon.isConsiderSystemLoad());
+    // <-
     jobMngr.start();
   }
 
