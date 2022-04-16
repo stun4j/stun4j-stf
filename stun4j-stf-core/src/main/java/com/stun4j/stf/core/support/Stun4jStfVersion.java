@@ -49,9 +49,9 @@ public final class Stun4jStfVersion {
   }
 
   /**
-   * Return the full version string of the present Spring Boot codebase, or {@code null}
+   * Return the full version string of the present Stun4j Stf codebase, or {@code null}
    * if it cannot be determined.
-   * @return the version of Spring Boot or {@code null}
+   * @return the version of Stun4j Stf or {@code null}
    * @see Package#getImplementationVersion()
    */
   public static String getVersion() {
