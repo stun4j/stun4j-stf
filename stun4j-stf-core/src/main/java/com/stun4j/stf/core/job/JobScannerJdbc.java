@@ -23,15 +23,22 @@ import static com.stun4j.stf.core.YesNoEnum.Y;
 import static com.stun4j.stf.core.utils.DataSourceUtils.DB_VENDOR_MY_SQL;
 import static com.stun4j.stf.core.utils.DataSourceUtils.DB_VENDOR_POSTGRE_SQL;
 
+import java.lang.reflect.Method;
 import java.util.Comparator;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
+import javax.sql.DataSource;
+
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.stun4j.guid.core.LocalGuid;
+
+import static com.stun4j.stf.core.job.JobHelper.*;
 import com.stun4j.stf.core.StateEnum;
 import com.stun4j.stf.core.Stf;
 import com.stun4j.stf.core.StfConsts;
@@ -49,9 +56,11 @@ import com.stun4j.stf.core.utils.DataSourceUtils;
  * @author Jay Meng
  */
 public class JobScannerJdbc implements JobScanner, JdbcAware {
+  private static final Logger LOG = LoggerFactory.getLogger(JobScannerJdbc.class);
   private final StfJdbcOps jdbcOps;
   private final String dbVendor;
   private final LocalGuid guid;
+  private final Method dsCloser;
 
   final String SQL_WITH_ALIVE_ST;
   final String SQL_WITH_SINGLE_ST;
@@ -79,6 +88,10 @@ public class JobScannerJdbc implements JobScanner, JdbcAware {
 
   public Stream<Stf> doScanStillAlive(StateEnum st, long timeoutMs, int limit, boolean running,
       String... includeFields) {
+    if (isDataSourceClose(dsCloser, jdbcOps.getDataSource())) {
+      LOG.warn("The dataSource has been closed and the scan is cancelled.");
+      return Stream.empty();
+    }
     long now = System.currentTimeMillis();
     long timeoutMsBefore = now - timeoutMs;
     long idEnd = guid.from(now);
@@ -150,9 +163,11 @@ public class JobScannerJdbc implements JobScanner, JdbcAware {
 
   public JobScannerJdbc(StfJdbcOps jdbcOps, String tblName) throws RuntimeException {
     this.jdbcOps = jdbcOps;
-    this.dbVendor = DataSourceUtils.getDatabaseProductName(jdbcOps.getDataSource());
+    DataSource ds;
+    this.dbVendor = DataSourceUtils.getDatabaseProductName(ds = jdbcOps.getDataSource());
     this.guid = LocalGuid.instance();
     this.includeHowManyDaysAgo = DFT_INCLUDE_HOW_MANY_DAYS_AGO;
+    this.dsCloser = tryGetDataSourceCloser(ds);
 
     SQL_WITH_ALIVE_ST = lenientFormat(
         "select * from %s where id in (select id from %s where id between ? and ? and up_at <= ? and is_running = ? and is_dead = ? and st in ('%s', '%s')) ",

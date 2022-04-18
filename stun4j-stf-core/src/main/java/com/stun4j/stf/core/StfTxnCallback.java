@@ -83,10 +83,12 @@ public class StfTxnCallback<T> implements InvocationHandler {
         @Override
         public void afterCompletion(int status) {
           StfContext.removeLastCommitInfo();
-          if (TransactionSynchronizationManager.isSynchronizationActive()
-              && TransactionSynchronizationManager.isActualTransactionActive()) {
-            TransactionSynchronizationManager.clearSynchronization();
-          }
+          TransactionSynchronizationManager.getResourceMap().forEach((k, v) -> {
+            if (k instanceof String && ((String)k).startsWith(StfTxnCallback.class.getSimpleName())) {
+              TransactionSynchronizationManager.unbindResourceIfPossible(k);
+            }
+          });
+          TransactionSynchronizationManager.clear();
         }
 
         @Override

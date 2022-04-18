@@ -27,7 +27,7 @@ public class Monitor {
    * Default: true
    */
   // The 'is-XXX' is not recommended, in part because javadoc is not displayed correctly in YML
-  private boolean vmResCheckEnabled = true;// TODO mj:might move to manager conf
+  private boolean vmResCheckEnabled = true;
 
   /**
    * Whether system-load is taken into consider

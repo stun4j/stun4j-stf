@@ -76,9 +76,16 @@ public class JobRunner {
     }
     logTriggerInformation(job, expectedRetryTimes, expectedTriggerTime, now);
     // retry the job
-    StfCall callee = JsonHelper.fromJson(job.getBody(), StfCall.class);
-    String calleeInfo = toCallStringOf(callee);
-    Object[] methodArgs = callee.getArgs();
+    String calleeInfo = null;
+    Object[] methodArgs = null;
+    try {
+      StfCall callee = JsonHelper.fromJson(job.getBody(), StfCall.class);
+      calleeInfo = toCallStringOf(callee);
+      methodArgs = callee.getArgs();
+    } catch (Throwable e) {
+      // this will definitely result in an invoke error,just to increase the retry times
+      LOG.error("Parsing calleeInfo of stf-job#{} error", jobId, e);
+    }
     stfCore.reForward(jobId, lastRetryTimes, calleeInfo, true, methodArgs);
   }
 

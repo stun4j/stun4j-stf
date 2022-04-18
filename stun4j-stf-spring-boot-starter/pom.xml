@@ -20,7 +20,7 @@
 			<groupId>com.stun4j.boot</groupId>
 			<artifactId>stun4j-guid-spring-boot-starter</artifactId>
 			<version>${stun4j-guid.version}</version>
-			<scope>provided</scope>
+<!-- 			<scope>provided</scope> -->
 		</dependency>
 		<!-- db -->
 		<dependency>
@@ -40,39 +40,4 @@
 			<optional>true</optional>
 		</dependency>
 	</dependencies>
-
-	<profiles>
-		<profile>
-			<id>dev</id>
-			<activation>
-				<activeByDefault>true</activeByDefault>
-			</activation>
-			<repositories>
-				<repository>
-					<snapshots>
-						<enabled>false</enabled>
-					</snapshots>
-					<releases>
-						<enabled>true</enabled>
-					</releases>
-					<id>nexus-aliyun</id>
-					<name>Nexus aliyun</name>
-					<url>http://maven.aliyun.com/nexus/content/groups/public</url>
-				</repository>
-			</repositories>
-			<pluginRepositories>
-				<pluginRepository>
-					<snapshots>
-						<enabled>false</enabled>
-					</snapshots>
-					<releases>
-						<enabled>true</enabled>
-					</releases>
-					<id>nexus-aliyun</id>
-					<name>Nexus aliyun</name>
-					<url>http://maven.aliyun.com/nexus/content/groups/public</url>
-				</pluginRepository>
-			</pluginRepositories>
-		</profile>
-	</profiles>
 </project>

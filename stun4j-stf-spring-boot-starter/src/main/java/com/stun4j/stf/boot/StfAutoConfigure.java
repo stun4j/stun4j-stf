@@ -137,7 +137,9 @@ public class StfAutoConfigure implements BeanClassLoaderAware, ApplicationContex
     JobManager jobMngr = new JobManager(loader, runners, fixer);
     // configure monitor->
     Monitor mon;
-    jobMngr.setVmResCheckEnabled((mon = props.getMonitor()).isVmResCheckEnabled());
+    boolean isVmResCheckEnabled;
+    jobMngr.setVmResCheckEnabled(isVmResCheckEnabled = (mon = props.getMonitor()).isVmResCheckEnabled());
+    fixer.setVmResCheckEnabled(isVmResCheckEnabled);
     StfMonitor.INSTANCE.setConsiderSystemLoad(mon.isConsiderSystemLoad());
     // <-
     jobMngr.start();

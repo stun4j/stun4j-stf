@@ -18,13 +18,17 @@ package com.stun4j.stf.core.job;
 import static com.stun4j.stf.core.support.executor.StfInternalExecutors.newWatcherOfRunningJobTimeoutFixer;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.commons.lang3.tuple.Pair;
+
 import com.stun4j.stf.core.Stf;
+import com.stun4j.stf.core.monitor.StfMonitor;
 import com.stun4j.stf.core.support.BaseLifeCycle;
 
 /**
@@ -54,11 +58,21 @@ public abstract class BaseJobRunningTimeoutFixer extends BaseLifeCycle {
   protected int limitPerScan;
   private ScheduledFuture<?> sf;
 
+  private boolean vmResCheckEnabled;
+
   @Override
   public void doStart() {
     int scanFreqSeconds;
     sf = watcher.scheduleWithFixedDelay(() -> {
       try {
+        if (vmResCheckEnabled) {
+          Pair<Boolean, Map<String, Object>> resRpt;
+          if ((resRpt = StfMonitor.INSTANCE.isVmResourceNotEnough()).getLeft()) {
+            LOG.warn("[on schedule] Check&fix of timeout running stf-jobs are paused due to insufficient resources > Reason: {}",
+                resRpt.getRight());
+            return;
+          }
+        }
         this.checkAndFix();
       } catch (Throwable e) {
         LOG.error("[on schedule] Check&fix timeout running stf-jobs error", e);
@@ -105,6 +119,7 @@ public abstract class BaseJobRunningTimeoutFixer extends BaseLifeCycle {
     this.scanFreqSeconds = DFT_SCAN_FREQ_SECONDS;
     this.timeoutMs = DFT_TIMEOUT_SECONDS * 1000;
     this.limitPerScan = DFT_LIMIT_PER_SCAN;
+    this.vmResCheckEnabled = true;
   }
 
   public void setScanFreqSeconds(int scanFreqSeconds) {
@@ -120,6 +135,10 @@ public abstract class BaseJobRunningTimeoutFixer extends BaseLifeCycle {
   public void setLimitPerScan(int limitPerScan) {
     this.limitPerScan = limitPerScan < DFT_MIN_LIMIT_PER_SCAN ? DFT_MIN_LIMIT_PER_SCAN
         : (limitPerScan > DFT_MAX_LIMIT_PER_SCAN ? DFT_MAX_LIMIT_PER_SCAN : limitPerScan);
+  }
+
+  public void setVmResCheckEnabled(boolean vmResCheckEnabled) {
+    this.vmResCheckEnabled = vmResCheckEnabled;
   }
 
 }

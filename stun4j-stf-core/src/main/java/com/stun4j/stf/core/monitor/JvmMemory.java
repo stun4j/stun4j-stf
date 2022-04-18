@@ -29,7 +29,7 @@ import org.apache.commons.lang3.tuple.Triple;
 public enum JvmMemory {
   INSTANCE;
 
-  private static float _highFactor = 0.7f;
+  private static float _highFactor = 0.85f;
   private final MemoryMXBean MEM_BASIC;
 
   public MemoryUsage getHeapUsage() {
