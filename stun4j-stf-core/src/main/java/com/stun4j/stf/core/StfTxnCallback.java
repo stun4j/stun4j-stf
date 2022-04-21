@@ -31,6 +31,7 @@ import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionSynchronizationAdapter;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import com.stun4j.stf.core.StfContext.TransactionResourceManager;
 import com.stun4j.stf.core.build.StfConfigs;
 import com.stun4j.stf.core.utils.Exceptions;
 
@@ -83,11 +84,7 @@ public class StfTxnCallback<T> implements InvocationHandler {
         @Override
         public void afterCompletion(int status) {
           StfContext.removeLastCommitInfo();
-          TransactionSynchronizationManager.getResourceMap().forEach((k, v) -> {
-            if (k instanceof String && ((String)k).startsWith(StfTxnCallback.class.getSimpleName())) {
-              TransactionSynchronizationManager.unbindResourceIfPossible(k);
-            }
-          });
+          TransactionResourceManager.unbindAll();
           TransactionSynchronizationManager.clear();
         }
 
@@ -107,7 +104,7 @@ public class StfTxnCallback<T> implements InvocationHandler {
             callerObjId = StfContext.getBizObjId(callerClass);
             String callerKey = lineageKeyOf(callerObjId, callerMethodName);
             @SuppressWarnings("unchecked")
-            MutablePair<Boolean, Long> nestedTxLaStfCommitInfo = (MutablePair<Boolean, Long>)TransactionSynchronizationManager
+            MutablePair<Boolean, Long> nestedTxLaStfCommitInfo = (MutablePair<Boolean, Long>)TransactionResourceManager
                 .getResource(callerKey);
             if (nestedTxLaStfCommitInfo != null) {
               if (!nestedTxLaStfCommitInfo.getLeft()) {
@@ -166,7 +163,7 @@ public class StfTxnCallback<T> implements InvocationHandler {
 
             // support 'nested' transaction(found unexpected re-order confirming last stf in such scenario)->
             String calleeKey = lineageKeyOf(calleeObjId, calleeMethodName);
-            TransactionSynchronizationManager.bindResource(calleeKey, MutablePair.of(false, newStfId));
+            TransactionResourceManager.bindResource(calleeKey, MutablePair.of(false, newStfId));
             // <-
           } catch (Throwable e) {
             Exceptions.sneakyThrow(e, LOG, "[{}#{}]Pre commit next-step |error: '{}'", callerObjId, callerMethodName,

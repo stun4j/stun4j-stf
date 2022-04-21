@@ -24,6 +24,7 @@ import java.util.function.Supplier;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import com.alibaba.ttl.TransmittableThreadLocal;
 import com.stun4j.guid.core.LocalGuid;
@@ -112,6 +113,7 @@ public final class StfContext {
   static void removeLastCommitInfo() {
     // DO NOT REMOVE HERE!!!TTL.remove()
     LAST_COMMITTED.remove();
+    TransactionResourceManager.TRANSACTION_RESOURCES.remove();
   }
 
   static void removeTTL() {
@@ -152,5 +154,29 @@ public final class StfContext {
   static Banner.Mode BANNER_MODE = Banner.Mode.CONSOLE;
 
   private StfContext() {
+  }
+
+  static class TransactionResourceManager {
+    private static final ThreadLocal<Map<String, Object>> TRANSACTION_RESOURCES;
+
+    static void unbindAll() {
+      TRANSACTION_RESOURCES.remove();
+    }
+
+    static Object getResource(String key) {
+      return TRANSACTION_RESOURCES.get().get(key);
+    }
+
+    static Map<String, Object> getResourceMap() {
+      return TRANSACTION_RESOURCES.get();
+    }
+
+    static void bindResource(String key, Object value) {
+      TRANSACTION_RESOURCES.get().put(key, value);
+    }
+
+    static {
+      TRANSACTION_RESOURCES = ThreadLocal.withInitial(HashMap::new);
+    }
   }
 }
