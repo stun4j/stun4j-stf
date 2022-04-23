@@ -20,6 +20,7 @@ import static com.stun4j.stf.core.build.BuildingBlockEnum.ARGS;
 import static com.stun4j.stf.core.build.BuildingBlockEnum.CLZ;
 import static com.stun4j.stf.core.build.BuildingBlockEnum.FWDS;
 import static com.stun4j.stf.core.build.BuildingBlockEnum.GLB;
+import static com.stun4j.stf.core.build.BuildingBlockEnum.LVS;
 import static com.stun4j.stf.core.build.BuildingBlockEnum.M;
 import static com.stun4j.stf.core.build.BuildingBlockEnum.OID;
 import static com.stun4j.stf.core.build.BuildingBlockEnum.O_IN;
@@ -35,6 +36,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -47,6 +49,7 @@ import com.stun4j.stf.core.utils.shaded.guava.common.primitives.Primitives;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigParseOptions;
+import com.typesafe.config.ConfigValue;
 
 /**
  * The parser of single stf-flow configuration
@@ -111,14 +114,31 @@ public class StfConfig {
     this(cfg, ConfigParseOptions.defaults().getClassLoader());
   }
 
-  private StfConfig(Config cfg, ClassLoader classLoader) {
+  private StfConfig(Config cfgRaw, ClassLoader classLoader) {
+    String rootPath;
+    String rootPathPre;
+    String parsingKey;
+    Config cfg;
+    cfgRaw = cfgRaw.withOnlyPath(rootPath = ROOT.key());
+    if (cfgRaw.hasPath((rootPathPre = rootPath + ".") + (parsingKey = LVS.key()))) {
+      Config vars = cfgRaw.getConfig(rootPathPre + parsingKey);
+      if (!vars.isEmpty()) {
+        for (Entry<String, ConfigValue> e : vars.entrySet()) {
+          String key = e.getKey();
+          ConfigValue value = e.getValue();
+          cfgRaw = cfgRaw.withValue(key, value);
+        }
+        cfg = cfgRaw.resolve();
+      } else {
+        cfg = cfgRaw;
+      }
+    } else {
+      cfg = cfgRaw;
+    }
     String fileName;
     notNull(fileName = Optional.ofNullable(cfg.origin().filename()).orElse(cfg.origin().url().getFile()),
         () -> cfg.origin().description());
-    String rootPath;
-    argument(cfg.root().containsKey(rootPath = ROOT.key()), "Illegal root-element (use '%s{' to start?)", rootPath);
-    String rootPathPre = rootPath + ".";
-    String parsingKey;
+    argument(cfg.root().containsKey(rootPath), "Illegal root-element (use '%s{' to start?)", rootPath);
     // parse global
     // try parse global oid base on file->
     String tmp;

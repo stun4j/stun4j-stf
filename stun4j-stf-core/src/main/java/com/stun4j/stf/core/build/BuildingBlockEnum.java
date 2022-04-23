@@ -21,11 +21,11 @@ package com.stun4j.stf.core.build;
  */
 public enum BuildingBlockEnum {
   ROOT("stfs"), //
-  GLB("global"), ACTS("actions"), FWDS("forwards"), // lvl-2
+  LVS("local-vars"), GLB("global"), ACTS("actions"), FWDS("forwards"), // lvl-2
   OID("oid"), // lvl-3 or 4
   ARGS("args"), TO("to"), // lvl-4
   O_IN("invoke-on-in"), U_IN("use-in"), // lvl-5,in means last-out
-  M("method"), CLZ("clz");
+  M("method"), CLZ("class");
 
   private final String key;
 

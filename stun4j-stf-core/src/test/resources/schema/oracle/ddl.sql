@@ -7,5 +7,5 @@ create table stn_stf (
   retry_times number(3, 0) not null,
   ct_at number(20, 0) not null,
   up_at number(20, 0) not null,
-  constraint pk_stn_stf_id primary key(id)
+  constraint pk_stn_stf primary key(id)
 );
