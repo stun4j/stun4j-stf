@@ -56,7 +56,7 @@ public class StfMonitor extends BaseLifeCycle {
     Triple<Boolean/* judgment result */, MemoryUsage/* heap */, MemoryUsage/* nonHeap */> mem;
     Pair<Boolean/* judgment result */, Double/* rate */> cpuRate;
     Pair<Boolean/* judgment result */, Double/* load */> sysLoad = null;
-    boolean isMemScarce = (mem = JvmMemory.INSTANCE.isScarce(false)).getLeft();
+    boolean isMemScarce = (mem = JvmMemory.INSTANCE.isScarce()).getLeft();
     boolean isCpuRateHigh = (cpuRate = JvmCpu.INSTANCE.isHigh()).getLeft();
     boolean isSysLoadHigh = considerSystemLoad && (sysLoad = systemLoad.isHigh()).getLeft();
     boolean isNotEnough = isMemScarce || isCpuRateHigh || isSysLoadHigh;

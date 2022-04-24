@@ -63,7 +63,10 @@ import com.stun4j.stf.core.job.JobManager;
 import com.stun4j.stf.core.job.JobRunners;
 import com.stun4j.stf.core.job.JobRunningTimeoutFixerJdbc;
 import com.stun4j.stf.core.job.JobScannerJdbc;
+import com.stun4j.stf.core.monitor.JvmCpu;
+import com.stun4j.stf.core.monitor.JvmMemory;
 import com.stun4j.stf.core.monitor.StfMonitor;
+import com.stun4j.stf.core.monitor.SystemLoad;
 import com.stun4j.stf.core.spi.StfJdbcOps;
 import com.stun4j.stf.core.spi.StfRegistry;
 import com.stun4j.stf.core.store.StfCoreJdbc;
@@ -141,6 +144,10 @@ public class StfAutoConfigure implements BeanClassLoaderAware, ApplicationContex
     jobMngr.setVmResCheckEnabled(isVmResCheckEnabled = (mon = props.getMonitor()).isVmResCheckEnabled());
     fixer.setVmResCheckEnabled(isVmResCheckEnabled);
     StfMonitor.INSTANCE.setConsiderSystemLoad(mon.isConsiderSystemLoad());
+    JvmMemory.INSTANCE.withHighFactor(mon.getJvmMem().getHighFactor())
+        .withIncludeNonHeap(mon.getJvmMem().isIncludeNonHeap());
+    JvmCpu.INSTANCE.withHighFactor(mon.getJvmCpu().getHighFactor());
+    SystemLoad.INSTANCE.withHighFactor(mon.getSysLoad().getHighFactor());
     // <-
     jobMngr.start();
   }

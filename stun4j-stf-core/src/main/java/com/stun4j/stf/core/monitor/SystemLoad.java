@@ -31,9 +31,9 @@ import com.sun.management.OperatingSystemMXBean;
 @SuppressWarnings("restriction")
 public final class SystemLoad extends BaseLifeCycle {
   private static final int TIME_WINDOW_SECONDS = 60;
-  static final SystemLoad INSTANCE;
+  public static final SystemLoad INSTANCE;
 
-  private static double _highFactor = 0.8;
+  private float highFactor = 0.8f;
   private final OperatingSystemMXBean os;
   private final int processorCnt;
 
@@ -60,7 +60,7 @@ public final class SystemLoad extends BaseLifeCycle {
   }
 
   public Pair<Boolean/* judgment result */, Double/* load */> isHigh() {
-    boolean res = lastWindowSecondsAvg / processorCnt >= _highFactor;
+    boolean res = lastWindowSecondsAvg / processorCnt >= highFactor;
     return Pair.of(res, lastWindowSecondsAvg);
   }
 
@@ -93,10 +93,9 @@ public final class SystemLoad extends BaseLifeCycle {
     thread.setDaemon(true);
   }
 
-  /** Be careful,this causes global changes */
-  public static SystemLoad withHighFactor(double highFactor) {
+  public SystemLoad withHighFactor(float highFactor) {
     argument(highFactor > 0 && highFactor < 1, "The 'highFactor' must be greater than 0 and less than 1");
-    SystemLoad._highFactor = highFactor;
-    return SystemLoad.INSTANCE;
+    this.highFactor = highFactor;
+    return this;
   }
 }

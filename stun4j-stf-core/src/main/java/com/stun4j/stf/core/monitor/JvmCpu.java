@@ -35,9 +35,9 @@ import com.sun.management.OperatingSystemMXBean;
 public final class JvmCpu extends BaseLifeCycle {
   private static final int TIME_WINDOW_SECONDS = 30;
 
-  static final JvmCpu INSTANCE;
+  public static final JvmCpu INSTANCE;
 
-  private static float _highFactor = 0.65f;
+  private float highFactor = 0.65f;
 
   private final RuntimeMXBean runtime;
   private final OperatingSystemMXBean os;
@@ -113,7 +113,7 @@ public final class JvmCpu extends BaseLifeCycle {
     this.os = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
     this.gcms = ManagementFactory.getGarbageCollectorMXBeans();
     this.processorCnt = os.getAvailableProcessors();
-    this.highFactorHalfProcessors = (processorCnt / 2) * 100 * _highFactor;
+    this.highFactorHalfProcessors = (processorCnt / 2) * 100 * highFactor;
 
     thread = new Thread(() -> {
       do {
@@ -142,10 +142,9 @@ public final class JvmCpu extends BaseLifeCycle {
     return lastWindowSecondsAvgRate;
   }
 
-  /** Be careful,this causes global changes */
-  public static JvmCpu withHighFactor(float highFactor) {
+  public JvmCpu withHighFactor(float highFactor) {
     argument(highFactor > 0 && highFactor < 1, "The 'highFactor' must be greater than 0 and less than 1");
-    JvmCpu._highFactor = highFactor;
-    return JvmCpu.INSTANCE;
+    this.highFactor = highFactor;
+    return this;
   }
 }

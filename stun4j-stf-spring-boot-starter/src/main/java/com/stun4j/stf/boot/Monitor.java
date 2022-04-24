@@ -36,6 +36,10 @@ public class Monitor {
    */
   private boolean considerSystemLoad = false;
 
+  private JvmMem jvmMem = new JvmMem();
+  private JvmCpu jvmCpu = new JvmCpu();
+  private SysLoad sysLoad = new SysLoad();
+
   public boolean isVmResCheckEnabled() {
     return vmResCheckEnabled;
   }
@@ -50,6 +54,92 @@ public class Monitor {
 
   public void setConsiderSystemLoad(boolean considerSystemLoad) {
     this.considerSystemLoad = considerSystemLoad;
+  }
+
+  public JvmMem getJvmMem() {
+    return jvmMem;
+  }
+
+  public void setJvmMem(JvmMem jvmMem) {
+    this.jvmMem = jvmMem;
+  }
+
+  public JvmCpu getJvmCpu() {
+    return jvmCpu;
+  }
+
+  public void setJvmCpu(JvmCpu jvmCpu) {
+    this.jvmCpu = jvmCpu;
+  }
+
+  public SysLoad getSysLoad() {
+    return sysLoad;
+  }
+
+  public void setSysLoad(SysLoad systemLoad) {
+    this.sysLoad = systemLoad;
+  }
+
+  static class JvmMem {
+    /**
+     * Default: 0.85f
+     */
+    private float highFactor = 0.85f;
+    /**
+     * Whether non-heap memory is taken into consider
+     * <p>
+     * Default: false
+     */
+    private boolean includeNonHeap;
+
+    public float getHighFactor() {
+      return highFactor;
+    }
+
+    public void setHighFactor(float highFactor) {
+      this.highFactor = highFactor;
+    }
+
+    public boolean isIncludeNonHeap() {
+      return includeNonHeap;
+    }
+
+    public void setIncludeNonHeap(boolean includeNonHeap) {
+      this.includeNonHeap = includeNonHeap;
+    }
+
+  }
+
+  static class JvmCpu {
+    /**
+     * Default: 0.65f
+     */
+    private float highFactor = 0.65f;
+
+    public float getHighFactor() {
+      return highFactor;
+    }
+
+    public void setHighFactor(float highFactor) {
+      this.highFactor = highFactor;
+    }
+
+  }
+
+  static class SysLoad {
+    /**
+     * Default: 0.8f
+     */
+    private float highFactor = 0.8f;
+
+    public float getHighFactor() {
+      return highFactor;
+    }
+
+    public void setHighFactor(float highFactor) {
+      this.highFactor = highFactor;
+    }
+
   }
 
 }

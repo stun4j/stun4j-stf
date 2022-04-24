@@ -29,7 +29,8 @@ import org.apache.commons.lang3.tuple.Triple;
 public enum JvmMemory {
   INSTANCE;
 
-  private static float _highFactor = 0.85f;
+  private float highFactor = 0.85f;
+  private boolean includeNonHeap;
   private final MemoryMXBean MEM_BASIC;
 
   public MemoryUsage getHeapUsage() {
@@ -40,8 +41,7 @@ public enum JvmMemory {
     return MEM_BASIC.getNonHeapMemoryUsage();
   }
 
-  public Triple<Boolean/* judgment result */, MemoryUsage/* heap */, MemoryUsage/* nonHeap */> isScarce(
-      boolean includeNonHeap) {
+  public Triple<Boolean/* judgment result */, MemoryUsage/* heap */, MemoryUsage/* nonHeap */> isScarce() {
     MemoryUsage heapUsage = getHeapUsage();
     MemoryUsage nonHeapUsage = null;
     // isMaxAvailable、max
@@ -89,14 +89,18 @@ public enum JvmMemory {
   }
 
   private boolean isAtHighWaterMark(long low, long high) {
-    return low / (high * 1.0) >= _highFactor;
+    return low / (high * 1.0) >= highFactor;
   }
 
-  /** Be careful,this causes global changes */
-  public static JvmMemory withHighFactor(float highFactor) {
+  public JvmMemory withHighFactor(float highFactor) {
     argument(highFactor > 0 && highFactor < 1, "The 'highFactor' must be greater than 0 and less than 1");
-    JvmMemory._highFactor = highFactor;
-    return JvmMemory.INSTANCE;
+    this.highFactor = highFactor;
+    return this;
+  }
+
+  public JvmMemory withIncludeNonHeap(boolean includeNonHeap) {
+    this.includeNonHeap = includeNonHeap;
+    return this;
   }
 
   {
