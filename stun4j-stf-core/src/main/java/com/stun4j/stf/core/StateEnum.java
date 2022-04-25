@@ -17,12 +17,12 @@ package com.stun4j.stf.core;
 
 /** @author Jay Meng */
 public enum StateEnum {
-  /** initialized(waiting to be handled) */
+  /** Initialized(waiting to be handled) */
   I,
-  /** in-progress(handling) */
+  /** In progress(handling) */
   P,
-  /** success(the final state) */
+  /** Success(the final state) */
   S,
-  /** fail(the final state) */
+  /** Fail(the final state) */
   F;
 }

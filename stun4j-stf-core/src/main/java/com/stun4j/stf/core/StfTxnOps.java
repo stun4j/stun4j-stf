@@ -40,7 +40,9 @@ import org.springframework.transaction.support.TransactionOperations;
  * <li>Note that the 'out' object is at risk of becoming dirty. Changes made to 'out' inside the closure of the
  * '#executeXXX' method will be persisted and correctly passed to downstream methods, while changes made to 'out'
  * outside the closure will become dirty, in which case the persistent data will not be consistent with the in-memory
- * version</li>
+ * version.</li>
+ * <li>The better option is to use methods like '#executeWithFinalXXX' or '#executeWithNonFinalXXX', which minimize the
+ * side effects of the problem above</li>
  * </ul>
  * @author Jay Meng
  */
@@ -50,16 +52,43 @@ public class StfTxnOps {
   private final TransactionOperations rawTxnOps;
   private final String stfTblName;
 
-  // TODO mj:give a check on out shouldn't be null('callee has param' is a good start),null leads unknown
-  // error,currently
-  public <T> T execute(T out, Function<TransactionStatus, T> action) {
+  // Low side-effect apis - - - - - - - - - - - - - - - - -->
+  public <OUT> OUT executeWithFinalResult(Supplier<OUT> outInitSupplier,
+      Function<OUT, Consumer<TransactionStatus>> action) {
     StackTraceElement[] callStacks = Thread.currentThread().getStackTrace();
-    return doExecute(out, action, callStacks, null);
+    OUT out = outInitSupplier.get();
+    doExecuteWithoutResult(out, action.apply(out), callStacks, null, null);
+    return out;
   }
 
-  public <T> T execute(T out, Function<TransactionStatus, T> action, Supplier<TransactionOperations> txnOpsProvider) {
+  public <OUT> OUT executeWithNonFinalResult(Supplier<OUT> outInitSupplier,
+      Function<OUT, Function<TransactionStatus, OUT>> action) {
     StackTraceElement[] callStacks = Thread.currentThread().getStackTrace();
-    return doExecute(out, action, callStacks, txnOpsProvider);
+    OUT out = outInitSupplier.get();
+    return doExecute(out, action.apply(out), callStacks, null);
+  }
+
+  public <OUT> OUT executeWithFinalResult(Supplier<OUT> outSupplier, Consumer<TransactionStatus> action) {
+    StackTraceElement[] callStacks = Thread.currentThread().getStackTrace();
+    OUT out = outSupplier.get();
+    doExecuteWithoutResult(out, action, callStacks, null, null);
+    return out;
+  }
+
+  public <OUT> OUT executeWithNonFinalResult(Supplier<OUT> outSupplier,
+      Function<OUT, Consumer<TransactionStatus>> action, Supplier<TransactionOperations> txnOpsProvider) {
+    StackTraceElement[] callStacks = Thread.currentThread().getStackTrace();
+    OUT out = outSupplier.get();
+    doExecuteWithoutResult(out, action.apply(out), callStacks, null, txnOpsProvider);
+    return out;
+  }
+
+  public <OUT> OUT executeWithFinalResult(Supplier<OUT> outSupplier, Consumer<TransactionStatus> action,
+      Supplier<TransactionOperations> txnOpsProvider) {
+    StackTraceElement[] callStacks = Thread.currentThread().getStackTrace();
+    OUT out = outSupplier.get();
+    doExecuteWithoutResult(out, action, callStacks, null, txnOpsProvider);
+    return out;
   }
 
   public <T> T execute(Function<TransactionStatus, T> action) {
@@ -93,6 +122,20 @@ public class StfTxnOps {
       BiFunction<Throwable, TransactionStatus, Boolean> onError, Supplier<TransactionOperations> txnOpsProvider) {
     StackTraceElement[] callStacks = Thread.currentThread().getStackTrace();
     doExecuteWithoutResult(null, action, callStacks, onError, txnOpsProvider);
+  }
+
+  // High side-effect apis - - - - - - - - - - - - - - - - -->
+
+  // TODO mj:give a check on out shouldn't be null('callee has param' is a good start),null leads unknown
+  // error,currently
+  public <T> T execute(T out, Function<TransactionStatus, T> action) {
+    StackTraceElement[] callStacks = Thread.currentThread().getStackTrace();
+    return doExecute(out, action, callStacks, null);
+  }
+
+  public <T> T execute(T out, Function<TransactionStatus, T> action, Supplier<TransactionOperations> txnOpsProvider) {
+    StackTraceElement[] callStacks = Thread.currentThread().getStackTrace();
+    return doExecute(out, action, callStacks, txnOpsProvider);
   }
 
   public <T> void executeWithoutResult(T out, Consumer<TransactionStatus> action) {
@@ -185,6 +228,8 @@ public class StfTxnOps {
       return null;
     }, callerClassName, callerMethodName, out));
   }
+
+  // <-- - - - - - - - - - - - - - -
 
   private void tryCommitLaStfOnDup(Long laStfId, DuplicateKeyException e) {
     Throwable rootCause;
