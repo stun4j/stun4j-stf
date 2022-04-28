@@ -42,8 +42,7 @@ import com.stun4j.stf.core.utils.Exceptions;
  * parameter of the downstream method.This is the typical, recommended way to make Stf work well</li>
  * <li>Be care of the case where you passing 'out' as {@code null} and it is generally accepted that the downstream
  * method does not need an input. In this case, do not pass {@code null} and instead use '#execute' or
- * '#executeWithoutResult' methods that have
- * no 'out' parameter</li>
+ * '#executeWithoutResult' methods that have no 'out' parameter</li>
  * </ul>
  * @author Jay Meng
  */

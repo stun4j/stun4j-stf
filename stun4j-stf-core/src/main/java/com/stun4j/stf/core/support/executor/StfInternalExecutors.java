@@ -17,12 +17,17 @@ package com.stun4j.stf.core.support.executor;
 
 import static com.stun4j.stf.core.utils.executor.PoolExecutors.defaultIoPrefer;
 import static com.stun4j.stf.core.utils.executor.PoolExecutors.defaultWorkStealingPool;
+import static com.stun4j.stf.core.utils.executor.PoolExecutors.newDynamicIoPrefer;
 import static com.stun4j.stf.core.utils.executor.PoolExecutors.newScheduler;
 import static com.stun4j.stf.core.utils.executor.PoolExecutors.newSingleThreadScheduler;
 
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
+
+import com.stun4j.stf.core.utils.executor.NamedThreadFactory;
 
 /** @author Jay Meng */
 public final class StfInternalExecutors {
@@ -52,6 +57,13 @@ public final class StfInternalExecutors {
 
   public static ThreadPoolExecutor newWorkerOfJobManager(String jobGrp) {
     return (ThreadPoolExecutor)defaultIoPrefer("stf-job-" + jobGrp + "-mngr-worker");
+  }
+
+  public static StfExecutorService newDefaultExec(int threadKeepAliveTimeSeconds, int taskQueueSize,
+      RejectedExecutionHandler rejectPolicy, boolean allowCoreThreadTimeOut) {
+    return new StfExecutorService(
+        newDynamicIoPrefer(new LinkedBlockingQueue<>(taskQueueSize),
+        NamedThreadFactory.of("stf-dft-exec"), threadKeepAliveTimeSeconds, allowCoreThreadTimeOut, rejectPolicy));
   }
 
   private StfInternalExecutors() {

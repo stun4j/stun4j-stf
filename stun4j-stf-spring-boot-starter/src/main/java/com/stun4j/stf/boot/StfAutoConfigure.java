@@ -15,6 +15,14 @@
  */
 package com.stun4j.stf.boot;
 
+import static com.stun4j.stf.boot.DefaultExecutor.RejectPolicy.DROP_WITH_EX_THROW;
+import static com.stun4j.stf.boot.DefaultExecutor.RejectPolicy.SILENT_DROP;
+import static com.stun4j.stf.boot.DefaultExecutor.RejectPolicy.SILENT_DROP_OLDEST;
+import static com.stun4j.stf.core.utils.executor.PoolExecutors.BACK_PRESSURE_POLICY;
+import static com.stun4j.stf.core.utils.executor.PoolExecutors.DROP_WITH_EX_THROW_POLICY;
+import static com.stun4j.stf.core.utils.executor.PoolExecutors.SILENT_DROP_OLDEST_POLICY;
+import static com.stun4j.stf.core.utils.executor.PoolExecutors.SILENT_DROP_POLICY;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -24,6 +32,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.TreeMap;
+import java.util.concurrent.RejectedExecutionHandler;
 import java.util.function.BiFunction;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -70,6 +79,8 @@ import com.stun4j.stf.core.monitor.SystemLoad;
 import com.stun4j.stf.core.spi.StfJdbcOps;
 import com.stun4j.stf.core.spi.StfRegistry;
 import com.stun4j.stf.core.store.StfCoreJdbc;
+import com.stun4j.stf.core.support.executor.StfExecutorService;
+import com.stun4j.stf.core.support.executor.StfInternalExecutors;
 import com.stun4j.stf.core.support.persistence.StfDefaultSpringJdbcOps;
 import com.stun4j.stf.core.support.registry.StfDefaultSpringRegistry;
 import com.stun4j.stf.core.utils.Exceptions;
@@ -99,6 +110,21 @@ public class StfAutoConfigure implements BeanClassLoaderAware, ApplicationContex
     rawTxnOps.setPropagationBehavior(txPropagation.getValue());
     // TODO mj:timeout
     return new StfTxnOps(rawTxnOps);
+  }
+
+  @Bean
+  StfExecutorService stfDftExec() {
+    DefaultExecutor cfg = props.getDefaultExecutor();
+    RejectedExecutionHandler rejectPolicy = BACK_PRESSURE_POLICY;
+    if (DROP_WITH_EX_THROW == cfg.getThreadRejectPolicy()) {
+      rejectPolicy = DROP_WITH_EX_THROW_POLICY;
+    } else if (SILENT_DROP == cfg.getThreadRejectPolicy()) {
+      rejectPolicy = SILENT_DROP_POLICY;
+    } else if (SILENT_DROP_OLDEST == cfg.getThreadRejectPolicy()) {
+      rejectPolicy = SILENT_DROP_OLDEST_POLICY;
+    }
+    return StfInternalExecutors.newDefaultExec(cfg.getThreadKeepAliveTimeSeconds(), cfg.getTaskQueueSize(),
+        rejectPolicy, cfg.isAllowCoreThreadTimeOut());
   }
 
   private void doEarlyInitialize() {

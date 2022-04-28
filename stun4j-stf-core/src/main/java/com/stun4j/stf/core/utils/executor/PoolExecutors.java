@@ -46,7 +46,7 @@ public final class PoolExecutors {
   public static final RejectedExecutionHandler SILENT_DROP_OLDEST_POLICY = new DiscardOldestPolicy();
 
   public static ExecutorService defaultIoPrefer(String prefix) {
-    return newDynamicIoPrefer(prefix, new LinkedBlockingQueue<>(1024), NamedThreadFactory.of(prefix), 60,
+    return newDynamicIoPrefer(new LinkedBlockingQueue<>(1024), NamedThreadFactory.of(prefix), 60, true,
         BACK_PRESSURE_POLICY);
   }
 
@@ -54,14 +54,12 @@ public final class PoolExecutors {
     return newWorkStealingPool(Runtime.getRuntime().availableProcessors(), prefix, daemon, null);
   }
 
-  public static ExecutorService newDynamicIoPrefer(String prefix, BlockingQueue<Runnable> queue,
-      ThreadFactory threadFactory, int keepAliveTimeSeconds, RejectedExecutionHandler reject) {
+  public static ExecutorService newDynamicIoPrefer(BlockingQueue<Runnable> queue, ThreadFactory threadFactory,
+      int keepAliveTimeSeconds, boolean allowCoreThreadTimeOut, RejectedExecutionHandler reject) {
     ThreadPoolExecutor exec = new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors(),
         Math.min(ThreadPoolUtils.ioIntensivePoolSize(), 64), keepAliveTimeSeconds, TimeUnit.SECONDS, queue,
         threadFactory, reject);
-    if (keepAliveTimeSeconds > 0) {
-      exec.allowCoreThreadTimeOut(true);
-    }
+    exec.allowCoreThreadTimeOut(allowCoreThreadTimeOut);
     return exec;
   }
 

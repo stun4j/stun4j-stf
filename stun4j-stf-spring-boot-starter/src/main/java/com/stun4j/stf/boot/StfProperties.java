@@ -73,6 +73,8 @@ public class StfProperties extends BaseVo {
 
   private Monitor monitor = new Monitor();
 
+  private DefaultExecutor defaultExecutor = new DefaultExecutor();
+
   public void setConfRootPath(String confRootPath) {
     argument(confRootPath.indexOf("*") == -1, "'*' is not supported in root path of stf-flow configurations");
     if (confRootPath.endsWith("/")) {
@@ -131,6 +133,14 @@ public class StfProperties extends BaseVo {
 
   public void setMonitor(Monitor monitor) {
     this.monitor = monitor;
+  }
+
+  public DefaultExecutor getDefaultExecutor() {
+    return defaultExecutor;
+  }
+
+  public void setDefaultExecutor(DefaultExecutor defaultExecutor) {
+    this.defaultExecutor = defaultExecutor;
   }
 
 }
