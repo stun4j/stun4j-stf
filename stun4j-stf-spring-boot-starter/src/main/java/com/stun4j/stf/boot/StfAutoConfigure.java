@@ -169,7 +169,7 @@ public class StfAutoConfigure implements BeanClassLoaderAware, ApplicationContex
     boolean isVmResCheckEnabled;
     jobMngr.setVmResCheckEnabled(isVmResCheckEnabled = (mon = props.getMonitor()).isVmResCheckEnabled());
     fixer.setVmResCheckEnabled(isVmResCheckEnabled);
-    StfMonitor.INSTANCE.setConsiderSystemLoad(mon.isConsiderSystemLoad());
+    StfMonitor.INSTANCE.withConsiderSystemLoad(mon.isConsiderSysLoad()).withConsiderJvmMemory(mon.isConsiderJvmMem());
     JvmMemory.INSTANCE.withHighFactor(mon.getJvmMem().getHighFactor())
         .withIncludeNonHeap(mon.getJvmMem().isIncludeNonHeap());
     JvmCpu.INSTANCE.withHighFactor(mon.getJvmCpu().getHighFactor());

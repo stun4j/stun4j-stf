@@ -30,7 +30,6 @@ import com.stun4j.stf.core.utils.CollectionUtils;
  */
 public class ActionMethodChecker implements Checker<String> {
 
-  @SuppressWarnings("restriction")
   @Override
   public void check(Chain<String> chain) throws RuntimeException {
     // forking check

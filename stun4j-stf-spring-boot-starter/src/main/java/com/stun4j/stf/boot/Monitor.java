@@ -34,7 +34,14 @@ public class Monitor {
    * <p>
    * Default: false
    */
-  private boolean considerSystemLoad = false;
+  private boolean considerSysLoad = false;
+
+  /**
+   * Whether jvm-mem is taken into consider
+   * <p>
+   * Default: true
+   */
+  private boolean considerJvmMem = true;
 
   private JvmMem jvmMem = new JvmMem();
   private JvmCpu jvmCpu = new JvmCpu();
@@ -48,12 +55,20 @@ public class Monitor {
     this.vmResCheckEnabled = vmResCheckEnabled;
   }
 
-  public boolean isConsiderSystemLoad() {
-    return considerSystemLoad;
+  public boolean isConsiderSysLoad() {
+    return considerSysLoad;
   }
 
-  public void setConsiderSystemLoad(boolean considerSystemLoad) {
-    this.considerSystemLoad = considerSystemLoad;
+  public void setConsiderSysLoad(boolean considerSysLoad) {
+    this.considerSysLoad = considerSysLoad;
+  }
+
+  public boolean isConsiderJvmMem() {
+    return considerJvmMem;
+  }
+
+  public void setConsiderJvmMem(boolean considerJvmMem) {
+    this.considerJvmMem = considerJvmMem;
   }
 
   public JvmMem getJvmMem() {
@@ -92,6 +107,11 @@ public class Monitor {
      */
     private boolean includeNonHeap;
 
+    /**
+     * Default: true
+     */
+    private boolean checkEnabled = true;
+
     public float getHighFactor() {
       return highFactor;
     }
@@ -106,6 +126,14 @@ public class Monitor {
 
     public void setIncludeNonHeap(boolean includeNonHeap) {
       this.includeNonHeap = includeNonHeap;
+    }
+
+    public boolean isCheckEnabled() {
+      return checkEnabled;
+    }
+
+    public void setCheckEnabled(boolean checkEnabled) {
+      this.checkEnabled = checkEnabled;
     }
 
   }
