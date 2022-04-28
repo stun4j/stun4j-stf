@@ -200,7 +200,7 @@ public class StfAutoConfigure implements BeanClassLoaderAware, ApplicationContex
       LOG.debug("Loading stf-flow configurations via files: {}", Arrays.toString(files));
     }
     // add to stf-configs and perform final validation
-    cfgs.addConfigs(classLoader, files).autoRegisterBizObjClasses((oid) -> applicationContext.getType(oid)).validate();
+    cfgs.addConfigs(classLoader, files).autoRegisterBizObjClasses((oid) -> applicationContext.getType(oid)).check();
   }
 
   private void loadFlowConfsFromJar(String confPath, ResourceLoader resLoader, URL dirUrl, String dirName,
@@ -247,7 +247,7 @@ public class StfAutoConfigure implements BeanClassLoaderAware, ApplicationContex
       }
       // add to stf-configs and perform final validation
       cfgs.addConfigs(classLoader, flowConfUrls).autoRegisterBizObjClasses((oid) -> applicationContext.getType(oid))
-          .validate();
+          .check();
     } catch (IOException e) {
       Exceptions.sneakyThrow(e);
     }

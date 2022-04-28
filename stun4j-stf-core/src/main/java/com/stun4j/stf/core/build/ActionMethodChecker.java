@@ -10,10 +10,12 @@ import static com.stun4j.stf.core.utils.Asserts.notNull;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import org.apache.commons.lang3.reflect.MethodUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -23,13 +25,14 @@ import com.stun4j.stf.core.StfContext;
 import com.stun4j.stf.core.utils.CollectionUtils;
 
 /**
- * Do strongly typed stf-action-method checks
+ * Do strong type checking on stf-action-methods
  * @author Jay Meng
  */
-public class ActionMethodValidator implements Validator<String> {
+public class ActionMethodChecker implements Checker<String> {
 
+  @SuppressWarnings("restriction")
   @Override
-  public void validate(Chain<String> chain) throws RuntimeException {
+  public void check(Chain<String> chain) throws RuntimeException {
     // forking check
     chain.getAllNodes().stream().filter(n -> n.getOutgoingNodes().size() > 1).findAny().ifPresent(n -> {
       throw new RuntimeException(lenientFormat(
@@ -37,6 +40,7 @@ public class ActionMethodValidator implements Validator<String> {
     });
 
     // method exist check
+    Map<Class<?>, Object> constructorCheckMemo = new HashMap<>();
     chain.getAllNodes().forEach(n -> {
       String[] tmp = n.getId().split(ACTION_FULL_PATH_SEPARATOR);
       String actionOid = tmp[0];
@@ -68,6 +72,21 @@ public class ActionMethodValidator implements Validator<String> {
         Class<?> clz = (Class<?>)ReflectionUtils.getField(fld, argPair);
         return clz;
       }).toArray(Class[]::new);
+
+      // Ensure that each arg class has a default constructor to avoid potential serialization error
+      Stream.of(actionMethodArgClzs).filter(argClz -> !StfConfig.SUPPORTED_PRIMITIVE_KEYWORDS.containsValue(argClz))
+          .forEach(argClz -> {
+            constructorCheckMemo.computeIfAbsent(argClz, c -> {
+              try {
+                c.getDeclaredConstructor();
+              } catch (Exception e) {
+                throw new RuntimeException(lenientFormat(
+                    "Class '%s' is missing the default constructor > Potential serialization error may occured",
+                    c.getName()));
+              }
+              return "";
+            });
+          });
 
       /*
        * #getAccessibleMethod strictly distinguishes types (able to identify wrapped/unwrapped types), but

@@ -54,12 +54,12 @@ import com.typesafe.config.ConfigValue;
 /**
  * The parser of single stf-flow configuration
  * <p>
- * Strongly typed validation is performed and the stf-config object is obtained for subsequent processing.
+ * Strong type checking is performed and the stf-config object is obtained for subsequent processing.
  * The stf-config object contains valid stf-actions and stf-action-forwards
  * @author Jay Meng
  */
 public class StfConfig {
-  private static final Map<String, Class<?>> SUPPORTED_PRIMITIVE_KEYWORDS;
+  static final Map<String, Class<?>> SUPPORTED_PRIMITIVE_KEYWORDS;
   private final Map<String/* current */, String/* next-to */> FORWARDS = new HashMap<>();
   private final Map<String/* method-name */, Map<String, Object>/* the args */> ACTIONS = new HashMap<>();
   private final Map<String/* global-key */, Object/* global-value */> GLOBAL = new HashMap<>();

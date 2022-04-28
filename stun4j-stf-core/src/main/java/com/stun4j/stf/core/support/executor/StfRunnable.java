@@ -22,8 +22,7 @@ public final class StfRunnable implements Runnable {
   private final TtlRunnable enhanced;
 
   public static StfRunnable of(Runnable runnable) {
-    return new StfRunnable(TtlRunnable.get(runnable, false, true));// TODO mj:autorelease set 'false',also check
-                                                                   // StfContext#removeTTL for the performance
+    return new StfRunnable(TtlRunnable.get(runnable, false, true));
   }
 
   @Override

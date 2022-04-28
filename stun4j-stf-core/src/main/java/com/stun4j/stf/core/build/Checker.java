@@ -19,6 +19,6 @@ package com.stun4j.stf.core.build;
  * To validate the chain
  * @author Jay Meng
  */
-public interface Validator<N> {
-  void validate(Chain<N> chain);
+public interface Checker<N> {
+  void check(Chain<N> chain);
 }

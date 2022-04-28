@@ -29,12 +29,12 @@ import com.stun4j.stf.core.support.NullValue;
  * Do action-chain cycle check
  * @author Jay Meng
  */
-public class CycleValidator<ID> implements Validator<ID> {
+public class CycleChecker<ID> implements Checker<ID> {
   private Map<Node<ID>, Object> visitedNodes = new HashMap<>();
   private Map<Node<ID>, Object> onPathNodes = new HashMap<>();
 
   @Override
-  public void validate(Chain<ID> chain) {
+  public void check(Chain<ID> chain) {
     doProcess(chain.getAllNodes());
   }
 
