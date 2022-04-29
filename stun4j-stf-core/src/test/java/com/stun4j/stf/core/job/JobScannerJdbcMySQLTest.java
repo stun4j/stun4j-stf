@@ -49,5 +49,6 @@ public class JobScannerJdbcMySQLTest extends BaseJobScannerCase {
   @AfterClass
   public static void afterClass() {
     SchemaFileHelper.cleanup(SCHEMA_FILE_WITH_TBL_NAME_CHANGED);
+    DB.close();
   }
 }

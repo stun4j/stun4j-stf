@@ -9,6 +9,7 @@
 	</parent>
 	<groupId>com.stun4j</groupId>
 	<artifactId>stun4j-stf-parent</artifactId>
+  <name>Stun4j Stf Parent</name>
 	<version>${revision}</version>
 	<packaging>pom</packaging>
 	<modules>
@@ -24,7 +25,7 @@
 
 		<!-- helper -->
 		<guava.version>31.1-jre</guava.version>
-		<stun4j-guid.version>1.2.3-SNAPSHOT</stun4j-guid.version>
+		<stun4j-guid.version>1.2.2.1</stun4j-guid.version>
 		<config.version>1.4.2</config.version>
 
 		<!-- log -->
