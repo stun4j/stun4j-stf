@@ -77,11 +77,11 @@ public class BizServiceMultiStep {
   }
 
   public Tx step2Tx(Tx tx) {
-    Long txId = tx.id;
-    String reqId = tx.reqId;
-    Long acctNoFrom = tx.acctNoFrom;
-    Long acctNoTo = tx.acctNoTo;
-    BigDecimal amtDt = tx.amtDelta;
+    Long txId = tx.getId();
+    String reqId = tx.getReqId();
+    Long acctNoFrom = tx.getAcctNoFrom();
+    Long acctNoTo = tx.getAcctNoTo();
+    BigDecimal amtDt = tx.getAmtDelta();
 
     Long acctOpSeqNo = guid.next();
     return txnOps.executeWithNonFinalResult(() -> new Tx(txId, reqId, acctNoTo, amtDt), out -> st -> {
@@ -106,9 +106,9 @@ public class BizServiceMultiStep {
   }
 
   public void endTx(Tx tx) {
-    Long txId = tx.id;
-    Long acctNoTo = tx.acctNoTo;
-    BigDecimal amtDt = tx.amtDelta;
+    Long txId = tx.getId();
+    Long acctNoTo = tx.getAcctNoTo();
+    BigDecimal amtDt = tx.getAmtDelta();
 
     Long acctOpSeqNo = guid.next();
     /*-
@@ -121,7 +121,7 @@ public class BizServiceMultiStep {
      * downstream output parameters after the Stf specific transaction is executed, which can cause potential
      * inconsistencies.
      */
-    txnOps.executeWithoutResult(tx.reqId, st -> {
+    txnOps.executeWithoutResult(tx.getReqId(), st -> {
       if (!txDao.markTxSuccess(txId)) {
         commitLastDone();
         return;

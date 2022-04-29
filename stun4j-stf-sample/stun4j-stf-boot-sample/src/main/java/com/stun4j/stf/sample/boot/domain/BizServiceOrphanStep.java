@@ -28,9 +28,9 @@ import com.stun4j.stf.sample.boot.persistence.ReqPo;
 @Service("bizOrphanStep")
 public class BizServiceOrphanStep {
   @Autowired
-  ReqDao reqDao;
+  private ReqDao reqDao;
   @Autowired
-  StfTxnOps txnOps;
+  private StfTxnOps txnOps;
 
   public void handle(Req req) {
     String reqId = req.getId();

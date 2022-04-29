@@ -23,14 +23,14 @@ import java.math.RoundingMode;
  */
 public class Tx extends Jsonable {
   private static final long serialVersionUID = 1L;
-  final Long id;
-  final String reqId;
+  private final Long id;
+  private final String reqId;
 
-  final Long acctNoFrom;
-  final Long acctNoTo;
-  final BigDecimal amtDelta;
-  final StatusEnum st;
-  String remark;
+  private final Long acctNoFrom;
+  private final Long acctNoTo;
+  private final BigDecimal amtDelta;
+  private final StatusEnum st;
+  private String remark;
 
   public Tx(Long id, String reqId) {
     this(id, reqId, -1L, null);

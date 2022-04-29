@@ -25,7 +25,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.stun4j.guid.core.LocalGuid;
-import com.stun4j.stf.core.StfTxnOps;
 import com.stun4j.stf.core.support.executor.StfExecutorService;
 import com.stun4j.stf.sample.boot.domain.BizServiceMultiStep;
 import com.stun4j.stf.sample.boot.domain.Req;
@@ -39,16 +38,13 @@ public class AppService {
   private static final Logger LOG = LoggerFactory.getLogger(AppService.class);
 
   @Autowired
-  LocalGuid guid;
+  private LocalGuid guid;
 
   @Autowired
-  StfExecutorService stfExec;
+  private StfExecutorService stfExec;
 
   @Autowired
-  BizServiceMultiStep svc;
-
-  @Autowired
-  StfTxnOps txnOps;
+  private BizServiceMultiStep svc;
 
   public String acceptReq(String acctNoFrom, String acctNoTo, String amt) {
     Req req = new Req(guid.next() + "", acctNoFrom, acctNoTo, amt);
