@@ -2,7 +2,7 @@
 -- Table structure for Stun4j Stf framework
 -- (Copied from stun4j-stf-core project)
 -- ----------------------------------------------
-drop table if exists stn_stf;
+--drop table if exists stn_stf;
 create table stn_stf (
   id bigint(20) unsigned not null,
   callee json not null,
@@ -21,7 +21,7 @@ create table stn_stf (
 -- ----------------------------
 -- Table structure for account
 -- ----------------------------
-drop table if exists acct;
+--drop table if exists acct;
 create table acct (
   no bigint(20) unsigned not null,
   amt decimal(19,2) not null,
@@ -35,7 +35,7 @@ create table acct (
 -- ----------------------------
 -- Table structure for request
 -- ----------------------------
-drop table if exists req;
+--drop table if exists req;
 create table req (
   id varchar(255) not null,
   body json default null,
@@ -46,7 +46,7 @@ create table req (
 -- ----------------------------
 -- Table structure for transaction
 -- ----------------------------
-drop table if exists tx;
+--drop table if exists tx;
 create table tx (
   id bigint(20) unsigned not null,
   req_id varchar(255) not null,
@@ -61,7 +61,7 @@ create table tx (
 -- ----------------------------
 -- Table structure for account operation
 -- ----------------------------
-drop table if exists acct_op;
+--drop table if exists acct_op;
 create table acct_op (
   id bigint(20) unsigned not null,
   acct_no bigint(20) unsigned not null,

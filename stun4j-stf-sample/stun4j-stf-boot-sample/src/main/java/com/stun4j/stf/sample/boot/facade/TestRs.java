@@ -15,15 +15,10 @@
  */
 package com.stun4j.stf.sample.boot.facade;
 
-import static com.stun4j.stf.sample.boot.utils.mock_data.Data.generateAmount;
 import static com.stun4j.stf.sample.boot.utils.mock_data.Data.generateAcctNos;
-
-import java.util.stream.Stream;
-
-import javax.annotation.PostConstruct;
+import static com.stun4j.stf.sample.boot.utils.mock_data.Data.generateAmount;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -36,7 +31,7 @@ import com.stun4j.stf.sample.boot.application.AppService;
 @RequestMapping("test")
 public class TestRs {
   @Autowired
-  AppService svc;
+  private AppService svc;
 
   @RequestMapping
   String index() {

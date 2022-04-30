@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.apache.commons.lang3.time.DateUtils;
+import org.apache.commons.lang3.time.FastDateFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,15 +35,8 @@ import com.stun4j.stf.core.support.JsonHelper;
  */
 public class JobRunner {
   private static final Logger LOG = LoggerFactory.getLogger(JobRunner.class);
-  private static final Map<Integer, Integer> DFT_FIXED_JOB_RETRY_INTERVAL_SECONDS = new HashMap<>();
-
-  static {
-    DFT_FIXED_JOB_RETRY_INTERVAL_SECONDS.put(1, 0);
-    DFT_FIXED_JOB_RETRY_INTERVAL_SECONDS.put(2, 1 * 60);
-    DFT_FIXED_JOB_RETRY_INTERVAL_SECONDS.put(3, 2 * 60);
-    DFT_FIXED_JOB_RETRY_INTERVAL_SECONDS.put(4, 5 * 60);
-    DFT_FIXED_JOB_RETRY_INTERVAL_SECONDS.put(5, 15 * 60);
-  }
+  private static final Map<Integer, Integer> DFT_FIXED_JOB_RETRY_INTERVAL_SECONDS;
+  private static final FastDateFormat DATE_FMT;
 
   private final Map<Integer, Integer> retryIntervalSeconds;
   private final int retryMaxTimes;
@@ -94,9 +88,11 @@ public class JobRunner {
     Date nextTriggerTime = nextIntervalSecondsAllowReSend != null
         ? DateUtils.addSeconds(now, nextIntervalSecondsAllowReSend)
         : null;
+    ;
     LOG.info(
         "Retring stf-job#{} [curTime={}, expectedRetryTimes={}, expectedTriggerTime={}, lastTriggerTime={}, nextTriggerTime={}]",
-        job.getId(), now, curRetryTimes, curTriggerTime, new Date(job.getUpAt()), nextTriggerTime);
+        job.getId(), DATE_FMT.format(now), curRetryTimes, DATE_FMT.format(curTriggerTime),
+        DATE_FMT.format(new Date(job.getUpAt())), DATE_FMT.format(nextTriggerTime));
   }
 
   private static String toCallStringOf(StfCall call) {
@@ -107,10 +103,6 @@ public class JobRunner {
     builder.append(":").append(bizObjId).append(".").append(method);
     String calleeInfo = builder.toString();
     return calleeInfo;
-  }
-
-  synchronized static JobRunner instance() {
-    return instance(null);
   }
 
   synchronized static JobRunner instance(Map<Integer, Integer> retryIntervalSeconds) {
@@ -124,6 +116,16 @@ public class JobRunner {
   private JobRunner(Map<Integer, Integer> retryIntervalSeconds) {
     this.retryIntervalSeconds = retryIntervalSeconds;
     this.retryMaxTimes = retryIntervalSeconds.size();
+  }
+
+  static {
+    DFT_FIXED_JOB_RETRY_INTERVAL_SECONDS = new HashMap<>();
+    DFT_FIXED_JOB_RETRY_INTERVAL_SECONDS.put(1, 0);
+    DFT_FIXED_JOB_RETRY_INTERVAL_SECONDS.put(2, 1 * 60);
+    DFT_FIXED_JOB_RETRY_INTERVAL_SECONDS.put(3, 2 * 60);
+    DFT_FIXED_JOB_RETRY_INTERVAL_SECONDS.put(4, 5 * 60);
+    DFT_FIXED_JOB_RETRY_INTERVAL_SECONDS.put(5, 15 * 60);
+    DATE_FMT = FastDateFormat.getInstance("yyyy-MM-dd HH:mm:ss.SSSZ");
   }
 
 }

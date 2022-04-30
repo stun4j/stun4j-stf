@@ -9,6 +9,9 @@
 	<groupId>com.stun4j.boot</groupId>
 	<artifactId>stun4j-stf-spring-boot-starter</artifactId>
 
+  <description>Starter for using Stun4J Stf</description>
+  <url>https://github.com/stun4j/stun4j-stf</url>
+
 	<dependencies>
 		<!-- module -->
 		<dependency>

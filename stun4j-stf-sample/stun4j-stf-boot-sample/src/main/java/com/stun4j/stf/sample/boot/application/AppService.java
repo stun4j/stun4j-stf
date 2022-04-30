@@ -53,10 +53,11 @@ public class AppService {
     String reqId = txBegin.getReqId();
     stfExec.execute(() -> {
       /*-
-       * Several points are demonstrated here, as follows:
-       * 1.Stf supports basic type parameter transmission.
+       * 1.Each downstream method is guaranteed to be called, even if any exceptions such as system crash, timeout, etc.
+       *  
+       * 2.Stf supports basic type parameter transmission.
        * 
-       * 2.Performance tips: In Stf, you should always consider minimizing the serialized size of Stf state object in
+       * 3.Performance tips: In Stf, you should always consider minimizing the serialized size of Stf state object in
        * the underlying storage.
        */
       Tx txToStep2 = svc.step1Tx(txId, reqId);
@@ -72,7 +73,7 @@ public class AppService {
         });
       });
     });
-    return req.getId();
+    return reqId;
   }
 
   public void sendNotification(String reqId) {// Here we simply simulated a timeout

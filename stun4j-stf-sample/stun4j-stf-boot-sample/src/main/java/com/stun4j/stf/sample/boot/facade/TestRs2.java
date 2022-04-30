@@ -27,7 +27,6 @@ import com.stun4j.stf.core.StfTxnOps;
 import com.stun4j.stf.core.support.executor.StfRunnable;
 import com.stun4j.stf.sample.boot.domain.BizServiceOrphanStep;
 import com.stun4j.stf.sample.boot.domain.Req;
-import com.stun4j.stf.sample.boot.persistence.ReqDao;
 
 /**
  * @author Jay Meng
@@ -36,13 +35,9 @@ import com.stun4j.stf.sample.boot.persistence.ReqDao;
 @RequestMapping("test2")
 public class TestRs2 {
   @Autowired
-  LocalGuid guid;
+  private BizServiceOrphanStep svc;
   @Autowired
-  BizServiceOrphanStep svc;
-  @Autowired
-  StfTxnOps txnOps;
-  @Autowired
-  ReqDao reqMapper;
+  private StfTxnOps txnOps;
 
   @RequestMapping
   public String index() {
@@ -53,7 +48,6 @@ public class TestRs2 {
     String reqId = LocalGuid.uuid();
 
     /*-
-     * Several points are demonstrated here, as follows:
      * 1.Sometimes a method has neither upstream nor downstream, and it is an orphan
      * method(BizServiceOrphanStep#handle). Stf also supports retry on orphan.
      * 

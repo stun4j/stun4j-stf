@@ -87,7 +87,6 @@ public class BizServiceMultiStep {
     return txnOps.executeWithNonFinalResult(() -> new Tx(txId, reqId, acctNoTo, amtDt), out -> st -> {
       if (!acctDao.decreaseAcctAmt(amtDt, acctNoFrom)) {
         /*-
-         * Several points are demonstrated here, as follows:
          * 1.The Stf framework guarantees retry, but sometimes the business side may need to stop retry early.The
          * StfContext#commitLastDone method is used to do this.
          * 
