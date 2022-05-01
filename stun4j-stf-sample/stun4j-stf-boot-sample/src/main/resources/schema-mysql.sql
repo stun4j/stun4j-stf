@@ -10,6 +10,7 @@ create table stn_stf (
   is_dead char(1) not null,
   is_running char(1) not null,
   retry_times tinyint(3) unsigned not null,
+  timeout_secs mediumint unsigned,
   ct_at bigint(20) unsigned not null,
   up_at bigint(20) unsigned not null,
   primary key(id)

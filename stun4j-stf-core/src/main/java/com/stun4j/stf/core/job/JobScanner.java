@@ -36,7 +36,7 @@ public interface JobScanner {
    * @return the result Stream, containing stf objects, needing to be closed once fully processed (e.g. through a
    *         try-with-resources clause)
    */
-  Stream<Stf> scanTimeoutJobsRunning(long timeoutMs, int limit, boolean running);
+  Stream<Stf> scanTimeoutJobsInProgress(long timeoutMs, int limit, boolean running);
 
   /**
    * @return the result Stream, containing stf objects, needing to be closed once fully processed (e.g. through a

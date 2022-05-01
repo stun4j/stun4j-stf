@@ -18,6 +18,7 @@ package com.stun4j.stf.core.build;
 import static com.google.common.base.Strings.lenientFormat;
 import static com.stun4j.stf.core.build.BuildingBlockEnum.ARGS;
 import static com.stun4j.stf.core.build.BuildingBlockEnum.OID;
+import static com.stun4j.stf.core.build.BuildingBlockEnum.TIMEOUT;
 import static com.stun4j.stf.core.utils.Asserts.argument;
 import static com.stun4j.stf.core.utils.Asserts.requireNonNull;
 import static com.stun4j.stf.core.utils.Asserts.state;
@@ -28,6 +29,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -74,7 +76,7 @@ public class StfConfigs {
     Node<String> toNode = iter.next();
     state(!iter.hasNext(), "Action forking is not supported");// this shouldn't happen
     if (toNode == null) {
-      // FIXME mj:pay attention to orphan node whose next shoule be itself, and also be aware of its
+      // FIXME mj:pay attention to orphan node whose next should be itself, and also be aware of its
       // 'retry-times',currently,its not tested,so we don't know what's the behavior of an orphan node
       return null;
     }
@@ -84,9 +86,7 @@ public class StfConfigs {
 
   @SuppressWarnings("unchecked")
   public static Pair<?, Class<?>>[] determineActionMethodArgs(String actionOid, String actionMethodName, Object out) {
-    // TODO mj:not thread-safe
-    String actionPath = actionPathBy(actionOid, actionMethodName);
-    Map<String, Object> actionDetail = FULL_PATH_ACTIONS.get(actionPath);
+    Map<String, Object> actionDetail = getActionDetail(actionOid, actionMethodName);
     List<Function<Object, Pair<?, Class<?>>>> argsInfo = (List<Function<Object, Pair<?, Class<?>>>>)actionDetail
         .get(ARGS.key());
     // support no-arg method invoke
@@ -99,6 +99,12 @@ public class StfConfigs {
       return arg;
     }).toArray(Pair[]::new);
     return args;
+  }
+
+  public static Integer getActionTimeout(String actionOid, String actionMethodName) {
+    Map<String, Object> actionDetail = getActionDetail(actionOid, actionMethodName);
+    Integer timeout = (Integer)actionDetail.get(TIMEOUT.key());
+    return timeout;
   }
 
   public StfConfigs addConfigs(File... cfgFileBasenames) {
@@ -193,6 +199,12 @@ public class StfConfigs {
     }
     doAutoRegister(map);
     return this;
+  }
+
+  private static Map<String, Object> getActionDetail(String actionOid, String actionMethodName) {
+    String actionPath = actionPathBy(actionOid, actionMethodName);
+    Map<String, Object> actionDetail = FULL_PATH_ACTIONS.get(actionPath);
+    return actionDetail;
   }
 
   private void doAutoRegister(Map<String, Object> map) {

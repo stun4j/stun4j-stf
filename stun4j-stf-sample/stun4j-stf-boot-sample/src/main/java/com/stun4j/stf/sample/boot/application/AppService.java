@@ -85,7 +85,7 @@ public class AppService {
     commitLastDone();
 
     /*
-     * An equivalent piece of code is written as follows:
+     * An equivalent code block is written as follows:
      * (More transparent, but the code above is better in performance)
      */
     // if (once.compareAndSet(false, true)) {

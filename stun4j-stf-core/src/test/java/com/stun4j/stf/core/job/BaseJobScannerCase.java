@@ -93,7 +93,7 @@ public abstract class BaseJobScannerCase extends BaseContainerCase<JobScanner> {
 
     // Only sql programmar is tested
     if (isNormal) {
-      try (Stream<Stf> stfs = biz.scanTimeoutJobsRunning(0, 1, false)) {
+      try (Stream<Stf> stfs = biz.scanTimeoutJobsInProgress(0, 1, false)) {
       }
     }
   }
@@ -136,7 +136,7 @@ public abstract class BaseJobScannerCase extends BaseContainerCase<JobScanner> {
         }
       } else {
         if (isNormal) {
-          stfs = biz.scanTimeoutJobsRunning(shortestTimeout, 1, false);
+          stfs = biz.scanTimeoutJobsInProgress(shortestTimeout, 1, false);
         }
       }
       Stf[] stfArray = stfs.toArray(Stf[]::new);
@@ -161,7 +161,7 @@ public abstract class BaseJobScannerCase extends BaseContainerCase<JobScanner> {
         }
       } else {
         if (isNormal) {
-          stfs2 = biz.scanTimeoutJobsRunning(shortestTimeout + 1, 1, false);
+          stfs2 = biz.scanTimeoutJobsInProgress(shortestTimeout + 1, 1, false);
         }
       }
       assert stfs2.count() == 0 : "should find 0 timeout job when timeout just not-happened";
@@ -181,7 +181,7 @@ public abstract class BaseJobScannerCase extends BaseContainerCase<JobScanner> {
         }
       } else {
         if (isNormal) {
-          stfs3 = biz.scanTimeoutJobsRunning(0, 1, true);
+          stfs3 = biz.scanTimeoutJobsInProgress(0, 1, true);
         }
       }
       assert stfs3.count() == 0 : "should find 0 timeout running job,because we never create any of this kinda job";

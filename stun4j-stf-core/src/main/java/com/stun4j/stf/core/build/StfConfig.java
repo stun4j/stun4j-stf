@@ -25,6 +25,7 @@ import static com.stun4j.stf.core.build.BuildingBlockEnum.M;
 import static com.stun4j.stf.core.build.BuildingBlockEnum.OID;
 import static com.stun4j.stf.core.build.BuildingBlockEnum.O_IN;
 import static com.stun4j.stf.core.build.BuildingBlockEnum.ROOT;
+import static com.stun4j.stf.core.build.BuildingBlockEnum.TIMEOUT;
 import static com.stun4j.stf.core.build.BuildingBlockEnum.TO;
 import static com.stun4j.stf.core.build.BuildingBlockEnum.U_IN;
 import static com.stun4j.stf.core.utils.Asserts.argument;
@@ -216,6 +217,22 @@ public class StfConfig {
             return null;
           }).collect(Collectors.toList());
           ACTIONS.computeIfAbsent(action, k -> new HashMap<>()).put(parsingActElmtKey, argPairs);
+        }
+        // parse action-timeout
+        if (actionInfo.indexOf(action + "." + (parsingActElmtKey = TIMEOUT.key())) != -1) {
+          String timeoutStr = act.getValue().unwrapped().toString();
+          int idx;
+          String msg;
+          argument((idx = timeoutStr.lastIndexOf("s")) != -1,
+              msg = ("Action 'timeout' can only be set to seconds, the wrong value is '" + timeoutStr + "'"));
+          Integer timeoutSeconds;
+          try {
+            timeoutSeconds = Integer.valueOf(timeoutStr.substring(0, idx));
+            argument(timeoutStr.substring(idx + 1).length() == 0, msg);
+          } catch (Exception e) {
+            throw new RuntimeException(msg, e);
+          }
+          ACTIONS.computeIfAbsent(action, k -> new HashMap<>()).put(parsingActElmtKey, timeoutSeconds);
         }
       });
     }

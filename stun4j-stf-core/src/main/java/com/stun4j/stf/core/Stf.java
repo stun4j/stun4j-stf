@@ -41,6 +41,8 @@ public class Stf extends BaseEntity<Long> {
   private long ctAt;
   private long upAt;
 
+  private Integer timeoutSecs;
+
   @Override
   public Long getId() {
     return id;
@@ -113,4 +115,13 @@ public class Stf extends BaseEntity<Long> {
   public void setUpAt(long upAt) {
     this.upAt = upAt;
   }
+
+  public Integer getTimeoutSecs() {
+    return timeoutSecs;
+  }
+
+  public void setTimeoutSecs(Integer timeoutSeconds) {
+    this.timeoutSecs = timeoutSeconds;
+  }
+
 }

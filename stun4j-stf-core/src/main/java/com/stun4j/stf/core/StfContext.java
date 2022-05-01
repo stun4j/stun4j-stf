@@ -28,6 +28,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 import com.alibaba.ttl.TransmittableThreadLocal;
 import com.stun4j.guid.core.LocalGuid;
+import com.stun4j.stf.core.build.StfConfigs;
 import com.stun4j.stf.core.spi.StfRegistry;
 import com.stun4j.stf.core.support.banner.Banner;
 import com.stun4j.stf.core.support.banner.Banner.Mode;

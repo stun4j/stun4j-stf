@@ -31,7 +31,7 @@ public class HelpStartUp implements ApplicationContextAware {
 
   @Override
   public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-    // Clean business related datas,comment out the following code if you don't need it
+    // Clean business related datas,comment out the following code block if you don't need it
     JdbcTemplate jdbc = applicationContext.getBean(JdbcTemplate.class);
     Stream.of(new String[]{"stn_stf", "req", "tx", "acct_op"}).forEach((tbl) -> {
       jdbc.update("delete from " + tbl);

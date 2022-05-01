@@ -127,7 +127,7 @@ public class StfCoreJdbc extends BaseStfCore {
   protected void doInit(Long newStfId, StfCall callee) {
     String calleeJson = JsonHelper.toJson(callee);
     long now = System.currentTimeMillis();
-    jdbcOps.update(INIT_SQL, newStfId, calleeJson, now, now);
+    jdbcOps.update(INIT_SQL, newStfId, calleeJson, callee.getTimeoutSecs(), now, now);
   }
 
   @Override
@@ -161,7 +161,7 @@ public class StfCoreJdbc extends BaseStfCore {
     this.jdbcOps = jdbc;
 
     String initTemplateSql = lenientFormat(
-        "insert into %s (id, callee, st, is_dead, is_running, retry_times, ct_at, up_at) values(?, ?, '%s', '%s', '%s', %s, ?, ?)",
+        "insert into %s (id, callee, st, is_dead, is_running, retry_times, timeout_secs, ct_at, up_at) values(?, ?, '%s', '%s', '%s', %s, ?, ?, ?)",
         tblName);
     INIT_SQL = lenientFormat(initTemplateSql, I.name(), N.name(), N.name(), 0);
     FORWARD_SQL = lenientFormat("update %s set st = '%s', up_at = ? where id = ? and st in ('%s', '%s')", tblName,

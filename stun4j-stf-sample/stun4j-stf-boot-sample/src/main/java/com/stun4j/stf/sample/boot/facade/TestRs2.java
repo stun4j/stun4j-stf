@@ -55,9 +55,19 @@ public class TestRs2 {
      */
     Req req = txnOps.executeWithFinalResult(() -> new Req(reqId, acctNoFrom, acctNoTo, amt), st -> {
     });
+
+    /*-
+     * 3.One interesting thing is that you can even think of Stf as a delay queue that can support approximately
+     * arbitrary precision delay time.
+     * 
+     * 4.Another interesting thing is that you can think of Stf as a relatively slow workflow that runs behind the
+     * scene.
+     */
+    // All you need to do is comment out the following code block, Stf will take the control->
     new Thread(StfRunnable.of(() -> {
       svc.handle(req);
     })).start();
+    // <-
 
     return reqId;
   }

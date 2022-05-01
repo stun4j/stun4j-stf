@@ -24,6 +24,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.stun4j.stf.core.build.StfConfigs;
 import com.stun4j.stf.core.utils.Exceptions;
 import com.stun4j.stf.core.utils.shaded.guava.common.primitives.Primitives;
 
@@ -46,8 +47,9 @@ public abstract class BaseStfCore implements StfCore {
 
   @SuppressWarnings("unchecked")
   StfCall newCallee(String bizObjId, String bizMethodName, Pair<?, Class<?>>... typedArgs) {
+    Integer timeout = StfConfigs.getActionTimeout(bizObjId, bizMethodName);
     if (ArrayUtils.isNotEmpty(typedArgs)) {
-      StfCall callee = StfCall.ofInJvm(bizObjId, bizMethodName, typedArgs.length);
+      StfCall callee = StfCall.ofInJvm(bizObjId, bizMethodName, typedArgs.length).withTimeoutSeconds(timeout);
       int argIdx = 0;
       for (Pair<?, Class<?>> arg : typedArgs) {
         Class<?> argType = arg.getRight();
@@ -60,7 +62,7 @@ public abstract class BaseStfCore implements StfCore {
       }
       return callee;
     }
-    return StfCall.ofInJvm(bizObjId, bizMethodName);
+    return StfCall.ofInJvm(bizObjId, bizMethodName).withTimeoutSeconds(timeout);
   }
 
   protected boolean checkFail(Long stfId) {

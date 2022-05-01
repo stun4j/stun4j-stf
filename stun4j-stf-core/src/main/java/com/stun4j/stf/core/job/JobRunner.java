@@ -15,13 +15,14 @@
  */
 package com.stun4j.stf.core.job;
 
+import static com.stun4j.stf.core.StfConsts.DFT_DATE_FMT;
+
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
 import org.apache.commons.lang3.time.DateUtils;
-import org.apache.commons.lang3.time.FastDateFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,21 +37,20 @@ import com.stun4j.stf.core.support.JsonHelper;
 public class JobRunner {
   private static final Logger LOG = LoggerFactory.getLogger(JobRunner.class);
   private static final Map<Integer, Integer> DFT_FIXED_JOB_RETRY_INTERVAL_SECONDS;
-  private static final FastDateFormat DATE_FMT;
 
   private final Map<Integer, Integer> retryIntervalSeconds;
   private final int retryMaxTimes;
   private static JobRunner _instance;
 
   static void doHandleTimeoutJob(Stf job, StfCore stfCore) {
-    // the job is declared dead if its retry-times exceeds the upper limit
+    // The job is declared dead if its retry-times exceeds the upper limit
     int lastRetryTimes = job.getRetryTimes();
     Long jobId = job.getId();
     if (lastRetryTimes >= _instance.retryMaxTimes) {
       stfCore.markDead(jobId, false);
       return;
     }
-    // calculate trigger time,if the time does not arrive, no execution is performed
+    // Calculate trigger time,if the time does not arrive, no execution is performed
     int expectedRetryTimes = lastRetryTimes == 0 ? 1 : lastRetryTimes + 1;
     Integer nextIntervalSecondsAllowReSend = _instance.retryIntervalSeconds.get(expectedRetryTimes);
     if (nextIntervalSecondsAllowReSend == null || job.getUpAt() <= 0) {
@@ -69,7 +69,7 @@ public class JobRunner {
       return;
     }
     logTriggerInformation(job, expectedRetryTimes, expectedTriggerTime, now);
-    // retry the job
+    // Retry the job
     String calleeInfo = null;
     Object[] methodArgs = null;
     try {
@@ -77,7 +77,7 @@ public class JobRunner {
       calleeInfo = toCallStringOf(callee);
       methodArgs = callee.getArgs();
     } catch (Throwable e) {
-      // this will definitely result in an invoke error,just to increase the retry times
+      // This will definitely result in an invoke error,just to increase the retry times
       LOG.error("Parsing calleeInfo of stf-job#{} error", jobId, e);
     }
     stfCore.reForward(jobId, lastRetryTimes, calleeInfo, true, methodArgs);
@@ -88,11 +88,10 @@ public class JobRunner {
     Date nextTriggerTime = nextIntervalSecondsAllowReSend != null
         ? DateUtils.addSeconds(now, nextIntervalSecondsAllowReSend)
         : null;
-    ;
     LOG.info(
         "Retring stf-job#{} [curTime={}, expectedRetryTimes={}, expectedTriggerTime={}, lastTriggerTime={}, nextTriggerTime={}]",
-        job.getId(), DATE_FMT.format(now), curRetryTimes, DATE_FMT.format(curTriggerTime),
-        DATE_FMT.format(new Date(job.getUpAt())), DATE_FMT.format(nextTriggerTime));
+        job.getId(), DFT_DATE_FMT.format(now), curRetryTimes, DFT_DATE_FMT.format(curTriggerTime),
+        DFT_DATE_FMT.format(new Date(job.getUpAt())), DFT_DATE_FMT.format(nextTriggerTime));
   }
 
   private static String toCallStringOf(StfCall call) {
@@ -125,7 +124,6 @@ public class JobRunner {
     DFT_FIXED_JOB_RETRY_INTERVAL_SECONDS.put(3, 2 * 60);
     DFT_FIXED_JOB_RETRY_INTERVAL_SECONDS.put(4, 5 * 60);
     DFT_FIXED_JOB_RETRY_INTERVAL_SECONDS.put(5, 15 * 60);
-    DATE_FMT = FastDateFormat.getInstance("yyyy-MM-dd HH:mm:ss.SSSZ");
   }
 
 }

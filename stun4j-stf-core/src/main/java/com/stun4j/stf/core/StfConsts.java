@@ -17,9 +17,12 @@ package com.stun4j.stf.core;
 
 import java.util.function.Consumer;
 
+import org.apache.commons.lang3.time.FastDateFormat;
+
 /** @author Jay Meng */
 public interface StfConsts {
   String DFT_TBL_NAME = "stn_stf";
+  FastDateFormat DFT_DATE_FMT = FastDateFormat.getInstance("yyyy-MM-dd HH:mm:ss.SSSZ");
 
   @SuppressWarnings("unused")
   static final Consumer<String> NOT_INITIALIZED_THROW = moduleId -> {

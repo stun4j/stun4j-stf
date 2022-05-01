@@ -26,23 +26,15 @@ import com.stun4j.stf.core.Stf;
  * @author Jay Meng
  */
 public class JobLoader extends BaseJobLoader {
-  private static final int DFT_MIN_JOB_WAITING_RUN_TIMEOUT_SECONDS = 10;
-  private static final int DFT_JOB_WAITING_RUN_TIMEOUT_SECONDS = 30;
-
-  private static final int DFT_MIN_JOB_RUNNING_TIMEOUT_SECONDS = 10;
-  private static final int DFT_JOB_RUNNING_TIMEOUT_SECONDS = 30;
-
-  private long jobWaitingRunTimeoutMs = DFT_JOB_WAITING_RUN_TIMEOUT_SECONDS * 1000;
-  private long jobRunningTimeoutMs = DFT_JOB_RUNNING_TIMEOUT_SECONDS * 1000;
   private final JobScanner scanner;
 
   @Override
   protected Stream<Stf> loadJobs(String jobGrp, int loadSize) {
     switch (jobGrp) {
       case JOB_GROUP_TIMEOUT_WAITING_RUN:
-        return scanner.scanTimeoutJobsWaitingRun(jobWaitingRunTimeoutMs, loadSize, false);
+        return scanner.scanTimeoutJobsWaitingRun(getJobWaitingRunTimeoutMs(), loadSize, false);
       case JOB_GROUP_TIMEOUT_RUNNING:
-        return scanner.scanTimeoutJobsRunning(jobRunningTimeoutMs, loadSize, false);
+        return scanner.scanTimeoutJobsInProgress(getJobRunningTimeoutMs(), loadSize, false);
       default:
         return Stream.empty();
     }
@@ -50,18 +42,6 @@ public class JobLoader extends BaseJobLoader {
 
   public JobLoader(JobScanner scanner) {
     this.scanner = scanner;
-  }
-
-  public void setJobWaitingRunTimeoutSeconds(int jobWaitingRunTimeoutSeconds) {
-    this.jobWaitingRunTimeoutMs = jobWaitingRunTimeoutSeconds < DFT_MIN_JOB_WAITING_RUN_TIMEOUT_SECONDS
-        ? DFT_MIN_JOB_WAITING_RUN_TIMEOUT_SECONDS * 1000
-        : jobWaitingRunTimeoutSeconds * 1000;
-  }
-
-  public void setJobRunningTimeoutSeconds(int jobRunningTimeoutSeconds) {
-    this.jobRunningTimeoutMs = jobRunningTimeoutSeconds < DFT_MIN_JOB_RUNNING_TIMEOUT_SECONDS
-        ? DFT_MIN_JOB_RUNNING_TIMEOUT_SECONDS * 1000
-        : jobRunningTimeoutSeconds * 1000;
   }
 
 }

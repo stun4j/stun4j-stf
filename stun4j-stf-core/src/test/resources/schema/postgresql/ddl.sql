@@ -5,6 +5,7 @@ create table stn_stf (
   is_dead char(1) not null,
   is_running char(1) not null,
   retry_times smallint not null,
+  timeout_secs int,
   ct_at bigint not null,
   up_at bigint not null,
   primary key(id)

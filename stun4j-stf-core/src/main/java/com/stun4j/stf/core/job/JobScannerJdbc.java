@@ -77,7 +77,7 @@ public class JobScannerJdbc implements JobScanner, JdbcAware {
   }
 
   @Override
-  public Stream<Stf> scanTimeoutJobsRunning(long timeoutMs, int limit, boolean running) {
+  public Stream<Stf> scanTimeoutJobsInProgress(long timeoutMs, int limit, boolean running) {
     return doScanStillAlive(P, timeoutMs, limit, running);
   }
 
@@ -93,7 +93,7 @@ public class JobScannerJdbc implements JobScanner, JdbcAware {
       return Stream.empty();
     }
     long now = System.currentTimeMillis();
-    long timeoutMsBefore = now - timeoutMs;
+    long timeoutMsThreshold = now - timeoutMs;
     long idEnd = guid.from(now);
     long idStart = guid.from(now - TimeUnit.DAYS.toMillis(includeHowManyDaysAgo));
 
@@ -106,14 +106,14 @@ public class JobScannerJdbc implements JobScanner, JdbcAware {
       } else {
         sql = SQL_WITH_SINGLE_ST_ORACLE;
       }
-      args = new Object[]{idStart, idEnd, timeoutMsBefore, yesNo.name(), N.name(), st.name(), limit};
+      args = new Object[]{idStart, idEnd, timeoutMsThreshold, yesNo.name(), N.name(), st.name(), limit};
     } else {
       if (DB_VENDOR_MY_SQL.equals(dbVendor) || DB_VENDOR_POSTGRE_SQL.equals(dbVendor)) {
         sql = SQL_WITH_ALIVE_ST_MYSQL;
       } else {
         sql = SQL_WITH_ALIVE_ST_ORACLE;
       }
-      args = new Object[]{idStart, idEnd, timeoutMsBefore, yesNo.name(), N.name(), limit};
+      args = new Object[]{idStart, idEnd, timeoutMsThreshold, yesNo.name(), N.name(), limit};
     }
 
     MutableBoolean checkFields = new MutableBoolean(false);
@@ -140,6 +140,9 @@ public class JobScannerJdbc implements JobScanner, JdbcAware {
       }
       if (!checkFields.getValue() || ArrayUtils.contains(includeFields, "retry_times")) {
         stf.setRetryTimes(rs.getInt("retry_times"));
+      }
+      if (!checkFields.getValue() || ArrayUtils.contains(includeFields, "timeout_secs")) {
+        stf.setTimeoutSecs(rs.getObject("timeout_secs", Integer.class));
       }
       if (!checkFields.getValue() || ArrayUtils.contains(includeFields, "ct_at")) {
         stf.setCtAt(rs.getLong("ct_at"));
