@@ -20,14 +20,16 @@ import static com.stun4j.stf.core.StateEnum.F;
 import static com.stun4j.stf.core.StateEnum.I;
 import static com.stun4j.stf.core.StateEnum.P;
 import static com.stun4j.stf.core.StateEnum.S;
+import static com.stun4j.stf.core.StfConsts.DFT_JOB_TIMEOUT_SECONDS;
+import static com.stun4j.stf.core.StfConsts.DFT_TBL_NAME;
 import static com.stun4j.stf.core.YesNoEnum.N;
 import static com.stun4j.stf.core.YesNoEnum.Y;
 
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import com.stun4j.stf.core.BaseStfCore;
 import com.stun4j.stf.core.StfCall;
-import com.stun4j.stf.core.StfConsts;
 import com.stun4j.stf.core.spi.StfJdbcOps;
 import com.stun4j.stf.core.support.JsonHelper;
 import com.stun4j.stf.core.utils.consumers.BaseConsumer;
@@ -127,7 +129,8 @@ public class StfCoreJdbc extends BaseStfCore {
   protected void doInit(Long newStfId, StfCall callee) {
     String calleeJson = JsonHelper.toJson(callee);
     long now = System.currentTimeMillis();
-    jdbcOps.update(INIT_SQL, newStfId, calleeJson, callee.getTimeoutSecs(), now, now);
+    int timeoutSecs = callee.getTimeoutSecs();
+    jdbcOps.update(INIT_SQL, newStfId, calleeJson, (now + timeoutSecs * 1000), now, now);
   }
 
   @Override
@@ -154,14 +157,14 @@ public class StfCoreJdbc extends BaseStfCore {
   }
 
   public StfCoreJdbc(StfJdbcOps jdbc) {
-    this(jdbc, StfConsts.DFT_TBL_NAME);
+    this(jdbc, DFT_TBL_NAME);
   }
 
   public StfCoreJdbc(StfJdbcOps jdbc, String tblName) {
     this.jdbcOps = jdbc;
 
     String initTemplateSql = lenientFormat(
-        "insert into %s (id, callee, st, is_dead, is_running, retry_times, timeout_secs, ct_at, up_at) values(?, ?, '%s', '%s', '%s', %s, ?, ?, ?)",
+        "insert into %s (id, callee, st, is_dead, is_locked, retry_times, timeout_at, ct_at, up_at) values(?, ?, '%s', '%s', '%s', %s, ?, ?, ?)",
         tblName);
     INIT_SQL = lenientFormat(initTemplateSql, I.name(), N.name(), N.name(), 0);
     FORWARD_SQL = lenientFormat("update %s set st = '%s', up_at = ? where id = ? and st in ('%s', '%s')", tblName,
@@ -184,8 +187,8 @@ public class StfCoreJdbc extends BaseStfCore {
         F.name());
 
     LOCK_SQL = lenientFormat(
-        "update %s set is_running = '%s' where id = ? and is_running = '%s' and up_at = ? and st not in ('%s', '%s')",
-        tblName, Y.name(), N.name(), S.name(), F.name());
+        "update %s set is_locked = '%s' where id = ? and is_locked = '%s' and up_at = ? and st not in ('%s', '%s')",
+        tblName, Y.name(), N.name(), S.name(), F.name());// FIXME mj:Extend timeoutAt here?
   }
 
   private void invokeConsumer(Long stfId, String calleeInfo, Object[] calleeMethodArgs, Integer curRetryTimes,

@@ -100,7 +100,7 @@ public abstract class BaseJobRunningTimeoutFixer extends BaseLifeCycle {
   }
 
   private void checkAndFix() {
-    try (Stream<Stf> jobsMayTimeoutStream = scanner.scanTimeoutJobsStillAlive(timeoutMs, limitPerScan, true, "id")) {
+    try (Stream<Stf> jobsMayTimeoutStream = scanner.scanTimeoutJobsStillAlive(limitPerScan, true, "id")) {
       List<Stf> jobsMayTimeout = jobsMayTimeoutStream.collect(Collectors.toList());
       if (jobsMayTimeout.size() == 0) {
         return;

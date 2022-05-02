@@ -72,48 +72,46 @@ public class JobScannerJdbc implements JobScanner, JdbcAware {
   private int includeHowManyDaysAgo;
 
   @Override
-  public Stream<Stf> scanTimeoutJobsWaitingRun(long timeoutMs, int limit, boolean running) {
-    return doScanStillAlive(I, timeoutMs, limit, running);
+  public Stream<Stf> scanTimeoutJobsWaitingRun(int limit, boolean locked) {
+    return doScanStillAlive(I, limit, locked);
   }
 
   @Override
-  public Stream<Stf> scanTimeoutJobsInProgress(long timeoutMs, int limit, boolean running) {
-    return doScanStillAlive(P, timeoutMs, limit, running);
+  public Stream<Stf> scanTimeoutJobsInProgress(int limit, boolean locked) {
+    return doScanStillAlive(P, limit, locked);
   }
 
   @Override
-  public Stream<Stf> scanTimeoutJobsStillAlive(long timeoutMs, int limit, boolean running, String... includeFields) {
-    return doScanStillAlive(null, timeoutMs, limit, running, includeFields);
+  public Stream<Stf> scanTimeoutJobsStillAlive(int limit, boolean locked, String... includeFields) {
+    return doScanStillAlive(null, limit, locked, includeFields);
   }
 
-  public Stream<Stf> doScanStillAlive(StateEnum st, long timeoutMs, int limit, boolean running,
-      String... includeFields) {
+  public Stream<Stf> doScanStillAlive(StateEnum st, int limit, boolean locked, String... includeFields) {
     if (isDataSourceClose(dsCloser, jdbcOps.getDataSource())) {
       LOG.warn("The dataSource has been closed and the scan is cancelled.");
       return Stream.empty();
     }
     long now = System.currentTimeMillis();
-    long timeoutMsThreshold = now - timeoutMs;
     long idEnd = guid.from(now);
     long idStart = guid.from(now - TimeUnit.DAYS.toMillis(includeHowManyDaysAgo));
 
     String sql;
     Object[] args;
-    YesNoEnum yesNo = running ? Y : N;
+    YesNoEnum yesNo = locked ? Y : N;
     if (st != null) {
       if (DB_VENDOR_MY_SQL.equals(dbVendor) || DB_VENDOR_POSTGRE_SQL.equals(dbVendor)) {
         sql = SQL_WITH_SINGLE_ST_MYSQL;
       } else {
         sql = SQL_WITH_SINGLE_ST_ORACLE;
       }
-      args = new Object[]{idStart, idEnd, timeoutMsThreshold, yesNo.name(), N.name(), st.name(), limit};
+      args = new Object[]{idStart, idEnd, now, yesNo.name(), N.name(), st.name(), limit};
     } else {
       if (DB_VENDOR_MY_SQL.equals(dbVendor) || DB_VENDOR_POSTGRE_SQL.equals(dbVendor)) {
         sql = SQL_WITH_ALIVE_ST_MYSQL;
       } else {
         sql = SQL_WITH_ALIVE_ST_ORACLE;
       }
-      args = new Object[]{idStart, idEnd, timeoutMsThreshold, yesNo.name(), N.name(), limit};
+      args = new Object[]{idStart, idEnd, now, yesNo.name(), N.name(), limit};
     }
 
     MutableBoolean checkFields = new MutableBoolean(false);
@@ -135,14 +133,14 @@ public class JobScannerJdbc implements JobScanner, JdbcAware {
       if (!checkFields.getValue() || ArrayUtils.contains(includeFields, "is_dead")) {
         stf.setIsDead(rs.getString("is_dead"));
       }
-      if (!checkFields.getValue() || ArrayUtils.contains(includeFields, "is_running")) {
-        stf.setIsRunning(rs.getString("is_running"));
+      if (!checkFields.getValue() || ArrayUtils.contains(includeFields, "is_locked")) {
+        stf.setIsLocked(rs.getString("is_locked"));
       }
       if (!checkFields.getValue() || ArrayUtils.contains(includeFields, "retry_times")) {
         stf.setRetryTimes(rs.getInt("retry_times"));
       }
-      if (!checkFields.getValue() || ArrayUtils.contains(includeFields, "timeout_secs")) {
-        stf.setTimeoutSecs(rs.getObject("timeout_secs", Integer.class));
+      if (!checkFields.getValue() || ArrayUtils.contains(includeFields, "timeout_at")) {
+        stf.setTimeoutAt(rs.getLong("timeout_at"));
       }
       if (!checkFields.getValue() || ArrayUtils.contains(includeFields, "ct_at")) {
         stf.setCtAt(rs.getLong("ct_at"));
@@ -173,11 +171,11 @@ public class JobScannerJdbc implements JobScanner, JdbcAware {
     this.dsCloser = tryGetDataSourceCloser(ds);
 
     SQL_WITH_ALIVE_ST = lenientFormat(
-        "select * from %s where id in (select id from %s where id between ? and ? and up_at <= ? and is_running = ? and is_dead = ? and st in ('%s', '%s')) ",
+        "select * from %s where id in (select id from %s where id between ? and ? and timeout_at <= ? and is_locked = ? and is_dead = ? and st in ('%s', '%s') order by timeout_at) ",
         tblName, tblName, I.name(), P.name());
 
     SQL_WITH_SINGLE_ST = lenientFormat(
-        "select * from %s where id in (select id from %s where id between ? and ? and up_at <= ? and is_running = ? and is_dead = ? and st = ?) ",
+        "select * from %s where id in (select id from %s where id between ? and ? and timeout_at <= ? and is_locked = ? and is_dead = ? and st = ? order by timeout_at) ",
         tblName, tblName);
 
     SQL_WITH_ALIVE_ST_MYSQL = lenientFormat("%s limit ?", SQL_WITH_ALIVE_ST);

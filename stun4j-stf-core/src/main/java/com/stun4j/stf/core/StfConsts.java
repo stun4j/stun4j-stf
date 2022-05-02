@@ -23,6 +23,8 @@ import org.apache.commons.lang3.time.FastDateFormat;
 public interface StfConsts {
   String DFT_TBL_NAME = "stn_stf";
   FastDateFormat DFT_DATE_FMT = FastDateFormat.getInstance("yyyy-MM-dd HH:mm:ss.SSSZ");
+  int DFT_MIN_JOB_TIMEOUT_SECONDS = 5;
+  int DFT_JOB_TIMEOUT_SECONDS = 20;
 
   @SuppressWarnings("unused")
   static final Consumer<String> NOT_INITIALIZED_THROW = moduleId -> {

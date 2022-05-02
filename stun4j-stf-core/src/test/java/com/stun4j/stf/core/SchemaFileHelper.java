@@ -54,6 +54,9 @@ public class SchemaFileHelper {
         line = line.replaceFirst("\\s{1}\\w*\\s{1}\\(", Strings.lenientFormat(" %s (", TBL_NAME));
         // do the rest copy
         do {
+          if (line.startsWith("create index")) {
+            line = line.replaceAll("stn_stf", TBL_NAME);
+          }
           fchTo.write(ByteBuffer.wrap(line.getBytes()));
         } while ((line = br.readLine()) != null);
         return Triple.of(TBL_NAME, SCHEMA_FILE_WITH_TBL_NAME_CHANGED, roundId);

@@ -35,13 +35,12 @@ public class Stf extends BaseEntity<Long> {
   private String body;
   private String st;
   private String isDead;
-  private String isRunning;
+  private String isLocked;
   private int retryTimes;
 
+  private long timeoutAt;
   private long ctAt;
   private long upAt;
-
-  private Integer timeoutSecs;
 
   @Override
   public Long getId() {
@@ -64,12 +63,16 @@ public class Stf extends BaseEntity<Long> {
     return isDead;
   }
 
-  public String getIsRunning() {
-    return isRunning;
+  public String getIsLocked() {
+    return isLocked;
   }
 
   public int getRetryTimes() {
     return retryTimes;
+  }
+
+  public long getTimeoutAt() {
+    return timeoutAt;
   }
 
   public long getCtAt() {
@@ -100,12 +103,16 @@ public class Stf extends BaseEntity<Long> {
     this.isDead = isDead;
   }
 
-  public void setIsRunning(String isRunning) {
-    this.isRunning = isRunning;
+  public void setIsLocked(String isLocked) {
+    this.isLocked = isLocked;
   }
 
   public void setRetryTimes(int retryTimes) {
     this.retryTimes = retryTimes;
+  }
+
+  public void setTimeoutAt(long timeoutAt) {
+    this.timeoutAt = timeoutAt;
   }
 
   public void setCtAt(long ctAt) {
@@ -114,14 +121,6 @@ public class Stf extends BaseEntity<Long> {
 
   public void setUpAt(long upAt) {
     this.upAt = upAt;
-  }
-
-  public Integer getTimeoutSecs() {
-    return timeoutSecs;
-  }
-
-  public void setTimeoutSecs(Integer timeoutSeconds) {
-    this.timeoutSecs = timeoutSeconds;
   }
 
 }

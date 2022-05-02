@@ -17,6 +17,7 @@ package com.stun4j.stf.core;
 
 import static com.stun4j.stf.core.support.executor.StfInternalExecutors.newWorkerOfStfCore;
 
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -38,16 +39,16 @@ public abstract class BaseStfCore implements StfCore {
 
   @SuppressWarnings("unchecked")
   @Override
-  public Long init(String bizObjId, String bizMethodName, Pair<?, Class<?>>... typedArgs) {
-    StfCall callee = newCallee(bizObjId, bizMethodName, typedArgs);
+  public Long init(String bizObjId, String bizMethodName, Integer timeoutSeconds, Pair<?, Class<?>>... typedArgs) {
+    StfCall callee = newCallee(bizObjId, bizMethodName, timeoutSeconds, typedArgs);
     Long newStfId = StfContext.newStfId();
     doInit(newStfId, callee);
     return newStfId;
   }
 
   @SuppressWarnings("unchecked")
-  StfCall newCallee(String bizObjId, String bizMethodName, Pair<?, Class<?>>... typedArgs) {
-    Integer timeout = StfConfigs.getActionTimeout(bizObjId, bizMethodName);
+  StfCall newCallee(String bizObjId, String bizMethodName, Integer timeoutSeconds, Pair<?, Class<?>>... typedArgs) {
+    int timeout = Optional.ofNullable(timeoutSeconds).orElse(StfConfigs.getActionTimeout(bizObjId, bizMethodName));
     if (ArrayUtils.isNotEmpty(typedArgs)) {
       StfCall callee = StfCall.ofInJvm(bizObjId, bizMethodName, typedArgs.length).withTimeoutSeconds(timeout);
       int argIdx = 0;

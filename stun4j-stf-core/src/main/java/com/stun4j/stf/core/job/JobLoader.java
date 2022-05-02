@@ -32,9 +32,9 @@ public class JobLoader extends BaseJobLoader {
   protected Stream<Stf> loadJobs(String jobGrp, int loadSize) {
     switch (jobGrp) {
       case JOB_GROUP_TIMEOUT_WAITING_RUN:
-        return scanner.scanTimeoutJobsWaitingRun(getJobWaitingRunTimeoutMs(), loadSize, false);
+        return scanner.scanTimeoutJobsWaitingRun(loadSize, false);
       case JOB_GROUP_TIMEOUT_RUNNING:
-        return scanner.scanTimeoutJobsInProgress(getJobRunningTimeoutMs(), loadSize, false);
+        return scanner.scanTimeoutJobsInProgress(loadSize, false);
       default:
         return Stream.empty();
     }

@@ -26,6 +26,7 @@ import org.testcontainers.containers.GenericContainer;
 
 import com.google.common.collect.Maps;
 import com.stun4j.guid.core.LocalGuid;
+import com.stun4j.guid.core.utils.Utils;
 import com.stun4j.stf.core.BaseContainerCase;
 import com.stun4j.stf.core.BaseStfCore;
 import com.stun4j.stf.core.StateEnum;
@@ -63,24 +64,42 @@ public abstract class BaseJobScannerCase extends BaseContainerCase<JobScanner> {
     _02_03_07_08_template(StateEnum.I, true);
   }
 
+  // public static void main(String[] args) {
+  // String url = "jdbc:mysql://localhost/test";
+  // String username = "root";
+  // String password = "1111";
+  // JdbcTemplate jdbc = new JdbcTemplate(new DriverManagerDataSource(url, username, password));
+  // jdbc.execute("delete from stn_stf");
+  // StfDefaultSpringJdbcOps ops;
+  // BaseStfCore stf = new StfCoreJdbc(ops = new StfDefaultSpringJdbcOps(jdbc), "stn_stf");
+  // stf.init("foo", "bar", 0);
+  //
+  // JobScanner biz = new JobScannerJdbc(ops, "stn_stf");
+  // try (Stream<Stf> stfs = biz.scanTimeoutJobsWaitingRun(1, false)) {
+  // System.out.println(stfs.count());
+  // }
+  // }
+
+  @SuppressWarnings("unchecked")
   private void _01_06_template(boolean isNormal) {
     JobScanner biz = bizBean();
     BaseStfCore stf = newStfCore(biz);
 
     long theVeryBegining = System.currentTimeMillis();
     if (isNormal) {
-      stf.init("foo", "bar");
+      stf.init("foo", "bar", 1);// give a shortest timeout
     }
+    Utils.sleepSeconds(1);
     if (isNormal) {
-      try (Stream<Stf> stfs = biz.scanTimeoutJobsWaitingRun(0, 1, false)) {
-        assert stfs.count() == 1 : "should find 1 job";
+      try (Stream<Stf> stfs = biz.scanTimeoutJobsWaitingRun(1, false)) {
+        assert stfs.count() == 1 : "should find 1 timeout job";
       }
     }
 
     if (isNormal) {
-      try (Stream<Stf> stfs = biz.scanTimeoutJobsStillAlive(0, 1, false, "id", "up_at")) {
+      try (Stream<Stf> stfs = biz.scanTimeoutJobsStillAlive(1, false, "id", "up_at")) {
         Stf[] stfArray = stfs.toArray(Stf[]::new);
-        assert stfArray.length == 1 : "should find 1 job";
+        assert stfArray.length == 1 : "should find 1 timeout job";
         Stf obj = stfArray[0];
 
         // getID==StfContext.laStfId()It also means that the correct value of id has been obtained
@@ -93,7 +112,7 @@ public abstract class BaseJobScannerCase extends BaseContainerCase<JobScanner> {
 
     // Only sql programmar is tested
     if (isNormal) {
-      try (Stream<Stf> stfs = biz.scanTimeoutJobsInProgress(0, 1, false)) {
+      try (Stream<Stf> stfs = biz.scanTimeoutJobsInProgress(1, false)) {
       }
     }
   }
@@ -115,28 +134,30 @@ public abstract class BaseJobScannerCase extends BaseContainerCase<JobScanner> {
 
     // tricky help test
     Map<String, Object> obj = null;
+    JdbcTemplate jdbc = null;
     if (biz instanceof JdbcAware) {
-      JdbcTemplate jdbc = extractNativeJdbcOps((JdbcAware)biz);
+      jdbc = extractNativeJdbcOps((JdbcAware)biz);
       if (isNormal) {
         obj = jdbc.queryForMap("select * from " + tblName + " where st=? limit 1", jobType.name());
       }
     }
-    long realDbUpAt = safeGetUpAt(obj);
+    // long realDbUpAt = safeGetUpAt(obj);
     // do the real test
-    long start = System.currentTimeMillis();
+    long now = System.currentTimeMillis();
     // System.out.println("time(ms) now: " + start);
     // Minimum timeout period for query results(This value is derived inversely from db, so it is used as the threshold
     // for the timeout)
-    long shortestTimeout = start - realDbUpAt;
+    // long shortestTimeout = start - realDbUpAt;
+    jdbc.update("update " + tblName + " set timeout_at = ?", now);
     Stream<Stf> stfs = null;
     try {
       if (StateEnum.I == jobType) {
         if (isNormal) {
-          stfs = biz.scanTimeoutJobsWaitingRun(shortestTimeout, 1, false);
+          stfs = biz.scanTimeoutJobsWaitingRun(1, false);
         }
       } else {
         if (isNormal) {
-          stfs = biz.scanTimeoutJobsInProgress(shortestTimeout, 1, false);
+          stfs = biz.scanTimeoutJobsInProgress(1, false);
         }
       }
       Stf[] stfArray = stfs.toArray(Stf[]::new);
@@ -148,40 +169,41 @@ public abstract class BaseJobScannerCase extends BaseContainerCase<JobScanner> {
       }
     }
 
-    long now = System.currentTimeMillis();
+    now = System.currentTimeMillis();
     // System.out.println("time(ms) passed: " + (now - start));
     // time passed by,So shortestTimeout is recalculated and then incremented by 1ms.(Deliberately extended the timeout
     // threshold just a little bit, so you can't expect to find anything)
-    shortestTimeout = now - realDbUpAt;
+//    long shortestTimeout = now - realDbUpAt;
+    jdbc.update("update " + tblName + " set timeout_at = ?", now+500);//+1000?
     Stream<Stf> stfs2 = null;
     try {
       if (StateEnum.I == jobType) {
         if (isNormal) {
-          stfs2 = biz.scanTimeoutJobsWaitingRun(shortestTimeout + 1, 1, false);
+          stfs2 = biz.scanTimeoutJobsWaitingRun(1, false);
         }
       } else {
         if (isNormal) {
-          stfs2 = biz.scanTimeoutJobsInProgress(shortestTimeout + 1, 1, false);
+          stfs2 = biz.scanTimeoutJobsInProgress(1, false);
         }
       }
-      assert stfs2.count() == 0 : "should find 0 timeout job when timeout just not-happened";
+      assert stfs2.count() == 0 : "should find 0 timeout job when timeout just not happened";
     } finally {
       if (stfs2 != null) {
         stfs2.close();
       }
     }
 
-    now = System.currentTimeMillis();
-    shortestTimeout = now - realDbUpAt;
+//    now = System.currentTimeMillis();
+//    shortestTimeout = now - realDbUpAt;
     Stream<Stf> stfs3 = null;
     try {
       if (StateEnum.I == jobType) {
         if (isNormal) {
-          stfs3 = biz.scanTimeoutJobsWaitingRun(0, 1, true);
+          stfs3 = biz.scanTimeoutJobsWaitingRun(1, true);
         }
       } else {
         if (isNormal) {
-          stfs3 = biz.scanTimeoutJobsInProgress(0, 1, true);
+          stfs3 = biz.scanTimeoutJobsInProgress(1, true);
         }
       }
       assert stfs3.count() == 0 : "should find 0 timeout running job,because we never create any of this kinda job";

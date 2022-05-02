@@ -147,7 +147,7 @@ public class JobManager extends BaseLifeCycle {
       return null;
     }
     Stf job = new Stf();
-    job.setIsRunning(Y.name());
+    job.setIsLocked(Y.name());
     /*
      * When the job is locked, we use its last-update-time-ms instead of using current-time-ms
      * (meanwhile,we do not record the time of this lock,for the simplification TODO mj:change this if necessary)
@@ -165,7 +165,7 @@ public class JobManager extends BaseLifeCycle {
         Stf jobMayLocked;
         if ((jobMayLocked = tryLockJob(jobGrp, job.getId(), null, job.getUpAt())) != null) {
           // job.setExecutor(jobMayLocked.getExecutor());TODO mj:record who lock the stf-job if necessary
-          job.setIsRunning(jobMayLocked.getIsRunning());
+          job.setIsLocked(jobMayLocked.getIsLocked());
           return job;
         }
       } catch (Throwable e) {

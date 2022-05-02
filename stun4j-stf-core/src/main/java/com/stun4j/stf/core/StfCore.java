@@ -26,7 +26,12 @@ import org.apache.commons.lang3.tuple.Pair;
 public interface StfCore {
 
   @SuppressWarnings("unchecked")
-  Long init(String bizObjId, String bizMethodName, Pair<?, Class<?>>... typedArgs);
+  Long init(String bizObjId, String bizMethodName, Integer timeoutSeconds, Pair<?, Class<?>>... typedArgs);
+
+  @SuppressWarnings("unchecked")
+  default Long init(String bizObjId, String bizMethodName, Pair<?, Class<?>>... typedArgs) {
+    return init(bizObjId, bizMethodName, null, typedArgs);
+  }
 
   void forward(Long stfId, String calleeInfo, boolean async, Object... calleeMethodArgs);
 
@@ -71,7 +76,7 @@ public interface StfCore {
 
       @SuppressWarnings("unchecked")
       @Override
-      public Long init(String bizObjId, String bizMethodName, Pair<?, Class<?>>... typedArgs) {
+      public Long init(String bizObjId, String bizMethodName, Integer timeoutSeconds, Pair<?, Class<?>>... typedArgs) {
         NOT_INITIALIZED_THROW.accept(MODULE_ID);
         return null;
       }

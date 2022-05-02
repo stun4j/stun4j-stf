@@ -15,8 +15,8 @@
  */
 package com.stun4j.stf.core.job;
 
-import static com.stun4j.stf.core.StfConsts.DFT_DATE_FMT;
-import static com.stun4j.stf.core.job.JobConsts.JOB_GROUP_TIMEOUT_WAITING_RUN;
+import static com.stun4j.stf.core.StfConsts.DFT_JOB_TIMEOUT_SECONDS;
+import static com.stun4j.stf.core.StfConsts.DFT_MIN_JOB_TIMEOUT_SECONDS;
 import static com.stun4j.stf.core.support.executor.StfInternalExecutors.newWatcherOfJobLoading;
 import static com.stun4j.stf.core.support.executor.StfInternalExecutors.newWorkerOfJobLoading;
 
@@ -38,18 +38,6 @@ import com.stun4j.stf.core.support.BaseLifeCycle;
  * @author Jay Meng
  */
 public abstract class BaseJobLoader extends BaseLifeCycle {
-  // fast mode
-  private static final int DFT_MIN_JOB_WAITING_RUN_TIMEOUT_SECONDS = 3;
-  private static final int DFT_JOB_WAITING_RUN_TIMEOUT_SECONDS = 5;
-  private static final int DFT_MIN_JOB_RUNNING_TIMEOUT_SECONDS = 3;
-  private static final int DFT_JOB_RUNNING_TIMEOUT_SECONDS = 5;
-  // slow mode(TODO mj:to be deprecated)->
-  // private static final int DFT_MIN_JOB_WAITING_RUN_TIMEOUT_SECONDS = 10;
-  // private static final int DFT_JOB_WAITING_RUN_TIMEOUT_SECONDS = 30;
-  // private static final int DFT_MIN_JOB_RUNNING_TIMEOUT_SECONDS = 10;
-  // private static final int DFT_JOB_RUNNING_TIMEOUT_SECONDS = 30;
-  // <-
-
   private static final int DFT_MIN_LOAD_SIZE = 100;
   private static final int DFT_MAX_LOAD_SIZE = 2000;
   private static final int DFT_LOAD_SIZE = 300;
@@ -65,8 +53,7 @@ public abstract class BaseJobLoader extends BaseLifeCycle {
   private final ScheduledExecutorService watcher;
   private final ExecutorService worker;
 
-  private long jobWaitingRunTimeoutMs;
-  private long jobRunningTimeoutMs;
+  private long jobTimeoutMs;
 
   private ScheduledFuture<?> sf;
   private int loadSize;
@@ -145,24 +132,6 @@ public abstract class BaseJobLoader extends BaseLifeCycle {
               loadedJobs.size(), queueSize);
         }
         for (Stf job : loadedJobs) {
-          // Check whether the job times out.If not,no enqueue happens
-          long nowMs = System.currentTimeMillis();
-          Integer jobCustomTimeoutSecs;
-          long jobRealTimeoutMs = (jobCustomTimeoutSecs = job.getTimeoutSecs()) != null ? jobCustomTimeoutSecs * 1000
-              : (JOB_GROUP_TIMEOUT_WAITING_RUN.equals(jobGrp) ? this.getJobWaitingRunTimeoutMs()
-                  : this.getJobRunningTimeoutMs());/*- TODO mj:1.Does JOB_GROUP_TIMEOUT_WAITING_RUN take a shorter time,or just the same? 
-              2.Be care of any new grp introduced */
-          long timeoutMsThreshold = nowMs - jobRealTimeoutMs;
-          if (job.getUpAt() > timeoutMsThreshold) {
-            if (LOG.isDebugEnabled()) {
-              LOG.debug(
-                  "Enqueuing stf-job#{} cancelled, the job has not timed out [curTime={}, jobLastUpTime={}, timeoutTimeThreshold={}, jobCustomTimeoutSecs={}, jobRealTimeoutMs={}, jobGrp={}]",
-                  job.getId(), DFT_DATE_FMT.format(nowMs), DFT_DATE_FMT.format(job.getUpAt()),
-                  DFT_DATE_FMT.format(timeoutMsThreshold), jobCustomTimeoutSecs, jobRealTimeoutMs, jobGrp);
-            }
-            continue;
-          }
-          // Try enqueue the job
           if (!queue.offer(job)) {
             break;
           }
@@ -188,8 +157,7 @@ public abstract class BaseJobLoader extends BaseLifeCycle {
   }
 
   BaseJobLoader() {
-    jobWaitingRunTimeoutMs = DFT_JOB_WAITING_RUN_TIMEOUT_SECONDS * 1000;
-    jobRunningTimeoutMs = DFT_JOB_RUNNING_TIMEOUT_SECONDS * 1000;
+    jobTimeoutMs = DFT_JOB_TIMEOUT_SECONDS * 1000;
 
     loadSize = DFT_LOAD_SIZE;
     scanFreqSeconds = DFT_SCAN_FREQ_SECONDS;
@@ -201,12 +169,8 @@ public abstract class BaseJobLoader extends BaseLifeCycle {
     watcher = newWatcherOfJobLoading();
   }
 
-  public long getJobWaitingRunTimeoutMs() {
-    return jobWaitingRunTimeoutMs;
-  }
-
-  public long getJobRunningTimeoutMs() {
-    return jobRunningTimeoutMs;
+  public long getJobTimeoutMs() {
+    return jobTimeoutMs;
   }
 
   public void setLoadSize(int loadSize) {
@@ -218,15 +182,8 @@ public abstract class BaseJobLoader extends BaseLifeCycle {
     this.scanFreqSeconds = scanFreqSeconds < DFT_MIN_SCAN_FREQ_SECONDS ? DFT_MIN_SCAN_FREQ_SECONDS : scanFreqSeconds;
   }
 
-  public void setJobWaitingRunTimeoutSeconds(int jobWaitingRunTimeoutSeconds) {
-    this.jobWaitingRunTimeoutMs = jobWaitingRunTimeoutSeconds < DFT_MIN_JOB_WAITING_RUN_TIMEOUT_SECONDS
-        ? DFT_MIN_JOB_WAITING_RUN_TIMEOUT_SECONDS * 1000
-        : jobWaitingRunTimeoutSeconds * 1000;
-  }
-
-  public void setJobRunningTimeoutSeconds(int jobRunningTimeoutSeconds) {
-    this.jobRunningTimeoutMs = jobRunningTimeoutSeconds < DFT_MIN_JOB_RUNNING_TIMEOUT_SECONDS
-        ? DFT_MIN_JOB_RUNNING_TIMEOUT_SECONDS * 1000
-        : jobRunningTimeoutSeconds * 1000;
+  public void setJobTimeoutSeconds(int jobTimeoutSeconds) {
+    this.jobTimeoutMs = jobTimeoutSeconds < DFT_MIN_JOB_TIMEOUT_SECONDS ? DFT_MIN_JOB_TIMEOUT_SECONDS * 1000
+        : jobTimeoutSeconds * 1000;
   }
 }

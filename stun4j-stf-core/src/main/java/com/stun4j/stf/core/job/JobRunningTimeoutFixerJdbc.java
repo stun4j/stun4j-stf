@@ -52,7 +52,7 @@ public class JobRunningTimeoutFixerJdbc extends BaseJobRunningTimeoutFixer imple
     super(scanner, runners);
     this.jdbcOps = jdbcOps;
     RESET_SQL = lenientFormat(
-        "update %s set is_running = '%s' where id = ? and is_running = '%s' and st in ('%s', '%s')", tblName,
+        "update %s set is_locked = '%s' where id = ? and is_locked = '%s' and st in ('%s', '%s')", tblName,
         YesNoEnum.N.name(), YesNoEnum.Y.name(), StateEnum.I.name(), StateEnum.P.name());
   }
 

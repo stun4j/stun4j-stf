@@ -16,6 +16,7 @@
 package com.stun4j.stf.core.build;
 
 import static com.google.common.base.Strings.lenientFormat;
+import static com.stun4j.stf.core.StfConsts.DFT_JOB_TIMEOUT_SECONDS;
 import static com.stun4j.stf.core.build.BuildingBlockEnum.ARGS;
 import static com.stun4j.stf.core.build.BuildingBlockEnum.OID;
 import static com.stun4j.stf.core.build.BuildingBlockEnum.TIMEOUT;
@@ -101,10 +102,15 @@ public class StfConfigs {
     return args;
   }
 
-  public static Integer getActionTimeout(String actionOid, String actionMethodName) {
+  public static int getActionTimeout(String actionOid, String actionMethodName) {
+    Integer timeoutSecs = null;
     Map<String, Object> actionDetail = getActionDetail(actionOid, actionMethodName);
-    Integer timeout = (Integer)actionDetail.get(TIMEOUT.key());
-    return timeout;
+    if (actionDetail != null) {
+      timeoutSecs = (Integer)actionDetail.get(TIMEOUT.key());
+    }
+
+    timeoutSecs = Optional.ofNullable(timeoutSecs).orElse(DFT_JOB_TIMEOUT_SECONDS);
+    return timeoutSecs;
   }
 
   public StfConfigs addConfigs(File... cfgFileBasenames) {
