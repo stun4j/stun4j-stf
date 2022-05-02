@@ -20,12 +20,10 @@ import static com.stun4j.stf.core.StateEnum.F;
 import static com.stun4j.stf.core.StateEnum.I;
 import static com.stun4j.stf.core.StateEnum.P;
 import static com.stun4j.stf.core.StateEnum.S;
-import static com.stun4j.stf.core.StfConsts.DFT_JOB_TIMEOUT_SECONDS;
 import static com.stun4j.stf.core.StfConsts.DFT_TBL_NAME;
 import static com.stun4j.stf.core.YesNoEnum.N;
 import static com.stun4j.stf.core.YesNoEnum.Y;
 
-import java.util.Optional;
 import java.util.function.Supplier;
 
 import com.stun4j.stf.core.BaseStfCore;
@@ -152,7 +150,8 @@ public class StfCoreJdbc extends BaseStfCore {
 
   @Override
   protected boolean doReForward(Long stfId, int curRetryTimes) {
-    int cnt = jdbcOps.update(RETRY_FORWARD_SQL, System.currentTimeMillis(), stfId, curRetryTimes);
+    long now;
+    int cnt = jdbcOps.update(RETRY_FORWARD_SQL, now = System.currentTimeMillis(), now, stfId, curRetryTimes);
     return cnt == 1;
   }
 
@@ -167,8 +166,9 @@ public class StfCoreJdbc extends BaseStfCore {
         "insert into %s (id, callee, st, is_dead, is_locked, retry_times, timeout_at, ct_at, up_at) values(?, ?, '%s', '%s', '%s', %s, ?, ?, ?)",
         tblName);
     INIT_SQL = lenientFormat(initTemplateSql, I.name(), N.name(), N.name(), 0);
-    FORWARD_SQL = lenientFormat("update %s set st = '%s', up_at = ? where id = ? and st in ('%s', '%s')", tblName,
-        P.name(), I.name(), P.name());
+    FORWARD_SQL = lenientFormat(
+        "update %s set st = '%s', timeout_at = ? + (timeout_at - up_at), up_at = ? where id = ? and st in ('%s', '%s')",
+        tblName, P.name(), I.name(), P.name());
 
     RETRY_FORWARD_SQL = new Supplier<String>() {
       @Override
@@ -188,7 +188,7 @@ public class StfCoreJdbc extends BaseStfCore {
 
     LOCK_SQL = lenientFormat(
         "update %s set is_locked = '%s' where id = ? and is_locked = '%s' and up_at = ? and st not in ('%s', '%s')",
-        tblName, Y.name(), N.name(), S.name(), F.name());// FIXME mj:Extend timeoutAt here?
+        tblName, Y.name(), N.name(), S.name(), F.name());
   }
 
   private void invokeConsumer(Long stfId, String calleeInfo, Object[] calleeMethodArgs, Integer curRetryTimes,

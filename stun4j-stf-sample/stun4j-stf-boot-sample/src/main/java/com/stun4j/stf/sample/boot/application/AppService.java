@@ -17,7 +17,7 @@ package com.stun4j.stf.sample.boot.application;
 
 import static com.stun4j.stf.core.StfContext.commitLastDone;
 
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,8 +76,9 @@ public class AppService {
     return reqId;
   }
 
-  public void sendNotification(String reqId) {// Here we simply simulated a timeout
-    if (once.compareAndSet(false, true)) {
+  public void sendNotification(String reqId) {
+    if (errorCnt
+        .decrementAndGet() >= 0) {/*- Here we simply simulated 3 timeouts.You can clearly see the ladder of retry intervals */
       LOG.error("Notification of request#{} has timed out...", reqId);
       return;
     }
@@ -88,14 +89,18 @@ public class AppService {
      * An equivalent code block is written as follows:
      * (More transparent, but the code above is better in performance)
      */
-    // if (once.compareAndSet(false, true)) {
+    // You can comment out the above block and uncomment the following block->
+    // if (errorCnt.decrementAndGet() >= 0) {
     // LOG.error("Notification of request#{} has timed out...", reqId);
     // return;
     // }
     // txnOps.executeWithoutResult(st -> {
     // LOG.info("Notification of request#{} was sent successfully", reqId);
     // });
+    // <-
   }
 
-  private AtomicBoolean once = new AtomicBoolean();// just for the time out mock
+  private AtomicInteger errorCnt = new AtomicInteger(3);// Just for simulate 3 timeouts
+  // @Autowired
+  // private StfTxnOps txnOps;
 }

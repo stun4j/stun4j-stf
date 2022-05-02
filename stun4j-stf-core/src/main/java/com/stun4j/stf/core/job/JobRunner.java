@@ -16,16 +16,19 @@
 package com.stun4j.stf.core.job;
 
 import static com.stun4j.stf.core.StfConsts.DFT_DATE_FMT;
+import static com.stun4j.stf.core.StfConsts.DFT_JOB_TIMEOUT_SECONDS;
+import static com.stun4j.stf.core.job.JobConsts.generateRetryBehaviorByPattern;
 
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 import org.apache.commons.lang3.time.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.stun4j.stf.core.Stf;
 import com.stun4j.stf.core.StfCall;
 import com.stun4j.stf.core.StfCore;
@@ -38,21 +41,25 @@ public class JobRunner {
   private static final Logger LOG = LoggerFactory.getLogger(JobRunner.class);
   private static final Map<Integer, Integer> DFT_FIXED_JOB_RETRY_INTERVAL_SECONDS;
 
-  private final Map<Integer, Integer> retryIntervalSeconds;
-  private final int retryMaxTimes;
+  private final Map<Integer, Integer> retryBehavior;
+  private final LoadingCache<Integer, Map<Integer, Integer>> cachedRetryBehavior;
   private static JobRunner _instance;
 
   static void doHandleTimeoutJob(Stf job, StfCore stfCore) {
+    // Determine job retry behavior
+    Map<Integer, Integer> retryBehavior = _instance.determineJobRetryBehavior(calculateJobTimeoutSeconds(job));
+    int retryMaxTimes = retryBehavior.size();
+
     // The job is declared dead if its retry-times exceeds the upper limit
     int lastRetryTimes = job.getRetryTimes();
     Long jobId = job.getId();
-    if (lastRetryTimes >= _instance.retryMaxTimes) {
+    if (lastRetryTimes >= retryMaxTimes) {
       stfCore.markDead(jobId, false);
       return;
     }
     // Calculate trigger time,if the time does not arrive, no execution is performed
     int expectedRetryTimes = lastRetryTimes == 0 ? 1 : lastRetryTimes + 1;
-    Integer nextIntervalSecondsAllowReSend = _instance.retryIntervalSeconds.get(expectedRetryTimes);
+    Integer nextIntervalSecondsAllowReSend = retryBehavior.get(expectedRetryTimes);
     if (nextIntervalSecondsAllowReSend == null || job.getUpAt() <= 0) {
       LOG.error("Unexpected stf-job state, retrying was cancelled [expectedRetryTimes={}] |error: '{}'",
           expectedRetryTimes, "No 'nextIntervalSecondsAllowReSend' or missing job last update-time");
@@ -68,7 +75,7 @@ public class JobRunner {
       }
       return;
     }
-    logTriggerInformation(job, expectedRetryTimes, expectedTriggerTime, now);
+    logTriggerInformation(job, expectedRetryTimes, expectedTriggerTime, now, retryBehavior);
     // Retry the job
     String calleeInfo = null;
     Object[] methodArgs = null;
@@ -83,8 +90,13 @@ public class JobRunner {
     stfCore.reForward(jobId, lastRetryTimes, calleeInfo, true, methodArgs);
   }
 
-  private static void logTriggerInformation(Stf job, int curRetryTimes, Date curTriggerTime, Date now) {
-    Integer nextIntervalSecondsAllowReSend = _instance.retryIntervalSeconds.get(curRetryTimes + 1);
+  private static int calculateJobTimeoutSeconds(Stf job) {
+    return (int)((job.getTimeoutAt() - job.getUpAt()) / 1000);// TODO mj:wot if negative?
+  }
+
+  private static void logTriggerInformation(Stf job, int curRetryTimes, Date curTriggerTime, Date now,
+      Map<Integer, Integer> retryBehavior) {
+    Integer nextIntervalSecondsAllowReSend = retryBehavior.get(curRetryTimes + 1);
     Date nextTriggerTime = nextIntervalSecondsAllowReSend != null
         ? DateUtils.addSeconds(now, nextIntervalSecondsAllowReSend)
         : null;
@@ -104,26 +116,37 @@ public class JobRunner {
     return calleeInfo;
   }
 
-  synchronized static JobRunner instance(Map<Integer, Integer> retryIntervalSeconds) {
+  synchronized static JobRunner instance(Map<Integer, Integer> retryBehavior) {
     if (_instance != null) {
       return _instance;
     }
-    return _instance = new JobRunner(
-        Optional.ofNullable(retryIntervalSeconds).orElse(new HashMap<>(DFT_FIXED_JOB_RETRY_INTERVAL_SECONDS)));
+    return _instance = new JobRunner(retryBehavior);
   }
 
-  private JobRunner(Map<Integer, Integer> retryIntervalSeconds) {
-    this.retryIntervalSeconds = retryIntervalSeconds;
-    this.retryMaxTimes = retryIntervalSeconds.size();
+  private Map<Integer, Integer> determineJobRetryBehavior(int timeoutSeconds) {
+    if (this.retryBehavior != null) {
+      return this.retryBehavior;
+    }
+    if (timeoutSeconds == DFT_JOB_TIMEOUT_SECONDS) {
+      return DFT_FIXED_JOB_RETRY_INTERVAL_SECONDS;
+    }
+    return cachedRetryBehavior.getUnchecked(timeoutSeconds);
   }
 
   static {
-    DFT_FIXED_JOB_RETRY_INTERVAL_SECONDS = new HashMap<>();
-    DFT_FIXED_JOB_RETRY_INTERVAL_SECONDS.put(1, 0);
-    DFT_FIXED_JOB_RETRY_INTERVAL_SECONDS.put(2, 1 * 60);
-    DFT_FIXED_JOB_RETRY_INTERVAL_SECONDS.put(3, 2 * 60);
-    DFT_FIXED_JOB_RETRY_INTERVAL_SECONDS.put(4, 5 * 60);
-    DFT_FIXED_JOB_RETRY_INTERVAL_SECONDS.put(5, 15 * 60);
+    DFT_FIXED_JOB_RETRY_INTERVAL_SECONDS = generateRetryBehaviorByPattern(DFT_JOB_TIMEOUT_SECONDS);
+  }
+
+  private JobRunner(Map<Integer, Integer> retryBehavior) {
+    this.retryBehavior = retryBehavior;
+
+    CacheLoader<Integer, Map<Integer, Integer>> loader = new CacheLoader<Integer, Map<Integer, Integer>>() {
+      public Map<Integer, Integer> load(Integer timeoutSeconds) throws Exception {
+        Map<Integer, Integer> map = generateRetryBehaviorByPattern(timeoutSeconds);
+        return map;
+      }
+    };
+    this.cachedRetryBehavior = CacheBuilder.newBuilder().maximumSize(100).weakKeys().weakValues().build(loader);
   }
 
 }

@@ -15,7 +15,9 @@
  */
 package com.stun4j.stf.boot;
 
-import java.util.HashMap;
+import static com.stun4j.stf.core.StfConsts.DFT_JOB_TIMEOUT_SECONDS;
+import static com.stun4j.stf.core.job.JobConsts.generateRetryBehaviorByPattern;
+
 import java.util.Map;
 
 /**
@@ -24,22 +26,19 @@ import java.util.Map;
  * @author Jay Meng
  */
 public class Job {
-  private static final Map<Integer, Integer> DFT_FIXED_JOB_RETRY_INTERVAL_SECONDS = new HashMap<>();
+  private static final Map<Integer, Integer> DFT_FIXED_JOB_RETRY_INTERVAL_SECONDS;
   static {
-    DFT_FIXED_JOB_RETRY_INTERVAL_SECONDS.put(1, 0);
-    DFT_FIXED_JOB_RETRY_INTERVAL_SECONDS.put(2, 1 * 60);
-    DFT_FIXED_JOB_RETRY_INTERVAL_SECONDS.put(3, 2 * 60);
-    DFT_FIXED_JOB_RETRY_INTERVAL_SECONDS.put(4, 5 * 60);
-    DFT_FIXED_JOB_RETRY_INTERVAL_SECONDS.put(5, 15 * 60);
+    DFT_FIXED_JOB_RETRY_INTERVAL_SECONDS = generateRetryBehaviorByPattern(DFT_JOB_TIMEOUT_SECONDS);
   }
+
   /**
    * Default:
    * <ul>
    * <li>1: 0</li>
-   * <li>2: 60</li>
-   * <li>3: 120</li>
-   * <li>4: 300</li>
-   * <li>5: 900</li>
+   * <li>2: 40</li>
+   * <li>3: 80</li>
+   * <li>4: 200</li>
+   * <li>5: 600</li>
    * </ul>
    */
   private Map<Integer, Integer> retryIntervalSeconds = DFT_FIXED_JOB_RETRY_INTERVAL_SECONDS;

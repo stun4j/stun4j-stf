@@ -15,8 +15,22 @@
  */
 package com.stun4j.stf.core.job;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public interface JobConsts {
-  public static final String JOB_GROUP_TIMEOUT_WAITING_RUN = "TimeoutJobsOfWaitingRun";
-  public static final String JOB_GROUP_TIMEOUT_RUNNING = "TimeoutJobsOfRunning";
-  public static final String[] ALL_JOB_GROUPS = new String[]{JOB_GROUP_TIMEOUT_WAITING_RUN, JOB_GROUP_TIMEOUT_RUNNING};
+  static final String JOB_GROUP_TIMEOUT_WAITING_RUN = "TimeoutJobsOfWaitingRun";
+  static final String JOB_GROUP_TIMEOUT_RUNNING = "TimeoutJobsOfRunning";
+  static final String[] ALL_JOB_GROUPS = new String[]{JOB_GROUP_TIMEOUT_WAITING_RUN, JOB_GROUP_TIMEOUT_RUNNING};
+
+  static Map<Integer, Integer> generateRetryBehaviorByPattern(int timeoutSeconds) {
+    Map<Integer, Integer> map = new HashMap<>();
+    map.put(1, 0);
+    int dblTimeout;
+    map.put(2, 1 * (dblTimeout = timeoutSeconds * 2));
+    map.put(3, 2 * dblTimeout);
+    map.put(4, 5 * dblTimeout);
+    map.put(5, 15 * dblTimeout);
+    return map;
+  }
 }
