@@ -32,6 +32,8 @@ public class Job {
   }
 
   /**
+   * Currently configuring this has no effect!!!
+   * <p>
    * Default:
    * <ul>
    * <li>1: 0</li>
@@ -41,7 +43,7 @@ public class Job {
    * <li>5: 600</li>
    * </ul>
    */
-  private Map<Integer, Integer> retryIntervalSeconds = DFT_FIXED_JOB_RETRY_INTERVAL_SECONDS;
+  private Map<Integer, Integer> retryIntervalSeconds = DFT_FIXED_JOB_RETRY_INTERVAL_SECONDS;/*- TODO mj:config the generate pattern,instead of hardcode*/
 
   public Map<Integer, Integer> getRetryIntervalSeconds() {
     return retryIntervalSeconds;
