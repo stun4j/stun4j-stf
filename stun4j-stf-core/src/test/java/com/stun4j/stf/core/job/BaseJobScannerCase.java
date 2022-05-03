@@ -105,7 +105,7 @@ public abstract class BaseJobScannerCase extends BaseContainerCase<JobScanner> {
         // getID==StfContext.laStfId()It also means that the correct value of id has been obtained
         // upAt >begin Indicates that the correct upAt value is obtained. RT of db is taken into
         // account，This value also asserts >=theVeryBegining
-        assert obj.getId().equals(StfContext.laStfId()) && obj.getSt() == null
+        assert obj.getId().equals(StfContext.safeGetLaStfIdValue()) && obj.getSt() == null
             && obj.getUpAt() >= theVeryBegining : "should job contains specified fields only";
       }
     }

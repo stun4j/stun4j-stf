@@ -133,7 +133,8 @@ public class StfCoreJdbc extends BaseStfCore {
 
   @Override
   public boolean doForward(Long stfId) {
-    int cnt = jdbcOps.update(FORWARD_SQL, System.currentTimeMillis(), stfId);
+    long now;
+    int cnt = jdbcOps.update(FORWARD_SQL, now = System.currentTimeMillis(), now, stfId);
     return cnt == 1;
   }
 
