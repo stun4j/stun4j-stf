@@ -169,7 +169,7 @@ public class StfTxnOps {
 
   private <T> T doExecute0(T out, Function<TransactionStatus, T> action, String callerClassName,
       String callerMethodName, Supplier<TransactionOperations> txnOpsProvider) {
-    Long laStfId = StfContext.laStfId();
+    Long laStfId = StfContext.safeGetLaStfIdValue();
     return determineTxnOps(txnOpsProvider).execute(StfTxnCallback.of(st -> {
       try {
         return action.apply(st);
@@ -204,7 +204,7 @@ public class StfTxnOps {
   private <T> void doExecuteWithoutResult0(T out, Consumer<TransactionStatus> action, String callerClassName,
       String callerMethodName, BiFunction<Throwable, TransactionStatus, Boolean> onError,
       Supplier<TransactionOperations> txnOpsProvider) {
-    Long laStfId = StfContext.laStfId();
+    Long laStfId = StfContext.safeGetLaStfIdValue();
     determineTxnOps(txnOpsProvider).execute(StfTxnCallback.of(st -> {
       try {
         action.accept(st);

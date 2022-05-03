@@ -39,7 +39,7 @@ import com.stun4j.stf.core.support.BaseLifeCycle;
  */
 public abstract class BaseJobLoader extends BaseLifeCycle {
   private static final int DFT_MIN_LOAD_SIZE = 100;
-  private static final int DFT_MAX_LOAD_SIZE = 2000;
+  private static final int DFT_MAX_LOAD_SIZE = 5000;
   private static final int DFT_LOAD_SIZE = 300;
 
   private static final int DFT_MIN_SCAN_FREQ_SECONDS = 3;

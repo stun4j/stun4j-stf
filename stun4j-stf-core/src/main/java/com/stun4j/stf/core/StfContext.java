@@ -19,12 +19,12 @@ import static com.stun4j.stf.core.utils.Asserts.requireNonNull;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import com.alibaba.ttl.TransmittableThreadLocal;
 import com.stun4j.guid.core.LocalGuid;
@@ -41,7 +41,7 @@ import com.stun4j.stf.core.support.banner.Stun4jStfBannerPrinter;
  */
 public final class StfContext {
   private static final Logger LOG = LoggerFactory.getLogger(StfContext.class);
-  private static final TransmittableThreadLocal<Long> TTL;
+  private static final TransmittableThreadLocal<StfId> TTL;
   private static final ThreadLocal<Boolean> LAST_COMMITTED;
   private static final Map<?, LocalGuid> CACHED_GUID;// TODO mj:extract 'single value cache' utility class(not strict)
 
@@ -65,12 +65,12 @@ public final class StfContext {
   }
 
   public static void commitLastDone() {
-    Long laStfId = laStfId();
+    Long laStfId = safeGetLaStfIdValue();
     commitLastDone(laStfId);
   }
 
   public static void commitLastDead() {
-    Long laStfId = laStfId();
+    Long laStfId = safeGetLaStfIdValue();
     commitLastDead(laStfId);
   }
 
@@ -79,7 +79,7 @@ public final class StfContext {
     return stf.init(bizObjId, bizMethodName, typedArgs);
   }
 
-  public static Long laStfId() {
+  public static StfId laStfId() {
     return TTL.get();
   }
 
@@ -97,6 +97,10 @@ public final class StfContext {
 
   public static void putBizObjClass(String bizObjId, Supplier<Class<?>> classProvider) {
     bizReg.putObjClass(bizObjId, classProvider.get());
+  }
+
+  public static Long safeGetLaStfIdValue() {
+    return Optional.ofNullable(laStfId()).orElse(StfId.empty()).getValue();
   }
 
   static String getBizObjId(Class<?> bizClass) {
@@ -121,24 +125,16 @@ public final class StfContext {
     TTL.remove();
   }
 
-  static Long newStfId() {
+  static StfId newStfId(String oid, String methodName) {
     Long stfId = CACHED_GUID.computeIfAbsent(null, k -> LocalGuid.instance()).next();
-    TTL.set(stfId);
-    return stfId;
+    String identity = StfConfigs.actionPathBy(oid, methodName);
+    StfId id;
+    TTL.set(id = new StfId(stfId, identity));
+    return id;
   }
 
-  static void withStfId(Long stfId) {
+  static void withStfId(StfId stfId) {
     TTL.set(stfId);
-  }
-
-  static {
-    printBanner();
-    CACHED_GUID = new HashMap<>(1);// not very strict in high concurrency scenarios
-    TTL = new TransmittableThreadLocal<>();
-    LAST_COMMITTED = ThreadLocal.withInitial(() -> false);
-
-    stf = StfCore.empty();
-    bizReg = StfRegistry.empty();
   }
 
   private static Banner printBanner() {
@@ -153,6 +149,16 @@ public final class StfContext {
   }
 
   static Banner.Mode BANNER_MODE = Banner.Mode.CONSOLE;
+
+  static {
+    printBanner();
+    CACHED_GUID = new HashMap<>(1);// not very strict in high concurrency scenarios
+    TTL = new TransmittableThreadLocal<>();
+    LAST_COMMITTED = ThreadLocal.withInitial(() -> false);
+
+    stf = StfCore.empty();
+    bizReg = StfRegistry.empty();
+  }
 
   private StfContext() {
   }

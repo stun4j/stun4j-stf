@@ -41,9 +41,11 @@ public abstract class BaseStfCore implements StfCore {
   @Override
   public Long init(String bizObjId, String bizMethodName, Integer timeoutSeconds, Pair<?, Class<?>>... typedArgs) {
     StfCall callee = newCallee(bizObjId, bizMethodName, timeoutSeconds, typedArgs);
-    Long newStfId = StfContext.newStfId();
-    doInit(newStfId, callee);
-    return newStfId;
+    // Long newStfId = StfContext.newStfId();
+    StfId newStfId = StfContext.newStfId(bizObjId, bizMethodName);
+    Long idVal;
+    doInit(idVal = newStfId.getValue(), callee);
+    return idVal;
   }
 
   @SuppressWarnings("unchecked")

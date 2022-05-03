@@ -49,13 +49,12 @@ import sun.misc.Signal;
  * </ul>
  * @author Jay Meng
  */
-@SuppressWarnings("restriction")
 public class JobManager extends BaseLifeCycle {
   private static final int DFT_MIN_SCAN_FREQ_SECONDS = 3;
   private static final int DFT_SCAN_FREQ_SECONDS = 3;
 
   private static final int DFT_MIN_HANDLE_BATCH_SIZE = 5;
-  private static final int DFT_MAX_HANDLE_BATCH_SIZE = 2000;
+  private static final int DFT_MAX_HANDLE_BATCH_SIZE = 5000;
   private static final int DFT_HANDLE_BATCH_SIZE = 20;
 
   private final ConcurrentHashMap<String, AtomicBoolean> handlings;

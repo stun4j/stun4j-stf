@@ -243,7 +243,7 @@ public class StfConfigs {
     });
   }
 
-  static String actionPathBy(String actionOid, String actionMethodName) {
+  public static String actionPathBy(String actionOid, String actionMethodName) {
     return actionOid + ACTION_FULL_PATH_SEPARATOR + actionMethodName;// the full path
   }
 

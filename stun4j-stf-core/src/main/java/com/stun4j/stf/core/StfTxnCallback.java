@@ -58,11 +58,10 @@ public class StfTxnCallback<T> implements InvocationHandler {
   @SuppressWarnings("unchecked")
   public static <T> TransactionCallback<T> of(TransactionCallback<T> txCb, String callerClassName,
       String callerMethodName, T bizOut) {
-    ClassLoader bizClassLoader = requireNonNull(
-        (bizOut != null ? Optional.ofNullable(bizOut.getClass().getClassLoader())// some class may not have
-                                                                                 // classloader(e.g. String)
-            .orElse(Thread.currentThread().getContextClassLoader()) : Thread.currentThread().getContextClassLoader()),
-        "The biz-classloader can't be null");
+    ClassLoader bizClassLoader = requireNonNull((bizOut != null
+        ? Optional.ofNullable(bizOut.getClass().getClassLoader())/* some class may not have classloader(e.g. String) */
+            .orElse(Thread.currentThread().getContextClassLoader())
+        : Thread.currentThread().getContextClassLoader()), "The biz-classloader can't be null");
     TransactionCallback<T> enhanced;
     try {
       enhanced = (TransactionCallback<T>)Proxy.newProxyInstance(bizClassLoader, new Class[]{TransactionCallback.class},
@@ -78,7 +77,7 @@ public class StfTxnCallback<T> implements InvocationHandler {
   public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
     if (TransactionSynchronizationManager.isSynchronizationActive()) {
       TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
-        private Long laStfId;
+        private StfId laStfId;
 
         @Override
         public void afterCompletion(int status) {
@@ -92,8 +91,12 @@ public class StfTxnCallback<T> implements InvocationHandler {
           // support normal 'single' transaction
           boolean isLaStfCommitted = false;
           if (laStfId != null && !StfContext.isLastCommitted()) {
-            StfContext.commitLastDone(laStfId);
-            isLaStfCommitted = true;
+            String callerObjId = StfContext.getBizObjId(callerClass);
+            String identity = StfConfigs.actionPathBy(callerObjId, callerMethodName);
+            if (identity.equals(laStfId.getIdentity())) {
+              StfContext.commitLastDone(laStfId.getValue());
+              isLaStfCommitted = true;
+            }
           }
 
           // support 'nested' transaction,meanwhile,try continue processing last-committed transaction,for last stfs to
@@ -108,7 +111,7 @@ public class StfTxnCallback<T> implements InvocationHandler {
             if (nestedTxLaStfCommitInfo != null) {
               if (!nestedTxLaStfCommitInfo.getLeft()) {
                 Long laStfId = nestedTxLaStfCommitInfo.getRight();
-                if (!laStfId.equals(this.laStfId) || !isLaStfCommitted) {
+                if (!laStfId.equals(this.laStfId.getValue()) || !isLaStfCommitted) {
                   StfContext.commitLastDone(laStfId);
                 }
                 nestedTxLaStfCommitInfo.setLeft(true);

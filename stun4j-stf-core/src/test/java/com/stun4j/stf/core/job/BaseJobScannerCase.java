@@ -126,7 +126,7 @@ public abstract class BaseJobScannerCase extends BaseContainerCase<JobScanner> {
       stf.init("foo2", "bar2");
     }
     // Change the state of 1 data item to 'P'
-    Long stfId = StfContext.laStfId();
+    Long stfId = StfContext.safeGetLaStfIdValue();
     // This changes the initial state of Stf: I->P, and the following process is the same!
     if (isNormal) {
       stf.doForward(stfId);
@@ -173,8 +173,8 @@ public abstract class BaseJobScannerCase extends BaseContainerCase<JobScanner> {
     // System.out.println("time(ms) passed: " + (now - start));
     // time passed by,So shortestTimeout is recalculated and then incremented by 1ms.(Deliberately extended the timeout
     // threshold just a little bit, so you can't expect to find anything)
-//    long shortestTimeout = now - realDbUpAt;
-    jdbc.update("update " + tblName + " set timeout_at = ?", now+500);//+1000?
+    // long shortestTimeout = now - realDbUpAt;
+    jdbc.update("update " + tblName + " set timeout_at = ?", now + 500);// +1000?
     Stream<Stf> stfs2 = null;
     try {
       if (StateEnum.I == jobType) {
@@ -193,8 +193,8 @@ public abstract class BaseJobScannerCase extends BaseContainerCase<JobScanner> {
       }
     }
 
-//    now = System.currentTimeMillis();
-//    shortestTimeout = now - realDbUpAt;
+    // now = System.currentTimeMillis();
+    // shortestTimeout = now - realDbUpAt;
     Stream<Stf> stfs3 = null;
     try {
       if (StateEnum.I == jobType) {

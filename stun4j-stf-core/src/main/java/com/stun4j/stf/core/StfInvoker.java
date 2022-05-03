@@ -84,7 +84,7 @@ abstract class StfInvoker {
           }
         }
         Method method;
-        StfContext.withStfId(stfId);
+        StfContext.withStfId(new StfId(stfId, bizObjId, methodName));
         if (argsNotEmpty) {
           method = MethodUtils.getAccessibleMethod(bizObj.getClass(), methodName, argTypes);
           method.invoke(bizObj, args);
