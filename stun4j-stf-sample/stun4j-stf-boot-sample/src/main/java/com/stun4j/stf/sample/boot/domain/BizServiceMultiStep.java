@@ -76,15 +76,13 @@ public class BizServiceMultiStep {
         });
   }
 
-  public Tx step2Tx(Tx tx) {
+  public TxResult step2Tx(Tx tx) {
     Long txId = tx.getId();
-    String reqId = tx.getReqId();
     Long acctNoFrom = tx.getAcctNoFrom();
-    Long acctNoTo = tx.getAcctNoTo();
     BigDecimal amtDt = tx.getAmtDelta();
 
     Long acctOpSeqNo = guid.next();
-    return txnOps.executeWithNonFinalResult(() -> new Tx(txId, reqId, acctNoTo, amtDt), out -> st -> {
+    return txnOps.executeWithNonFinalResult(() -> TxResult.of(tx), res -> st -> {
       if (!acctDao.decreaseAcctAmt(amtDt, acctNoFrom)) {
         /*-
          * 1.The Stf framework guarantees retry, but sometimes the business side may need to stop retry early.The
@@ -96,11 +94,10 @@ public class BizServiceMultiStep {
          */
         txDao.markTxFail(txId);
         commitLastDone();
-        return null;
+        return TxResult.error(res.getTx(), 1);
       }
       acctOpDao.insertAcctOpOfDecrement(acctOpSeqNo, acctNoFrom, amtDt, txId);
-      out.setRemark("This is the right place modifing the 'out' if necessary");// Pay attention to this
-      return out;
+      return res.withTxRemark("This is the right place modifing the 'actual out' if necessary");
     });
   }
 

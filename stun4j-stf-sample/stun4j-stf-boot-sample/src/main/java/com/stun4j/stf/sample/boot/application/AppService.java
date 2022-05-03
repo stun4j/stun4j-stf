@@ -17,6 +17,7 @@ package com.stun4j.stf.sample.boot.application;
 
 import static com.stun4j.stf.core.StfContext.commitLastDone;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
@@ -24,8 +25,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.google.common.base.Objects;
 import com.stun4j.guid.core.LocalGuid;
 import com.stun4j.stf.core.support.executor.StfExecutorService;
+import com.stun4j.stf.core.utils.Asserts;
 import com.stun4j.stf.sample.boot.domain.BizServiceMultiStep;
 import com.stun4j.stf.sample.boot.domain.Req;
 import com.stun4j.stf.sample.boot.domain.Tx;
@@ -51,28 +54,26 @@ public class AppService {
     Tx txBegin = svc.acceptReq(req);
     Long txId = txBegin.getId();
     String reqId = txBegin.getReqId();
-    stfExec.execute(() -> {
-      /*-
-       * 1.Each downstream method is guaranteed to be called, even if any exceptions such as system crash, timeout, etc.
-       *  
-       * 2.Stf supports basic type parameter transmission.
-       * 
-       * 3.Performance tips: In Stf, you should always consider minimizing the serialized size of Stf state object in
-       * the underlying storage.
-       */
-      Tx txToStep2 = svc.step1Tx(txId, reqId);
-      stfExec.execute(() -> {
-        Tx txToEnd = svc.step2Tx(txToStep2);
-        if (txToEnd == null) {
-          return;
-        }
-        stfExec.execute(() -> {
+    /*-
+    * 1.Each downstream method is guaranteed to be called, even if any exceptions such as system crash, timeout, etc.
+    *
+    * 2.Stf supports basic type parameter transmission.
+    *
+    * 3.Performance tips: In Stf, you should always consider minimizing the serialized size of Stf state object in
+    * the underlying storage.
+    */
+    CompletableFuture.supplyAsync(() -> svc.step1Tx(txId, reqId), stfExec).thenApplyAsync(svc::step2Tx, stfExec)
+        .thenApply(step2TxRes -> {
+          if (Objects.equal(step2TxRes.getErrorCode(), 1)) {
+            Asserts.state(false, LOG, "Insufficient balance of account#%s", step2TxRes.getTx().getAcctNoFrom());
+          }
+          return step2TxRes.getTx();// 4.Here is an example of a transformation where we convert 'step2TxRes' to the
+                                    // input parameter of the downstream method
+        }).thenAcceptAsync(txToEnd -> {
           svc.endTx(txToEnd);
 
           this.sendNotification(reqId);
-        });
-      });
-    });
+        }, stfExec);
     return reqId;
   }
 

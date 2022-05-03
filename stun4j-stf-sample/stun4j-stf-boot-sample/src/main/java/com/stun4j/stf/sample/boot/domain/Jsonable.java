@@ -15,7 +15,6 @@
  */
 package com.stun4j.stf.sample.boot.domain;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -31,8 +30,7 @@ import com.stun4j.stf.sample.boot.utils.JsonUtils;
 /**
  * @author Jay Meng
  */
-public abstract class Jsonable implements Serializable {
-  private static final long serialVersionUID = 1L;
+public abstract class Jsonable {
   private static final Map<String, ObjectMapper> PROFILES;
 
   @JsonFilter("filter")

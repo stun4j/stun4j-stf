@@ -22,7 +22,6 @@ import java.math.RoundingMode;
  * @author Jay Meng
  */
 public class Tx extends Jsonable {
-  private static final long serialVersionUID = 1L;
   private final Long id;
   private final String reqId;
 
@@ -33,15 +32,11 @@ public class Tx extends Jsonable {
   private String remark;
 
   public Tx(Long id, String reqId) {
-    this(id, reqId, -1L, null);
-  }
-
-  public Tx(Long id, String reqId, Long acctNoTo, BigDecimal amtDelta) {
     this.id = id;
     this.reqId = reqId;
-    this.acctNoFrom = -1L;
-    this.acctNoTo = acctNoTo;
-    this.amtDelta = amtDelta;
+    this.acctNoFrom = null;
+    this.acctNoTo = null;
+    this.amtDelta = null;
     this.st = StatusEnum.I;
   }
 
@@ -54,8 +49,8 @@ public class Tx extends Jsonable {
     this.st = StatusEnum.I;
   }
 
-  private Tx() {
-    this(-1L, null, -1L, null);
+  Tx() {
+    this(null, null);
   }
 
   public long getId() {
@@ -88,6 +83,12 @@ public class Tx extends Jsonable {
 
   public void setRemark(String remark) {
     this.remark = remark;
+  }
+
+  @Override
+  public String toString() {
+    return "Tx [id=" + id + ", reqId=" + reqId + ", acctNoFrom=" + acctNoFrom + ", acctNoTo=" + acctNoTo + ", amtDelta="
+        + amtDelta + ", st=" + st + ", remark=" + remark + "]";
   }
 
 }

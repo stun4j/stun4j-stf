@@ -60,7 +60,7 @@ public class TestRs2 {
      * 3.One interesting thing is that you can think of Stf as a delay queue that can support arbitrary precision delay
      * time.
      * 
-     * 4.Another interesting thing is that you can even think of Stf as a relatively slow workflow that runs behind the
+     * 4.Another interesting thing is that you can think of Stf as a compensation workflow that runs behind the
      * scene.
      */
     // To achieve 3 and 4, all you need to do is comment out the following code block, Stf will take the control->

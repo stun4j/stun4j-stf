@@ -18,42 +18,39 @@ package com.stun4j.stf.sample.boot.domain;
 /**
  * @author Jay Meng
  */
-public class Req extends Jsonable {
-  private final String id;
-  private final String acctNoFrom;
-  private final String acctNoTo;
-  private final String amt;
+public class TxResult {
+  private final Tx tx;
+  private final Integer errorCode;
 
-  public Req(String id, String acctNoFrom, String acctNoTo, String amt) {
-    this.id = id;
-    this.acctNoFrom = acctNoFrom;
-    this.acctNoTo = acctNoTo;
-    this.amt = amt;
+  static TxResult of(Tx tx) {
+    return new TxResult(tx, null);
   }
 
-  public String getId() {
-    return id;
+  static TxResult error(Tx tx, Integer errorCode) {
+    return new TxResult(tx, errorCode);
   }
 
-  public String getAcctNoFrom() {
-    return acctNoFrom;
+  TxResult withTxRemark(String remark) {
+    tx.setRemark(remark);
+    return this;
   }
 
-  public String getAcctNoTo() {
-    return acctNoTo;
+  TxResult(Tx tx, Integer errorCode) {
+    this.tx = tx;
+    this.errorCode = errorCode;
   }
 
-  public String getAmt() {
-    return amt;
+  public Tx getTx() {
+    return tx;
   }
 
-  Req() {
-    this(null, null, null, null);
+  public Integer getErrorCode() {
+    return errorCode;
   }
 
   @Override
   public String toString() {
-    return "Req [id=" + id + ", acctNoFrom=" + acctNoFrom + ", acctNoTo=" + acctNoTo + ", amt=" + amt + "]";
+    return "TxResult [tx=" + tx + ", errorCode=" + errorCode + "]";
   }
 
 }

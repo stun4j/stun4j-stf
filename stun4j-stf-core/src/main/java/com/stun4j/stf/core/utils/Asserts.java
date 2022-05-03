@@ -19,6 +19,8 @@ import static com.google.common.base.Strings.lenientFormat;
 
 import java.util.function.Supplier;
 
+import org.slf4j.Logger;
+
 /** @author Jay Meng */
 public abstract class Asserts {
   public static <T> void notNull(T obj) {
@@ -81,6 +83,14 @@ public abstract class Asserts {
   public static void state(boolean expression, String errorMsgTemplate, Object... errorMsgArgs) {
     if (!expression) {
       throw new IllegalStateException(lenientFormat(errorMsgTemplate, errorMsgArgs));
+    }
+  }
+
+  public static void state(boolean expression, Logger logger, String errorMsgTemplate, Object... errorMsgArgs) {
+    if (!expression) {
+      String msg;
+      logger.error(msg = lenientFormat(errorMsgTemplate, errorMsgArgs));
+      throw new IllegalStateException(msg);
     }
   }
 
