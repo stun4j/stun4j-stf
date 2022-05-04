@@ -22,7 +22,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.stun4j.guid.core.LocalGuid;
 import com.stun4j.stf.sample.boot.application.AppService;
+import com.stun4j.stf.sample.boot.domain.Req;
 
 /**
  * @author Jay Meng
@@ -33,11 +35,16 @@ public class TestRs {
   @Autowired
   private AppService svc;
 
+  @Autowired
+  private LocalGuid guid;
+
   @RequestMapping
   String index() {
     String[] acctNos = generateAcctNos();
     String amt = generateAmount();
-    String reqId = svc.acceptReq(acctNos[0], acctNos[1], amt);
+    String reqId;
+    Req req = new Req(reqId = guid.next() + "", acctNos[0], acctNos[1], amt);
+    svc.acceptReq(req);
     return reqId;
   }
 }

@@ -28,16 +28,16 @@ public abstract class Asserts {
   }
 
   public static <T> void notNull(T obj, String errorMsg) {
-    if (obj == null) raiseArgumentException(errorMsg);
+    if (obj == null) throw new IllegalArgumentException(errorMsg);
   }
 
   public static <T> void notNull(T obj, Supplier<String> errorMsg) {
-    if (obj == null) raiseArgumentException(errorMsg);
+    if (obj == null) throw new IllegalArgumentException(errorMsg.get());
   }
 
   public static <T> void notNull(T obj, String errorMsgTemplate, Object... errorMsgArgs) {
     if (obj == null) {
-      raiseArgumentException(lenientFormat(errorMsgTemplate, errorMsgArgs));
+      throw new IllegalArgumentException(lenientFormat(errorMsgTemplate, errorMsgArgs));
     }
   }
 
@@ -58,19 +58,19 @@ public abstract class Asserts {
 
   public static void argument(boolean expression, String errorMsg) {
     if (!expression) {
-      raiseArgumentException(errorMsg);
+      throw new IllegalArgumentException(errorMsg);
     }
   }
 
   public static void argument(boolean expression, Supplier<String> errorMsg) {
     if (!expression) {
-      raiseArgumentException(errorMsg);
+      throw new IllegalArgumentException(errorMsg.get());
     }
   }
 
   public static void argument(boolean expression, String errorMsgTemplate, Object... errorMsgArgs) {
     if (!expression) {
-      raiseArgumentException(lenientFormat(errorMsgTemplate, errorMsgArgs));
+      throw new IllegalArgumentException(lenientFormat(errorMsgTemplate, errorMsgArgs));
     }
   }
 
@@ -86,6 +86,19 @@ public abstract class Asserts {
     }
   }
 
+  public static void state(boolean expression, Supplier<String> errorMsg) {
+    if (!expression) {
+      throw new IllegalStateException(errorMsg.get());
+    }
+  }
+
+  public static void state(boolean expression, Logger logger, String errorMsg) {
+    if (!expression) {
+      logger.error(errorMsg);
+      throw new IllegalStateException(errorMsg);
+    }
+  }
+
   public static void state(boolean expression, Logger logger, String errorMsgTemplate, Object... errorMsgArgs) {
     if (!expression) {
       String msg;
@@ -94,17 +107,23 @@ public abstract class Asserts {
     }
   }
 
-  public static void state(boolean expression, Supplier<String> errorMsg) {
+  public static void state(boolean expression, Logger logger, Supplier<String> errorMsg) {
     if (!expression) {
-      throw new IllegalStateException(errorMsg.get());
+      String msg;
+      logger.error(msg = errorMsg.get());
+      throw new IllegalStateException(msg);
     }
   }
 
-  private static void raiseArgumentException(String errorMsg) {
-    throw new IllegalArgumentException(errorMsg);
+  public static void raiseIllegalStateException(String errorMsg) {
+    state(false, errorMsg);
   }
 
-  private static void raiseArgumentException(Supplier<String> errorMsg) {
-    throw new IllegalArgumentException(errorMsg.get());
+  public static void raiseIllegalStateException(String errorMsgTemplate, Object... errorMsgArgs) {
+    state(false, errorMsgTemplate, errorMsgArgs);
+  }
+
+  public static void raiseIllegalStateException(Logger logger, String errorMsgTemplate, Object... errorMsgArgs) {
+    state(false, logger, errorMsgTemplate, errorMsgArgs);
   }
 }
