@@ -52,11 +52,11 @@ public class AppService {
     /*-
     * 1.Each downstream method is guaranteed to be called, even if any exceptions such as system crash, timeout, etc.
     *
-    * 2.Stf supports supports asynchronous task chain by using StfExecutorService or StfRunnable,StfCallable
+    * 2.Stf supports non-forking asynchronous task chain by using StfExecutorService or StfRunnable,StfCallable.
     *
-    * 2.Stf supports basic type parameter transmission.
+    * 3.Stf supports basic type parameter transmission.
     *
-    * 3.Performance tips: In Stf, you should always consider minimizing the serialized size of Stf state object in
+    * 4.Performance tips: In Stf, you should always consider minimizing the serialized size of Stf state object in
     * the underlying storage.
     */
     CompletableFuture.supplyAsync(() -> svc.step1Tx(txId, reqId), stfExec).thenApplyAsync(svc::step2Tx, stfExec)
