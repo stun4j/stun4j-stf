@@ -19,8 +19,6 @@ import static com.stun4j.stf.sample.boot.utils.mock_data.Data.generateAcctNos;
 import static com.stun4j.stf.sample.boot.utils.mock_data.Data.generateAmount;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Isolation;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -29,7 +27,6 @@ import com.stun4j.stf.core.StfTxnOps;
 import com.stun4j.stf.core.support.executor.StfRunnable;
 import com.stun4j.stf.sample.boot.domain.BizServiceOrphanStep;
 import com.stun4j.stf.sample.boot.domain.Req;
-import com.stun4j.stf.sample.boot.utils.mock_data.MockHelper;
 
 /**
  * @author Jay Meng
@@ -73,13 +70,5 @@ public class TestRs2 {
     // <-
 
     return reqId;
-  }
-
-  @Autowired
-  MockHelper mock;
-
-  @RequestMapping("decr")
-  public Integer decr() {
-    return mock.decrementAndGet();
   }
 }

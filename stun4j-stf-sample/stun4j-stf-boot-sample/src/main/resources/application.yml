@@ -13,6 +13,6 @@ spring:
       platform: mysql
 stun4j:
   stf:
-    conf-full-load-order: [bizMultiStep-flow, bizOnTop-flow, entry2-flow]
+    conf-full-load-order: [bizMultiStep-flow, bizOnTop-flow]
       
     
