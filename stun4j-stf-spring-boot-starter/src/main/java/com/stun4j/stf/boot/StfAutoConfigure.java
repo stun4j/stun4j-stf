@@ -66,11 +66,9 @@ import com.stun4j.stf.core.StfCore;
 import com.stun4j.stf.core.StfTxnOps;
 import com.stun4j.stf.core.build.StfConfig;
 import com.stun4j.stf.core.build.StfConfigs;
-import com.stun4j.stf.core.job.BaseJobRunningTimeoutFixer;
 import com.stun4j.stf.core.job.JobLoader;
 import com.stun4j.stf.core.job.JobManager;
 import com.stun4j.stf.core.job.JobRunners;
-import com.stun4j.stf.core.job.JobRunningTimeoutFixerJdbc;
 import com.stun4j.stf.core.job.JobScannerJdbc;
 import com.stun4j.stf.core.monitor.JvmCpu;
 import com.stun4j.stf.core.monitor.JvmMemory;
@@ -162,13 +160,20 @@ public class StfAutoConfigure implements BeanClassLoaderAware, ApplicationContex
     JobScannerJdbc scanner = JobScannerJdbc.of(jdbcOps);
     JobLoader loader = new JobLoader(scanner);
     JobRunners runners = new JobRunners(stf);
-    BaseJobRunningTimeoutFixer fixer = JobRunningTimeoutFixerJdbc.of(jdbcOps, scanner, runners);
-    JobManager jobMngr = new JobManager(loader, runners, fixer);
+    JobManager jobMngr = new JobManager(loader, runners);
+
+    // configure loader
+    loader.setLoadSize(props.getJob().getLoader().getLoadSize());
+    loader.setScanFreqSeconds(props.getJob().getLoader().getScanFreqSecs());
+
+    // configure manager
+    jobMngr.setHandleBatchSize(props.getJob().getManager().getHandleBatchSize());
+    jobMngr.setScanFreqSeconds(props.getJob().getManager().getScanFreqSecs());
+
     // configure monitor->
     Monitor mon;
     boolean isVmResCheckEnabled;
     jobMngr.setVmResCheckEnabled(isVmResCheckEnabled = (mon = props.getMonitor()).isVmResCheckEnabled());
-    fixer.setVmResCheckEnabled(isVmResCheckEnabled);
     StfMonitor.INSTANCE.withConsiderSystemLoad(mon.isConsiderSysLoad()).withConsiderJvmMemory(mon.isConsiderJvmMem());
     JvmMemory.INSTANCE.withHighFactor(mon.getJvmMem().getHighFactor())
         .withIncludeNonHeap(mon.getJvmMem().isIncludeNonHeap());

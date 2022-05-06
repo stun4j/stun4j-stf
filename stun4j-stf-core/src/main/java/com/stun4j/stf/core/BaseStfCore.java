@@ -40,19 +40,18 @@ public abstract class BaseStfCore implements StfCore {
   @SuppressWarnings("unchecked")
   @Override
   public Long init(String bizObjId, String bizMethodName, Integer timeoutSeconds, Pair<?, Class<?>>... typedArgs) {
-    StfCall callee = newCallee(bizObjId, bizMethodName, timeoutSeconds, typedArgs);
-    // Long newStfId = StfContext.newStfId();
+    int timeoutSecs = Optional.ofNullable(timeoutSeconds).orElse(StfConfigs.getActionTimeout(bizObjId, bizMethodName));
+    StfCall callee = newCallee(bizObjId, bizMethodName, timeoutSecs, typedArgs);
     StfId newStfId = StfContext.newStfId(bizObjId, bizMethodName);
     Long idVal;
-    doInit(idVal = newStfId.getValue(), callee);
+    doInit(idVal = newStfId.getValue(), callee, timeoutSecs);
     return idVal;
   }
 
   @SuppressWarnings("unchecked")
   StfCall newCallee(String bizObjId, String bizMethodName, Integer timeoutSeconds, Pair<?, Class<?>>... typedArgs) {
-    int timeout = Optional.ofNullable(timeoutSeconds).orElse(StfConfigs.getActionTimeout(bizObjId, bizMethodName));
     if (ArrayUtils.isNotEmpty(typedArgs)) {
-      StfCall callee = StfCall.ofInJvm(bizObjId, bizMethodName, typedArgs.length).withTimeoutSeconds(timeout);
+      StfCall callee = StfCall.ofInJvm(bizObjId, bizMethodName, typedArgs.length);
       int argIdx = 0;
       for (Pair<?, Class<?>> arg : typedArgs) {
         Class<?> argType = arg.getRight();
@@ -65,7 +64,7 @@ public abstract class BaseStfCore implements StfCore {
       }
       return callee;
     }
-    return StfCall.ofInJvm(bizObjId, bizMethodName).withTimeoutSeconds(timeout);
+    return StfCall.ofInJvm(bizObjId, bizMethodName);
   }
 
   protected boolean checkFail(Long stfId) {
@@ -84,16 +83,18 @@ public abstract class BaseStfCore implements StfCore {
     }
   }
 
-  protected abstract void doInit(Long newStfId, StfCall callee);
+  protected abstract void doInit(Long newStfId, StfCall callee, int timeoutSecs);
 
-  public abstract boolean doForward(Long stfId);
+  @Deprecated
+  protected abstract boolean doForward(Long stfId);
 
-  protected abstract boolean doTryLockStf(Long stfId, long lastUpAtMs);
+  protected abstract boolean doTryLockStf(Long stfId, int timeoutSecs, int curRetryTimes);
 
   protected abstract boolean doMarkDone(Long stfId);
 
   protected abstract void doMarkDead(Long stfId);
 
+  @Deprecated
   protected abstract boolean doReForward(Long stfId, int curRetryTimes);
 
   {

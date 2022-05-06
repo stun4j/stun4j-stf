@@ -20,7 +20,6 @@ import static com.stun4j.stf.core.utils.Asserts.raiseIllegalStateException;
 
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +30,7 @@ import com.stun4j.stf.core.support.executor.StfExecutorService;
 import com.stun4j.stf.sample.boot.domain.BizServiceMultiStep;
 import com.stun4j.stf.sample.boot.domain.Req;
 import com.stun4j.stf.sample.boot.domain.Tx;
+import com.stun4j.stf.sample.boot.utils.mock_data.MockHelper;
 
 /**
  * @author Jay Meng
@@ -75,7 +75,7 @@ public class AppService {
   }
 
   public void sendNotification(String reqId) {
-    if (errorCnt
+    if (mock
         .decrementAndGet() >= 0) {/*- Here we simply simulated 3 timeouts.You can clearly see the ladder of retry intervals. */
       LOG.error("Notification of request#{} has timed out...", reqId);
       return;
@@ -98,7 +98,9 @@ public class AppService {
     // <-
   }
 
-  private AtomicInteger errorCnt = new AtomicInteger(3);// Just for simulate 3 timeouts
+  @Autowired
+  MockHelper mock;
+  // private AtomicInteger errorCnt = new AtomicInteger(3);// Just for simulate 3 timeouts
   // @Autowired
   // private StfTxnOps txnOps;
 }
