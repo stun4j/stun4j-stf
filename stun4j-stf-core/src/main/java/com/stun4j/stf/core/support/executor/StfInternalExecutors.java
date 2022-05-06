@@ -18,7 +18,6 @@ package com.stun4j.stf.core.support.executor;
 import static com.stun4j.stf.core.utils.executor.PoolExecutors.defaultIoPrefer;
 import static com.stun4j.stf.core.utils.executor.PoolExecutors.defaultWorkStealingPool;
 import static com.stun4j.stf.core.utils.executor.PoolExecutors.newDynamicIoPrefer;
-import static com.stun4j.stf.core.utils.executor.PoolExecutors.newScheduler;
 import static com.stun4j.stf.core.utils.executor.PoolExecutors.newSingleThreadScheduler;
 
 import java.util.concurrent.ExecutorService;
@@ -37,11 +36,6 @@ public final class StfInternalExecutors {
 
   public static ThreadPoolExecutor newWorkerOfJobRunner(String jobGrp) {
     return (ThreadPoolExecutor)defaultIoPrefer("stf-job-" + jobGrp + "-runner");
-  }
-
-  @Deprecated
-  public static ScheduledExecutorService newWatcherOfRunningJobTimeoutFixer() {// TODO mj:prove 2 works?
-    return newScheduler(2, "stf-job-running-timeout-fix-watcher", true);
   }
 
   public static ScheduledExecutorService newWatcherOfJobLoading() {

@@ -61,7 +61,6 @@ public class JobManager extends BaseLifeCycle {
   private final JobLoader loader;
   private final JobRunners runners;
   private final JobRunner runner;
-  // private final BaseJobRunningTimeoutFixer runningTimeoutFixer;
 
   private final ScheduledExecutorService watcher;
   private final Map<String, ThreadPoolExecutor> workers;
@@ -76,8 +75,6 @@ public class JobManager extends BaseLifeCycle {
   @Override
   protected void doStart() {
     loader.doStart();
-
-    // runningTimeoutFixer.doStart();
 
     if (vmResCheckEnabled) {
       StfMonitor.INSTANCE.doStart();
@@ -132,7 +129,6 @@ public class JobManager extends BaseLifeCycle {
       }
     });
     runners.shutdown();
-    // runningTimeoutFixer.shutdown();
     loader.shutdown();
 
     if (vmResCheckEnabled) {
@@ -162,7 +158,6 @@ public class JobManager extends BaseLifeCycle {
 
         if (tryLockJob(jobGrp, job.getId(), pair.getValue(), job.getRetryTimes())) {
           // job.setExecutor(jobMayLocked.getExecutor());TODO mj:record who lock the stf-job if necessary
-          // job.setIsLocked(jobMayLocked.getIsLocked());
           return job;
         }
       } catch (Throwable e) {

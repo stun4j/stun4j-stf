@@ -30,7 +30,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.stun4j.guid.core.LocalGuid;
 import com.stun4j.stf.core.Stf;
 import com.stun4j.stf.core.support.BaseLifeCycle;
 
@@ -132,12 +131,7 @@ public abstract class BaseJobLoader extends BaseLifeCycle {
           LOG.debug("Loaded and try enqueuing stf-jobs [grp={}, loaded={}, queue size before={}]", jobGrp,
               loadedJobs.size(), queueSize);
         }
-//        long workerId = LocalGuid.instance().getWorkerId();
-        // int hash = Math.abs(workerId.hashCode());
         for (Stf job : loadedJobs) {
-//          if (job.getId() % 4 != workerId) {
-//            continue;
-//          }
           if (!queue.offer(job)) {
             break;
           }

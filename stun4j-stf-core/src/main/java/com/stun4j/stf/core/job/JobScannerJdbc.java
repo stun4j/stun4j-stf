@@ -60,11 +60,8 @@ public class JobScannerJdbc implements JobScanner, JdbcAware {
   private final LocalGuid guid;
   private final Method dsCloser;
 
-  // final String SQL_WITH_ALIVE_ST;
   final String SQL_WITH_SINGLE_ST;
-  // final String SQL_WITH_ALIVE_ST_MYSQL;
   final String SQL_WITH_SINGLE_ST_MYSQL;
-  // final String SQL_WITH_ALIVE_ST_ORACLE;
   final String SQL_WITH_SINGLE_ST_ORACLE;
 
   private int includeHowManyDaysAgo;
@@ -79,12 +76,6 @@ public class JobScannerJdbc implements JobScanner, JdbcAware {
     return doScanStillAlive(P, limit);
   }
 
-  @Deprecated
-  @Override
-  public Stream<Stf> scanTimeoutJobsStillAlive(int limit, boolean locked, String... includeFields) {
-    return doScanStillAlive(null, limit, includeFields);
-  }
-
   public Stream<Stf> doScanStillAlive(StateEnum st, int limit, String... includeFields) {
     if (isDataSourceClose(dsCloser, jdbcOps.getDataSource())) {
       LOG.warn("The dataSource has been closed and the scan is cancelled.");
@@ -95,23 +86,12 @@ public class JobScannerJdbc implements JobScanner, JdbcAware {
     long idStart = guid.from(now - TimeUnit.DAYS.toMillis(includeHowManyDaysAgo));
 
     String sql;
-    Object[] args;
-    // YesNoEnum yesNo = locked ? Y : N;
-    // if (st != null) {
     if (DB_VENDOR_MY_SQL.equals(dbVendor) || DB_VENDOR_POSTGRE_SQL.equals(dbVendor)) {
       sql = SQL_WITH_SINGLE_ST_MYSQL;
     } else {
       sql = SQL_WITH_SINGLE_ST_ORACLE;
     }
-    args = new Object[]{idStart, idEnd, now, N.name(), st.name(), limit};
-    // } else {
-    // if (DB_VENDOR_MY_SQL.equals(dbVendor) || DB_VENDOR_POSTGRE_SQL.equals(dbVendor)) {
-    // sql = SQL_WITH_ALIVE_ST_MYSQL;
-    // } else {
-    // sql = SQL_WITH_ALIVE_ST_ORACLE;
-    // }
-    // args = new Object[]{idStart, idEnd, now, yesNo.name(), N.name(), limit};
-    // }
+    Object[] args = new Object[]{idStart, idEnd, now, N.name(), st.name(), limit};
 
     MutableBoolean checkFields = new MutableBoolean(false);
     if (includeFields != null && includeFields.length > 0) {
@@ -169,20 +149,10 @@ public class JobScannerJdbc implements JobScanner, JdbcAware {
     this.includeHowManyDaysAgo = DFT_INCLUDE_HOW_MANY_DAYS_AGO;
     this.dsCloser = tryGetDataSourceCloser(ds);
 
-    // SQL_WITH_ALIVE_ST = lenientFormat(
-    // "select * from %s where id in (select id from %s where id between ? and ? and timeout_at <= ? and is_locked = ?
-    // and is_dead = ? and st in ('%s', '%s') order by timeout_at) ",
-    // tblName, tblName, I.name(), P.name());
-
     SQL_WITH_SINGLE_ST = lenientFormat(
         "select * from %s where id in (select id from %s where id between ? and ? and timeout_at <= ? and is_dead = ? and st = ? order by timeout_at) ",
         tblName, tblName);
-
-    // SQL_WITH_ALIVE_ST_MYSQL = lenientFormat("%s limit ?", SQL_WITH_ALIVE_ST);
     SQL_WITH_SINGLE_ST_MYSQL = lenientFormat("%s limit ?", SQL_WITH_SINGLE_ST);
-    // SQL_WITH_ALIVE_ST_ORACLE = lenientFormat(
-    // "select * from (select t_temp.*, rownum rn from (%s) t_temp where rownum <= ?) where rn > 0",
-    // SQL_WITH_ALIVE_ST);
     SQL_WITH_SINGLE_ST_ORACLE = lenientFormat(
         "select * from (select t_temp.*, rownum rn from (%s) t_temp where rownum <= ?) where rn > 0",
         SQL_WITH_SINGLE_ST);

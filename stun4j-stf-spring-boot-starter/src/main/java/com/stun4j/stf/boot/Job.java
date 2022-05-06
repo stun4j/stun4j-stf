@@ -44,6 +44,8 @@ public class Job {
    * </ul>
    */
   private Map<Integer, Integer> retryIntervalSeconds = DFT_FIXED_JOB_RETRY_INTERVAL_SECONDS;/*- TODO mj:config the generate pattern,instead of hardcode*/
+  private JobLoader loader = new JobLoader();
+  private JobManager manager = new JobManager();
 
   public Map<Integer, Integer> getRetryIntervalSeconds() {
     return retryIntervalSeconds;
@@ -51,6 +53,66 @@ public class Job {
 
   public void setRetryIntervalSeconds(Map<Integer, Integer> retryIntervalSeconds) {
     this.retryIntervalSeconds = retryIntervalSeconds;
+  }
+
+  public JobLoader getLoader() {
+    return loader;
+  }
+
+  public void setLoader(JobLoader loader) {
+    this.loader = loader;
+  }
+
+  public JobManager getManager() {
+    return manager;
+  }
+
+  public void setManager(JobManager manager) {
+    this.manager = manager;
+  }
+
+  static class JobLoader {
+    private int loadSize = 300;
+    private int scanFreqSecs = 3;
+
+    public int getLoadSize() {
+      return loadSize;
+    }
+
+    public void setLoadSize(int loadSize) {
+      this.loadSize = loadSize;
+    }
+
+    public int getScanFreqSecs() {
+      return scanFreqSecs;
+    }
+
+    public void setScanFreqSecs(int scanFreqSecs) {
+      this.scanFreqSecs = scanFreqSecs;
+    }
+
+  }
+
+  static class JobManager {
+    private int handleBatchSize = 20;
+    private int scanFreqSecs = 3;
+
+    public int getHandleBatchSize() {
+      return handleBatchSize;
+    }
+
+    public void setHandleBatchSize(int handleBatchSize) {
+      this.handleBatchSize = handleBatchSize;
+    }
+
+    public int getScanFreqSecs() {
+      return scanFreqSecs;
+    }
+
+    public void setScanFreqSecs(int scanFreqSecs) {
+      this.scanFreqSecs = scanFreqSecs;
+    }
+
   }
 
 }

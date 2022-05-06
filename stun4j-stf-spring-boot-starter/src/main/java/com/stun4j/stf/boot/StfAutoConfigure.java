@@ -161,10 +161,15 @@ public class StfAutoConfigure implements BeanClassLoaderAware, ApplicationContex
     JobLoader loader = new JobLoader(scanner);
     JobRunners runners = new JobRunners(stf);
     JobManager jobMngr = new JobManager(loader, runners);
-    loader.setLoadSize(1024);
-     loader.setScanFreqSeconds(2);
-    jobMngr.setHandleBatchSize(512);
-     jobMngr.setScanFreqSeconds(2);
+
+    // configure loader
+    loader.setLoadSize(props.getJob().getLoader().getLoadSize());
+    loader.setScanFreqSeconds(props.getJob().getLoader().getScanFreqSecs());
+
+    // configure manager
+    jobMngr.setHandleBatchSize(props.getJob().getManager().getHandleBatchSize());
+    jobMngr.setScanFreqSeconds(props.getJob().getManager().getScanFreqSecs());
+
     // configure monitor->
     Monitor mon;
     boolean isVmResCheckEnabled;

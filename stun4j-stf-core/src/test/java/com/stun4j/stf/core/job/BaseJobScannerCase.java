@@ -96,20 +96,6 @@ public abstract class BaseJobScannerCase extends BaseContainerCase<JobScanner> {
       }
     }
 
-    if (isNormal) {
-      try (Stream<Stf> stfs = biz.scanTimeoutJobsStillAlive(1, false, "id", "up_at")) {
-        Stf[] stfArray = stfs.toArray(Stf[]::new);
-        assert stfArray.length == 1 : "should find 1 timeout job";
-        Stf obj = stfArray[0];
-
-        // getID==StfContext.laStfId()It also means that the correct value of id has been obtained
-        // upAt >begin Indicates that the correct upAt value is obtained. RT of db is taken into
-        // account，This value also asserts >=theVeryBegining
-        assert obj.getId().equals(StfContext.safeGetLaStfIdValue()) && obj.getSt() == null
-            && obj.getUpAt() >= theVeryBegining : "should job contains specified fields only";
-      }
-    }
-
     // Only sql programmar is tested
     if (isNormal) {
       try (Stream<Stf> stfs = biz.scanTimeoutJobsInProgress(1)) {
@@ -128,9 +114,9 @@ public abstract class BaseJobScannerCase extends BaseContainerCase<JobScanner> {
     // Change the state of 1 data item to 'P'
     Long stfId = StfContext.safeGetLaStfIdValue();
     // This changes the initial state of Stf: I->P, and the following process is the same!
-    if (isNormal) {
-      stf.doForward(stfId);
-    }
+//    if (isNormal) {
+//      stf.doForward(stfId);
+//    }
 
     // tricky help test
     Map<String, Object> obj = null;
@@ -195,23 +181,23 @@ public abstract class BaseJobScannerCase extends BaseContainerCase<JobScanner> {
 
     // now = System.currentTimeMillis();
     // shortestTimeout = now - realDbUpAt;
-//    Stream<Stf> stfs3 = null;
-//    try {
-//      if (StateEnum.I == jobType) {
-//        if (isNormal) {
-//          stfs3 = biz.scanTimeoutJobsWaitingRun(1, true);
-//        }
-//      } else {
-//        if (isNormal) {
-//          stfs3 = biz.scanTimeoutJobsInProgress(1, true);
-//        }
-//      }
-//      assert stfs3.count() == 0 : "should find 0 timeout running job,because we never create any of this kinda job";
-//    } finally {
-//      if (stfs3 != null) {
-//        stfs3.close();
-//      }
-//    }
+    // Stream<Stf> stfs3 = null;
+    // try {
+    // if (StateEnum.I == jobType) {
+    // if (isNormal) {
+    // stfs3 = biz.scanTimeoutJobsWaitingRun(1, true);
+    // }
+    // } else {
+    // if (isNormal) {
+    // stfs3 = biz.scanTimeoutJobsInProgress(1, true);
+    // }
+    // }
+    // assert stfs3.count() == 0 : "should find 0 timeout running job,because we never create any of this kinda job";
+    // } finally {
+    // if (stfs3 != null) {
+    // stfs3.close();
+    // }
+    // }
   }
 
   long safeGetUpAt(Map<String, Object> obj) {

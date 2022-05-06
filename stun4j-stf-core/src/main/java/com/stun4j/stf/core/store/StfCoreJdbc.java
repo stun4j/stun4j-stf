@@ -62,6 +62,7 @@ public class StfCoreJdbc extends BaseStfCore {
     worker.execute(() -> invokeConsumer(stfId, calleeInfo, calleeMethodArgs, lastRetryTimes, bizFn));
   };
 
+  @Deprecated
   private final TriConsumer<Long, String, Object[]> forward = (stfId, calleeInfo, calleeMethodArgs) -> {
     if (!doForward(stfId)) {
       LOG.error("The stf#{} can't be triggered forward", stfId);
@@ -129,7 +130,6 @@ public class StfCoreJdbc extends BaseStfCore {
   protected void doInit(Long newStfId, StfCall callee, int timeoutSecs) {
     String calleeJson = JsonHelper.toJson(callee);
     long now = System.currentTimeMillis();
-    // int timeoutSecs = callee.getTimeoutSecs();
     jdbcOps.update(INIT_SQL, newStfId, calleeJson, timeoutSecs, (now + timeoutSecs * 1000), now, now);
   }
 
@@ -150,7 +150,7 @@ public class StfCoreJdbc extends BaseStfCore {
     int cnt = jdbcOps.update(MARK_DONE_SQL, System.currentTimeMillis(), stfId);
     return cnt == 1;
   }
-
+  
   @Override
   protected boolean doReForward(Long stfId, int curRetryTimes) {
     long now;

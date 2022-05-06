@@ -33,6 +33,7 @@ public interface StfCore {
     return init(bizObjId, bizMethodName, null, typedArgs);
   }
 
+  @Deprecated
   void forward(Long stfId, String calleeInfo, boolean async, Object... calleeMethodArgs);
 
   boolean tryLockStf(Long stfId, int timeoutSecs, int curRetryTimes);
