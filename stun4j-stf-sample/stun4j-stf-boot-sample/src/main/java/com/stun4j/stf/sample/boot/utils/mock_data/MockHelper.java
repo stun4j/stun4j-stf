@@ -15,11 +15,7 @@
  */
 package com.stun4j.stf.sample.boot.utils.mock_data;
 
-import java.util.stream.Stream;
-
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
@@ -27,19 +23,14 @@ import org.springframework.stereotype.Component;
  * @author Jay Meng
  */
 @Component
-public class HelpStartUp implements ApplicationContextAware {
+public class MockHelper {
 
-  @Override
-  public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-    // Clean business related datas,comment out the following code block if you don't need it//->
-    JdbcTemplate jdbc = applicationContext.getBean(JdbcTemplate.class);
-    Stream.of(new String[]{"stn_stf", "req", "tx", "acct_op"}).forEach((tbl) -> {
-      jdbc.update("delete from " + tbl);
-    });
+  @Autowired
+  JdbcTemplate jdbc;
 
-    jdbc.update("delete from stn_mock");
-    jdbc.update("insert into stn_mock (id, value) values ('cnt', 3)");
-    //<-
+  public Integer decrementAndGet() {
+    Integer cur = jdbc.queryForObject("select value from stn_mock where id='cnt'", Integer.class);
+    int res = jdbc.update("update stn_mock set value=value-1 where id='cnt' and value=?", cur);
+    return res == 1 ? cur - 1 : decrementAndGet();
   }
-
 }

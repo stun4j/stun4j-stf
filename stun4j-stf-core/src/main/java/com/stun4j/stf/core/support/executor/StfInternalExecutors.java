@@ -39,6 +39,7 @@ public final class StfInternalExecutors {
     return (ThreadPoolExecutor)defaultIoPrefer("stf-job-" + jobGrp + "-runner");
   }
 
+  @Deprecated
   public static ScheduledExecutorService newWatcherOfRunningJobTimeoutFixer() {// TODO mj:prove 2 works?
     return newScheduler(2, "stf-job-running-timeout-fix-watcher", true);
   }

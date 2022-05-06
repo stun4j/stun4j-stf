@@ -37,10 +37,10 @@ public class Job {
    * Default:
    * <ul>
    * <li>1: 0</li>
-   * <li>2: 40</li>
-   * <li>3: 80</li>
-   * <li>4: 200</li>
-   * <li>5: 600</li>
+   * <li>2: 20</li>
+   * <li>3: 40</li>
+   * <li>4: 60</li>
+   * <li>5: 100</li>
    * </ul>
    */
   private Map<Integer, Integer> retryIntervalSeconds = DFT_FIXED_JOB_RETRY_INTERVAL_SECONDS;/*- TODO mj:config the generate pattern,instead of hardcode*/

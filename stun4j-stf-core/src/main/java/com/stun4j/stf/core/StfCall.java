@@ -33,7 +33,7 @@ public class StfCall {
   private final String method;
   private final Object[] args;
 
-  private int timeoutSecs;
+//  private int timeoutSecs;
 
   public static StfCall of(String type, String bizObjId, String method) {
     return new StfCall(type, bizObjId, method, null);
@@ -84,10 +84,10 @@ public class StfCall {
     return this;
   }
 
-  public StfCall withTimeoutSeconds(int timeoutSeconds) {
-    this.timeoutSecs = timeoutSeconds;
-    return this;
-  }
+//  public StfCall withTimeoutSeconds(int timeoutSeconds) {
+//    this.timeoutSecs = timeoutSeconds;
+//    return this;
+//  }
 
   private StfCall(String type, String bizObjId, String method, Object[] args) {
     this.type = type;
@@ -116,8 +116,8 @@ public class StfCall {
     return args;
   }
 
-  public int getTimeoutSecs() {
-    return timeoutSecs;
-  }
+//  public int getTimeoutSecs() {
+//    return timeoutSecs;
+//  }
 
 }

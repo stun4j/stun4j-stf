@@ -19,25 +19,17 @@ package com.stun4j.stf.sample.boot.domain;
  * @author Jay Meng
  */
 public class TxResult {
-  private final Tx tx;
-  private final Integer errorCode;
+  private Tx tx;
+  private Integer errorCode;
 
-  static TxResult of(Tx tx) {
-    return new TxResult(tx, null);
-  }
-
-  static TxResult error(Tx tx, Integer errorCode) {
-    return new TxResult(tx, errorCode);
-  }
-
-  TxResult withTxRemark(String remark) {
-    tx.setRemark(remark);
+  TxResult withTx(Tx tx) {
+    this.tx = tx;
     return this;
   }
 
-  TxResult(Tx tx, Integer errorCode) {
-    this.tx = tx;
+  TxResult withErrorCode(Integer errorCode) {
     this.errorCode = errorCode;
+    return this;
   }
 
   public Tx getTx() {

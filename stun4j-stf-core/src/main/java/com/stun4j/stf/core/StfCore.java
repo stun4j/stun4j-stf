@@ -35,7 +35,7 @@ public interface StfCore {
 
   void forward(Long stfId, String calleeInfo, boolean async, Object... calleeMethodArgs);
 
-  boolean tryLockStf(Long stfId, long lastUpAtMs);
+  boolean tryLockStf(Long stfId, int timeoutSecs, int curRetryTimes);
 
   void markDone(Long stfId, boolean async);
 
@@ -53,7 +53,7 @@ public interface StfCore {
       }
 
       @Override
-      public boolean tryLockStf(Long stfId, long lastUpAtMs) {
+      public boolean tryLockStf(Long stfId, int timeoutSecs, int curRetryTimes) {
         NOT_INITIALIZED_THROW.accept(MODULE_ID);
         return false;
       }

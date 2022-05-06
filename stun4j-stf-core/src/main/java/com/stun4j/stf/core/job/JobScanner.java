@@ -30,18 +30,19 @@ public interface JobScanner {
    * @return the result Stream, containing stf objects, needing to be closed once fully processed (e.g. through a
    *         try-with-resources clause)
    */
-  Stream<Stf> scanTimeoutJobsWaitingRun(int limit, boolean locked);
+  Stream<Stf> scanTimeoutJobsWaitingRun(int limit);
 
   /**
    * @return the result Stream, containing stf objects, needing to be closed once fully processed (e.g. through a
    *         try-with-resources clause)
    */
-  Stream<Stf> scanTimeoutJobsInProgress(int limit, boolean locked);
+  Stream<Stf> scanTimeoutJobsInProgress(int limit);
 
   /**
    * @return the result Stream, containing stf objects, needing to be closed once fully processed (e.g. through a
    *         try-with-resources clause)
    */
+  @Deprecated
   Stream<Stf> scanTimeoutJobsStillAlive(int limit, boolean locked, String... includeFields);
 
 }
