@@ -62,6 +62,7 @@ public class StfCoreJdbc extends BaseStfCore {
     worker.execute(() -> invokeConsumer(stfId, calleeInfo, calleeMethodArgs, lastRetryTimes, bizFn));
   };
 
+  @Deprecated
   private final TriConsumer<Long, String, Object[]> forward = (stfId, calleeInfo, calleeMethodArgs) -> {
     if (!doForward(stfId)) {
       LOG.error("The stf#{} can't be triggered forward", stfId);
@@ -72,10 +73,10 @@ public class StfCoreJdbc extends BaseStfCore {
 
   private final QuadruConsumer<Long, String, Object[], Integer> reForward = (stfId, calleeInfo, calleeMethodArgs,
       lastRetryTimes) -> {
-    if (!doReForward(stfId, lastRetryTimes)) {
-      LOG.warn("The stf#{} can't be re-forward", stfId);
-      return;
-    }
+    // if (!doReForward(stfId, lastRetryTimes)) {
+    // LOG.warn("The stf#{} can't be re-forward", stfId);
+    // return;
+    // }
     invokeCall(stfId, calleeInfo, calleeMethodArgs);
   };
 
@@ -95,16 +96,18 @@ public class StfCoreJdbc extends BaseStfCore {
   }
 
   @Override
-  public boolean tryLockStf(Long stfId, long lastUpAtMs) {
+  public boolean tryLockStf(Long stfId, int timeoutSecs, int curRetryTimes) {
     if (checkFail(stfId)) {
       return false;
     }
-    return doTryLockStf(stfId, lastUpAtMs);
+    return doTryLockStf(stfId, timeoutSecs, curRetryTimes);
   }
 
   @Override
-  public boolean doTryLockStf(Long stfId, long lastUpAtMs) {
-    int cnt = jdbcOps.update(LOCK_SQL, stfId, lastUpAtMs);
+  protected boolean doTryLockStf(Long stfId, int timeoutSecs, int curRetryTimes) {
+    long now;
+    int cnt = jdbcOps.update(LOCK_SQL, (now = System.currentTimeMillis()) + timeoutSecs * 1000, now, stfId,
+        curRetryTimes);
     return cnt == 1;
   }
 
@@ -124,11 +127,10 @@ public class StfCoreJdbc extends BaseStfCore {
   }
 
   @Override
-  protected void doInit(Long newStfId, StfCall callee) {
+  protected void doInit(Long newStfId, StfCall callee, int timeoutSecs) {
     String calleeJson = JsonHelper.toJson(callee);
     long now = System.currentTimeMillis();
-    int timeoutSecs = callee.getTimeoutSecs();
-    jdbcOps.update(INIT_SQL, newStfId, calleeJson, (now + timeoutSecs * 1000), now, now);
+    jdbcOps.update(INIT_SQL, newStfId, calleeJson, timeoutSecs, (now + timeoutSecs * 1000), now, now);
   }
 
   @Override
@@ -148,7 +150,7 @@ public class StfCoreJdbc extends BaseStfCore {
     int cnt = jdbcOps.update(MARK_DONE_SQL, System.currentTimeMillis(), stfId);
     return cnt == 1;
   }
-
+  
   @Override
   protected boolean doReForward(Long stfId, int curRetryTimes) {
     long now;
@@ -164,9 +166,10 @@ public class StfCoreJdbc extends BaseStfCore {
     this.jdbcOps = jdbc;
 
     String initTemplateSql = lenientFormat(
-        "insert into %s (id, callee, st, is_dead, is_locked, retry_times, timeout_at, ct_at, up_at) values(?, ?, '%s', '%s', '%s', %s, ?, ?, ?)",
+        "insert into %s (id, callee, st, is_dead, retry_times, timeout_secs, timeout_at, ct_at, up_at) values(?, ?, '%s', '%s', %s, ?, ?, ?, ?)",
         tblName);
-    INIT_SQL = lenientFormat(initTemplateSql, I.name(), N.name(), N.name(), 0);
+    INIT_SQL = lenientFormat(initTemplateSql, I.name(), N.name(), 0);
+    // TODO mj:deprecated
     FORWARD_SQL = lenientFormat(
         "update %s set st = '%s', timeout_at = ? + (timeout_at - up_at), up_at = ? where id = ? and st in ('%s', '%s')",
         tblName, P.name(), I.name(), P.name());
@@ -182,14 +185,15 @@ public class StfCoreJdbc extends BaseStfCore {
         return upPart + " where " + condPart;
       }
     }.get();
+    // <-
     MARK_DEAD_SQL = lenientFormat("update %s set is_dead = '%s', up_at = ? where id = ? and st != '%s'", tblName,
         Y.name(), S.name());
     MARK_DONE_SQL = lenientFormat("update %s set st = '%s', up_at = ? where id = ? and st != '%s'", tblName, S.name(),
         F.name());
 
     LOCK_SQL = lenientFormat(
-        "update %s set is_locked = '%s' where id = ? and is_locked = '%s' and up_at = ? and st not in ('%s', '%s')",
-        tblName, Y.name(), N.name(), S.name(), F.name());
+        "update %s set st = '%s', retry_times = retry_times + 1, timeout_at = ?, up_at = ? where id = ? and retry_times = ? and st in ('%s', '%s')",
+        tblName, P.name(), I.name(), P.name());
   }
 
   private void invokeConsumer(Long stfId, String calleeInfo, Object[] calleeMethodArgs, Integer curRetryTimes,

@@ -6,13 +6,13 @@ spring:
     username: "root"
     password: "1111"
     hikari:
-      maximum-pool-size: 20
+      maximum-pool-size: 40
   sql:
     init:
       mode: never
       platform: mysql
 stun4j:
   stf:
-    conf-full-load-order: [bizMultiStep-flow, bizOnTop-flow]
+    conf-full-load-order: [bizMultiStep-flow, bizOnTop-flow, entry2-flow]
       
     

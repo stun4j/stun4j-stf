@@ -82,7 +82,8 @@ public class BizServiceMultiStep {
     BigDecimal amtDt = tx.getAmtDelta();
 
     Long acctOpSeqNo = guid.next();
-    return txnOps.executeWithNonFinalResult(() -> TxResult.of(tx), res -> st -> {
+    TxResult res = new TxResult();
+    Tx outTx = txnOps.executeWithNonFinalResult(() -> tx, out -> st -> {
       if (!acctDao.decreaseAcctAmt(amtDt, acctNoFrom)) {
         /*-
          * 1.The Stf framework guarantees retry, but sometimes the business side may need to stop retry early.The
@@ -94,11 +95,13 @@ public class BizServiceMultiStep {
          */
         txDao.markTxFail(txId);
         commitLastDone();
-        return TxResult.error(res.getTx(), 1);
+        res.withErrorCode(1);
       }
       acctOpDao.insertAcctOpOfDecrement(acctOpSeqNo, acctNoFrom, amtDt, txId);
-      return res.withTxRemark("This is the right place modifing the 'actual out' if necessary");
+      out.setRemark("This is the right place modifing the 'out' if necessary");// Pay attention to this
+      return out;
     });
+    return res.withTx(outTx);
   }
 
   public void endTx(Tx tx) {

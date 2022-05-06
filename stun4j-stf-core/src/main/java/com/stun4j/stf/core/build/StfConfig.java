@@ -232,7 +232,10 @@ public class StfConfig {
             timeoutSeconds = Integer.valueOf(timeoutStr.substring(0, idx));
             argument(timeoutStr.substring(idx + 1).length() == 0, msg);
             argument(timeoutSeconds > 0,
-                msg = "The 'timeout' of action[%s] must be greater than 0, the wrong value is '%s'", action,
+                msg = "The timeout-seconds of action[%s] must be greater than 0, the wrong value is '%s'", action,
+                timeoutStr);
+            argument(timeoutSeconds <= 8388607,
+                msg = "The timeout-seconds of action[%s] must be less than or equal to 8388607, the wrong value is '%s'", action,
                 timeoutStr);
           } catch (Exception e) {
             throw new RuntimeException(lenientFormat(msg, action, timeoutStr), e);

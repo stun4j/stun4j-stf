@@ -15,7 +15,6 @@
  */
 package com.stun4j.stf.core.job;
 
-import static com.stun4j.stf.core.YesNoEnum.Y;
 import static com.stun4j.stf.core.job.JobConsts.ALL_JOB_GROUPS;
 import static com.stun4j.stf.core.support.executor.StfInternalExecutors.newWatcherOfJobManager;
 import static com.stun4j.stf.core.support.executor.StfInternalExecutors.newWorkerOfJobManager;
@@ -61,7 +60,7 @@ public class JobManager extends BaseLifeCycle {
   private final StfCore stfCore;
   private final JobLoader loader;
   private final JobRunners runners;
-  private final BaseJobRunningTimeoutFixer runningTimeoutFixer;
+  private final JobRunner runner;
 
   private final ScheduledExecutorService watcher;
   private final Map<String, ThreadPoolExecutor> workers;
@@ -76,8 +75,6 @@ public class JobManager extends BaseLifeCycle {
   @Override
   protected void doStart() {
     loader.doStart();
-
-    runningTimeoutFixer.doStart();
 
     if (vmResCheckEnabled) {
       StfMonitor.INSTANCE.doStart();
@@ -132,7 +129,6 @@ public class JobManager extends BaseLifeCycle {
       }
     });
     runners.shutdown();
-    runningTimeoutFixer.shutdown();
     loader.shutdown();
 
     if (vmResCheckEnabled) {
@@ -140,19 +136,12 @@ public class JobManager extends BaseLifeCycle {
     }
   }
 
-  protected Stf tryLockJob(String jobGrp, Long jobId, String executorId, long lastUpAt) {
-    if (!stfCore.tryLockStf(jobId, lastUpAt)) {
+  protected boolean tryLockJob(String jobGrp, Long jobId, int timeoutSecs, int curRetryTimes) {
+    if (!stfCore.tryLockStf(jobId, timeoutSecs, curRetryTimes)) {
       LOG.warn("Try lock job#{} fail,it may be running [jobGrp={}]", jobId, jobGrp);
-      return null;
+      return false;
     }
-    Stf job = new Stf();
-    job.setIsLocked(Y.name());
-    /*
-     * When the job is locked, we use its last-update-time-ms instead of using current-time-ms
-     * (meanwhile,we do not record the time of this lock,for the simplification TODO mj:change this if necessary)
-     */
-    job.setUpAt(lastUpAt);
-    return job;
+    return true;
   }
 
   public Stf takeUniqueJob(String jobGrp) {
@@ -161,10 +150,14 @@ public class JobManager extends BaseLifeCycle {
       try {
         job = loader.getJobFromQueue(jobGrp);
         if (job == null) return null;
-        Stf jobMayLocked;
-        if ((jobMayLocked = tryLockJob(jobGrp, job.getId(), null, job.getUpAt())) != null) {
+
+        Pair<Boolean, Integer> pair;
+        if (!(pair = runner.checkWhetherTheJobCanRun(job, stfCore)).getKey()) {
+          return null;
+        }
+
+        if (tryLockJob(jobGrp, job.getId(), pair.getValue(), job.getRetryTimes())) {
           // job.setExecutor(jobMayLocked.getExecutor());TODO mj:record who lock the stf-job if necessary
-          job.setIsLocked(jobMayLocked.getIsLocked());
           return job;
         }
       } catch (Throwable e) {
@@ -211,39 +204,7 @@ public class JobManager extends BaseLifeCycle {
     }
   }
 
-  public JobManager(JobLoader loader, JobRunners runners, BaseJobRunningTimeoutFixer runningTimeoutFixer) {
-    this.scanFreqSeconds = DFT_SCAN_FREQ_SECONDS;
-    this.handleBatchSize = DFT_HANDLE_BATCH_SIZE;
-    this.vmResCheckEnabled = true;
-    this.stfCore = runners.getStfCore();
-    this.loader = loader;
-    this.runners = runners;
-    this.runningTimeoutFixer = runningTimeoutFixer;
-    this.handlings = new ConcurrentHashMap<>();
-    this.workers = Stream.of(ALL_JOB_GROUPS).reduce(new HashMap<String, ThreadPoolExecutor>(), (map, grp) -> {
-      map.put(grp, newWorkerOfJobManager(grp));
-      return map;
-    }, (a, b) -> null);
-    this.watcher = newWatcherOfJobManager();
-  }
-
-  public void setScanFreqSeconds(int scanFreqSeconds) {
-    this.scanFreqSeconds = scanFreqSeconds < DFT_MIN_SCAN_FREQ_SECONDS ? DFT_MIN_SCAN_FREQ_SECONDS : scanFreqSeconds;
-  }
-
-  public void setHandleBatchSize(int handleBatchSize) {
-    this.handleBatchSize = handleBatchSize < DFT_MIN_HANDLE_BATCH_SIZE ? DFT_MIN_HANDLE_BATCH_SIZE
-        : (handleBatchSize > DFT_MAX_HANDLE_BATCH_SIZE ? DFT_MAX_HANDLE_BATCH_SIZE : handleBatchSize);
-  }
-
-  public void setVmResCheckEnabled(boolean vmResCheckEnabled) {
-    this.vmResCheckEnabled = vmResCheckEnabled;
-  }
-
-  {
-    registerGracefulShutdown();
-  }
-
+  @SuppressWarnings("restriction")
   private void registerGracefulShutdown() {
     try {
       Signal.handle(new Signal(getOSSignalType()), s -> {
@@ -269,5 +230,38 @@ public class JobManager extends BaseLifeCycle {
 
   private static String getOSSignalType() {
     return System.getProperties().getProperty("os.name").toLowerCase().startsWith("win") ? "INT" : "TERM";
+  }
+
+  public JobManager(JobLoader loader, JobRunners runners) {
+    this.scanFreqSeconds = DFT_SCAN_FREQ_SECONDS;
+    this.handleBatchSize = DFT_HANDLE_BATCH_SIZE;
+    this.vmResCheckEnabled = true;
+    this.stfCore = runners.getStfCore();
+    this.loader = loader;
+    this.runners = runners;
+    this.runner = runners.getRunner();
+    this.handlings = new ConcurrentHashMap<>();
+    this.workers = Stream.of(ALL_JOB_GROUPS).reduce(new HashMap<String, ThreadPoolExecutor>(), (map, grp) -> {
+      map.put(grp, newWorkerOfJobManager(grp));
+      return map;
+    }, (a, b) -> null);
+    this.watcher = newWatcherOfJobManager();
+  }
+
+  public void setScanFreqSeconds(int scanFreqSeconds) {
+    this.scanFreqSeconds = scanFreqSeconds < DFT_MIN_SCAN_FREQ_SECONDS ? DFT_MIN_SCAN_FREQ_SECONDS : scanFreqSeconds;
+  }
+
+  public void setHandleBatchSize(int handleBatchSize) {
+    this.handleBatchSize = handleBatchSize < DFT_MIN_HANDLE_BATCH_SIZE ? DFT_MIN_HANDLE_BATCH_SIZE
+        : (handleBatchSize > DFT_MAX_HANDLE_BATCH_SIZE ? DFT_MAX_HANDLE_BATCH_SIZE : handleBatchSize);
+  }
+
+  public void setVmResCheckEnabled(boolean vmResCheckEnabled) {
+    this.vmResCheckEnabled = vmResCheckEnabled;
+  }
+
+  {
+    registerGracefulShutdown();
   }
 }

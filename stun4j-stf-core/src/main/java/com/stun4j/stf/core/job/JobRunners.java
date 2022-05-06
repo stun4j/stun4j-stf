@@ -41,6 +41,7 @@ public class JobRunners extends BaseLifeCycle {
   private final StfCore stfCore;
   private final Map<String, ThreadPoolExecutor> workers;
   private final Map<String, Runnings> runnings;
+  private final JobRunner runner;
 
   private class Runnings {
     private final ConcurrentMap<Long, Object> jobIds = new ConcurrentHashMap<>();
@@ -115,7 +116,7 @@ public class JobRunners extends BaseLifeCycle {
 
   public JobRunners(StfCore stfCore, Map<Integer, Integer> retryIntervalSeconds) {
     this.stfCore = stfCore;
-    JobRunner.instance(retryIntervalSeconds);
+    this.runner = JobRunner.init(retryIntervalSeconds);
 
     this.runnings = new HashMap<>();
     this.workers = new HashMap<>();
@@ -128,4 +129,9 @@ public class JobRunners extends BaseLifeCycle {
   public StfCore getStfCore() {
     return stfCore;
   }
+
+  JobRunner getRunner() {
+    return runner;
+  }
+
 }
