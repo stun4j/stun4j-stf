@@ -19,7 +19,9 @@ import static com.stun4j.stf.core.job.JobConsts.ALL_JOB_GROUPS;
 import static com.stun4j.stf.core.support.executor.StfInternalExecutors.newWatcherOfJobManager;
 import static com.stun4j.stf.core.support.executor.StfInternalExecutors.newWorkerOfJobManager;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
@@ -48,6 +50,7 @@ import sun.misc.Signal;
  * </ul>
  * @author Jay Meng
  */
+@SuppressWarnings("restriction")
 public class JobManager extends BaseLifeCycle {
   private static final int DFT_MIN_SCAN_FREQ_SECONDS = 3;
   private static final int DFT_SCAN_FREQ_SECONDS = 3;
@@ -137,14 +140,46 @@ public class JobManager extends BaseLifeCycle {
   }
 
   protected boolean tryLockJob(String jobGrp, Long jobId, int timeoutSecs, int curRetryTimes) {
-    if (!stfCore.tryLockStf(jobId, timeoutSecs, curRetryTimes)) {
+    if (!stfCore.lockStf(jobId, timeoutSecs, curRetryTimes)) {
       LOG.warn("Try lock job#{} fail,it may be running [jobGrp={}]", jobId, jobGrp);
       return false;
     }
     return true;
   }
 
-  public Stf takeUniqueJob(String jobGrp) {
+  private void takeJobsAndRun() {
+    workers.forEach((jobGrp, worker) -> {
+      worker.execute(() -> {
+        takeJobsAndRun(jobGrp);
+        //batchTakeJobsAndRun(jobGrp);
+      });
+    });
+  }
+
+  private void takeJobsAndRun(String jobGrp) {
+    int batchSize = handleBatchSize;
+    // No need apply 'handlings' ctrl
+    int availableThread = runners.getAvailablePoolSize(jobGrp);
+    availableThread *= 32;
+    int round = availableThread % batchSize == 0 ? availableThread / batchSize : availableThread / batchSize + 1;
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("round:{} [availableThread={}, fixed-batchSize={}, jobGrp={}]", round, availableThread, batchSize, jobGrp);
+    }
+    start: for (int i = 1; i <= round; i++) {
+      if (i == round) {
+        batchSize = availableThread - batchSize * (round - 1);
+      }
+      for (int j = 0; j < batchSize; j++) {
+        Stf job = takeUniqueJob(jobGrp);
+        if (job == null) {
+          break start;
+        }
+        runners.execute(jobGrp, job);
+      }
+    }
+  }
+
+  private Stf takeUniqueJob(String jobGrp) {
     while (!Thread.currentThread().isInterrupted()) {
       Stf job = null;
       try {
@@ -152,8 +187,8 @@ public class JobManager extends BaseLifeCycle {
         if (job == null) return null;
 
         Pair<Boolean, Integer> pair;
-        if (!(pair = runner.checkWhetherTheJobCanRun(job, stfCore)).getKey()) {
-          return null;
+        if (!(pair = runner.checkWhetherTheJobCanRun(job)).getKey()) {
+          continue;// We can't stop here because we are using a custom gradient retry mechanism
         }
 
         if (tryLockJob(jobGrp, job.getId(), pair.getValue(), job.getRetryTimes())) {
@@ -169,42 +204,66 @@ public class JobManager extends BaseLifeCycle {
     return null;
   }
 
-  private void takeJobsAndRun() {
-    workers.forEach((jobGrp, worker) -> {
-      worker.execute(() -> {
-        takeJobsAndRun(jobGrp);
-      });
-    });
-  }
-
-  private void takeJobsAndRun(String jobGrp) {
+  private void batchTakeJobsAndRun(String jobGrp) {
     int batchSize = handleBatchSize;
     AtomicBoolean handling = handlings.computeIfAbsent(jobGrp, k -> new AtomicBoolean());
     if (handling.compareAndSet(false, true)) {
       try {
         int availableThread = runners.getAvailablePoolSize(jobGrp);
-        int it = availableThread % batchSize == 0 ? availableThread / batchSize : availableThread / batchSize + 1;
-        start: for (int i = 1; i <= it; i++) {
-          int size = batchSize;
-          if (i == it) {
-            size = availableThread - batchSize * (it - 1);
+        availableThread *= 32;
+        int round = availableThread % batchSize == 0 ? availableThread / batchSize : availableThread / batchSize + 1;
+        start: for (int i = 1; i <= round; i++) {
+          if (i == round) {
+            batchSize = availableThread - batchSize * (round - 1);
           }
-          int finalSize = size;
-          for (int j = 0; j < finalSize; j++) {
-            Stf job = takeUniqueJob(jobGrp);
-            if (job == null) {
+
+          List<Object[]> preBatchArgs = new ArrayList<>();
+          List<Stf> lockedJobs = null;
+          boolean isQueueEmpty = false;
+          try {
+            for (int j = 0; j < batchSize; j++) {
+              isQueueEmpty = collectPreBatchArgs(jobGrp, preBatchArgs);
+              if (isQueueEmpty) {
+                break;
+              }
+            }
+            if (!preBatchArgs.isEmpty()) {
+              lockedJobs = stfCore.batchLockStfs(preBatchArgs);
+            }
+            if (lockedJobs != null) {
+              for (Stf lockedJob : lockedJobs) {
+                runners.execute(jobGrp, lockedJob);
+              }
+            }
+            if (isQueueEmpty) {
               break start;
             }
-            runners.execute(jobGrp, job);
+          } finally {
+            loader.signalToLoadJobs(jobGrp);
           }
         }
       } finally {
-        handling.compareAndSet(true, false);
+        // handling.compareAndSet(true, false);
+        handling.set(false);
       }
     }
   }
 
-  @SuppressWarnings("restriction")
+  private boolean collectPreBatchArgs(String jobGrp, List<Object[]> preBatchArgs) {
+    while (!Thread.currentThread().isInterrupted()) {
+      Stf job = loader.getJobFromQueue(jobGrp);
+      if (job == null) return true;
+
+      Pair<Boolean, Integer> pair;
+      if (!(pair = runner.checkWhetherTheJobCanRun(job)).getKey()) {
+        continue;
+      }
+      preBatchArgs.add(new Object[]{job, pair.getValue(), job.getId(), job.getRetryTimes()});
+      break;
+    }
+    return false;
+  }
+
   private void registerGracefulShutdown() {
     try {
       Signal.handle(new Signal(getOSSignalType()), s -> {

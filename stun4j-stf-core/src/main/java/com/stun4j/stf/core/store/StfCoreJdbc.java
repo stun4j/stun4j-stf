@@ -23,7 +23,11 @@ import static com.stun4j.stf.core.StateEnum.S;
 import static com.stun4j.stf.core.StfConsts.DFT_TBL_NAME;
 import static com.stun4j.stf.core.YesNoEnum.N;
 import static com.stun4j.stf.core.YesNoEnum.Y;
+import static com.stun4j.stf.core.job.JobHelper.isDataSourceClose;
+import static com.stun4j.stf.core.job.JobHelper.tryGetDataSourceCloser;
 
+import java.lang.reflect.Method;
+import java.util.List;
 import java.util.function.Supplier;
 
 import com.stun4j.stf.core.BaseStfCore;
@@ -49,6 +53,7 @@ public class StfCoreJdbc extends BaseStfCore {
   private final String LOCK_SQL;
 
   private final StfJdbcOps jdbcOps;
+  private final Method dsCloser;
 
   private final SextuConsumer<Long, String, Object[], Integer, Boolean, BaseConsumer<Long>> coreFn = (stfId, calleeInfo,
       calleeMethodArgs, lastRetryTimes, async, bizFn) -> {
@@ -96,19 +101,11 @@ public class StfCoreJdbc extends BaseStfCore {
   }
 
   @Override
-  public boolean tryLockStf(Long stfId, int timeoutSecs, int curRetryTimes) {
+  public boolean lockStf(Long stfId, int timeoutSecs, int curRetryTimes) {
     if (checkFail(stfId)) {
       return false;
     }
-    return doTryLockStf(stfId, timeoutSecs, curRetryTimes);
-  }
-
-  @Override
-  protected boolean doTryLockStf(Long stfId, int timeoutSecs, int curRetryTimes) {
-    long now;
-    int cnt = jdbcOps.update(LOCK_SQL, (now = System.currentTimeMillis()) + timeoutSecs * 1000, now, stfId,
-        curRetryTimes);
-    return cnt == 1;
+    return doLockStf(stfId, timeoutSecs, curRetryTimes);
   }
 
   @Override
@@ -127,12 +124,39 @@ public class StfCoreJdbc extends BaseStfCore {
   }
 
   @Override
+  protected boolean doLockStf(Long stfId, int timeoutSecs, int curRetryTimes) {
+    if (isDataSourceClose(dsCloser, jdbcOps.getDataSource())) {
+      LOG.warn("[doLockStf] The dataSource has been closed and the operation on stf#{} is cancelled.", stfId);
+      return false;
+    }
+    long now;
+    int cnt = jdbcOps.update(LOCK_SQL, (now = System.currentTimeMillis()) + timeoutSecs * 1000, now, stfId,
+        curRetryTimes);
+    return cnt == 1;
+  }
+
+  @Override
+  public int[] doBatchLockStfs(List<Object[]> batchArgs) {
+    if (isDataSourceClose(dsCloser, jdbcOps.getDataSource())) {
+      LOG.warn("[doBatchLockStfs] The dataSource has been closed and the operations on stfs is cancelled.");
+      return null;
+    }
+    int[] res = jdbcOps.batchUpdate(LOCK_SQL, batchArgs);
+    return res;
+  }
+
+  @Override
   protected void doInit(Long newStfId, StfCall callee, int timeoutSecs) {
+    if (isDataSourceClose(dsCloser, jdbcOps.getDataSource())) {
+      LOG.warn("[doInit] The dataSource has been closed and the operation on stf#{} is cancelled.", newStfId);
+      return;
+    }
     String calleeJson = JsonHelper.toJson(callee);
     long now = System.currentTimeMillis();
     jdbcOps.update(INIT_SQL, newStfId, calleeJson, timeoutSecs, (now + timeoutSecs * 1000), now, now);
   }
 
+  @Deprecated
   @Override
   public boolean doForward(Long stfId) {
     long now;
@@ -140,21 +164,30 @@ public class StfCoreJdbc extends BaseStfCore {
     return cnt == 1;
   }
 
+  @Deprecated
+  @Override
+  protected boolean doReForward(Long stfId, int curRetryTimes) {
+    long now;
+    int cnt = jdbcOps.update(RETRY_FORWARD_SQL, now = System.currentTimeMillis(), now, stfId, curRetryTimes);
+    return cnt == 1;
+  }
+
   @Override
   protected void doMarkDead(Long stfId) {
+    if (isDataSourceClose(dsCloser, jdbcOps.getDataSource())) {
+      LOG.warn("[doMarkDead] The dataSource has been closed and the operation on stf#{} is cancelled.", stfId);
+      return;
+    }
     jdbcOps.update(MARK_DEAD_SQL, System.currentTimeMillis(), stfId);
   }
 
   @Override
   public boolean doMarkDone(Long stfId) {
+    if (isDataSourceClose(dsCloser, jdbcOps.getDataSource())) {
+      LOG.warn("[doMarkDone] The dataSource has been closed and the operation on stf#{} is cancelled.", stfId);
+      return false;
+    }
     int cnt = jdbcOps.update(MARK_DONE_SQL, System.currentTimeMillis(), stfId);
-    return cnt == 1;
-  }
-  
-  @Override
-  protected boolean doReForward(Long stfId, int curRetryTimes) {
-    long now;
-    int cnt = jdbcOps.update(RETRY_FORWARD_SQL, now = System.currentTimeMillis(), now, stfId, curRetryTimes);
     return cnt == 1;
   }
 
@@ -164,12 +197,13 @@ public class StfCoreJdbc extends BaseStfCore {
 
   public StfCoreJdbc(StfJdbcOps jdbc, String tblName) {
     this.jdbcOps = jdbc;
+    this.dsCloser = tryGetDataSourceCloser(jdbcOps.getDataSource());
 
     String initTemplateSql = lenientFormat(
         "insert into %s (id, callee, st, is_dead, retry_times, timeout_secs, timeout_at, ct_at, up_at) values(?, ?, '%s', '%s', %s, ?, ?, ?, ?)",
         tblName);
     INIT_SQL = lenientFormat(initTemplateSql, I.name(), N.name(), 0);
-    // TODO mj:deprecated
+    // TODO mj:deprecated->
     FORWARD_SQL = lenientFormat(
         "update %s set st = '%s', timeout_at = ? + (timeout_at - up_at), up_at = ? where id = ? and st in ('%s', '%s')",
         tblName, P.name(), I.name(), P.name());

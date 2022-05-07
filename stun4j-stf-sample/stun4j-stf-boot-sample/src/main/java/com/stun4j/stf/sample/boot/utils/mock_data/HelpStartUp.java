@@ -39,7 +39,7 @@ public class HelpStartUp implements ApplicationContextAware {
 
     jdbc.update("delete from stn_mock");
     jdbc.update("insert into stn_mock (id, value) values ('cnt', 3)");
-    //<-
+    // <-
   }
 
 }

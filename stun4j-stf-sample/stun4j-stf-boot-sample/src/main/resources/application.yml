@@ -13,6 +13,13 @@ spring:
       platform: mysql
 stun4j:
   stf:
-    conf-full-load-order: [bizMultiStep-flow, bizOnTop-flow]
+    job:
+      loader:
+        load-size: 2048
+        scan-freq-secs: 1
+      manager:
+        handle-batch-size: 512
+        scan-freq-secs: 1
+    conf-full-load-order: [bizMultiStep-flow, bizOnTop-flow, entry2-flow]
       
     

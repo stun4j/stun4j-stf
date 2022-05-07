@@ -24,18 +24,35 @@ import com.stun4j.stf.core.Stf;
  */
 public interface JobScanner {
   int DFT_INCLUDE_HOW_MANY_DAYS_AGO = 1;
-  int DFT_MAX_INCLUDE_HOW_MANY_DAYS_AGO = 30;
+  int DFT_MAX_INCLUDE_HOW_MANY_DAYS_AGO = 100;
 
   /**
    * @return the result Stream, containing stf objects, needing to be closed once fully processed (e.g. through a
    *         try-with-resources clause)
    */
-  Stream<Stf> scanTimeoutJobsWaitingRun(int limit);
+
+  Stream<Stf> scanTimeoutJobsWaitingRun(int limit, int pageNo);
 
   /**
    * @return the result Stream, containing stf objects, needing to be closed once fully processed (e.g. through a
    *         try-with-resources clause)
    */
-  Stream<Stf> scanTimeoutJobsInProgress(int limit);
+  Stream<Stf> scanTimeoutJobsInProgress(int limit, int pageNo);
+
+  /**
+   * @return the result Stream, containing stf objects, needing to be closed once fully processed (e.g. through a
+   *         try-with-resources clause)
+   */
+  default Stream<Stf> scanTimeoutJobsWaitingRun(int limit) {
+    return scanTimeoutJobsWaitingRun(limit, 0);
+  }
+
+  /**
+   * @return the result Stream, containing stf objects, needing to be closed once fully processed (e.g. through a
+   *         try-with-resources clause)
+   */
+  default Stream<Stf> scanTimeoutJobsInProgress(int limit) {
+    return scanTimeoutJobsInProgress(limit, 0);
+  }
 
 }

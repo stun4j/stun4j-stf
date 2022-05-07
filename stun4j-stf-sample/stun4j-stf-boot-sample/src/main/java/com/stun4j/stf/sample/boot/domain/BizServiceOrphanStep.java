@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.stun4j.stf.core.StfContext;
 import com.stun4j.stf.core.StfTxnOps;
 import com.stun4j.stf.sample.boot.persistence.ReqDao;
 import com.stun4j.stf.sample.boot.persistence.ReqPo;
@@ -41,5 +42,7 @@ public class BizServiceOrphanStep {
     txnOps.executeWithoutResult(st -> {
       reqDao.insert(new ReqPo(reqId, reqBody));
     });
+    LOG.info("red#" + reqId);
+    // StfContext.commitLastDone();
   }
 }

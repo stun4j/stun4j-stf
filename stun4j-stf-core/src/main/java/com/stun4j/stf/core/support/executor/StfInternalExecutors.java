@@ -56,8 +56,7 @@ public final class StfInternalExecutors {
 
   public static StfExecutorService newDefaultExec(int threadKeepAliveTimeSeconds, int taskQueueSize,
       RejectedExecutionHandler rejectPolicy, boolean allowCoreThreadTimeOut) {
-    return new StfExecutorService(
-        newDynamicIoPrefer(new LinkedBlockingQueue<>(taskQueueSize),
+    return new StfExecutorService(newDynamicIoPrefer(new LinkedBlockingQueue<>(taskQueueSize),
         NamedThreadFactory.of("stf-dft-exec"), threadKeepAliveTimeSeconds, allowCoreThreadTimeOut, rejectPolicy));
   }
 
