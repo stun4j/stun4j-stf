@@ -17,6 +17,8 @@ package com.stun4j.stf.core;
 
 import static com.stun4j.stf.core.StfConsts.NOT_INITIALIZED_THROW;
 
+import java.util.List;
+
 import org.apache.commons.lang3.tuple.Pair;
 
 /**
@@ -36,7 +38,9 @@ public interface StfCore {
   @Deprecated
   void forward(Long stfId, String calleeInfo, boolean async, Object... calleeMethodArgs);
 
-  boolean tryLockStf(Long stfId, int timeoutSecs, int curRetryTimes);
+  boolean lockStf(Long stfId, int timeoutSecs, int curRetryTimes);
+
+  List<Stf> batchLockStfs(List<Object[]> preBatchArgs);
 
   void markDone(Long stfId, boolean async);
 
@@ -54,9 +58,15 @@ public interface StfCore {
       }
 
       @Override
-      public boolean tryLockStf(Long stfId, int timeoutSecs, int curRetryTimes) {
+      public boolean lockStf(Long stfId, int timeoutSecs, int curRetryTimes) {
         NOT_INITIALIZED_THROW.accept(MODULE_ID);
         return false;
+      }
+
+      @Override
+      public List<Stf> batchLockStfs(List<Object[]> preBatchArgs) {
+        NOT_INITIALIZED_THROW.accept(MODULE_ID);
+        return null;
       }
 
       @Override

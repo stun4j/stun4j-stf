@@ -17,8 +17,12 @@ package com.stun4j.stf.core;
 
 import static com.stun4j.stf.core.support.executor.StfInternalExecutors.newWorkerOfStfCore;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.ListIterator;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -67,6 +71,37 @@ public abstract class BaseStfCore implements StfCore {
     return StfCall.ofInJvm(bizObjId, bizMethodName);
   }
 
+  @Override
+  public List<Stf> batchLockStfs(List<Object[]> preBatchArgs) {
+    long now = System.currentTimeMillis();
+    List<Stf> jobs = new ArrayList<>();
+    List<Object[]> batchArgs = preBatchArgs.stream().map(arg -> {
+      int timeoutSeconds = (Integer)arg[1];
+      Stf job = (Stf)arg[0];
+      jobs.add(job);
+      arg[0] = now + timeoutSeconds * 1000;
+      arg[1] = now;
+      return arg;
+    }).collect(Collectors.toList());
+    int finalBatchSize = batchArgs.size();
+    int[] res = doBatchLockStfs(batchArgs);
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("The batch-lock image of stfs: {}", res);
+    }
+    if (res == null || ArrayUtils.indexOf(res, 1) < 0) {
+      return null;// TODO mj:Somewhat rude here
+    }
+    res = ArrayUtils.subarray(res, 0, finalBatchSize);
+    int idx = 0;
+    for (ListIterator<Stf> iter = jobs.listIterator(); iter.hasNext();) {
+      iter.next();
+      if (res[idx++] != 1) {
+        iter.remove();
+      }
+    }
+    return jobs;
+  }
+
   protected boolean checkFail(Long stfId) {
     if (stfId == null || stfId <= 0) {
       LOG.error("The id of stf#{} must be greater than 0", stfId);
@@ -88,14 +123,16 @@ public abstract class BaseStfCore implements StfCore {
   @Deprecated
   protected abstract boolean doForward(Long stfId);
 
-  protected abstract boolean doTryLockStf(Long stfId, int timeoutSecs, int curRetryTimes);
+  @Deprecated
+  protected abstract boolean doReForward(Long stfId, int curRetryTimes);
+
+  protected abstract boolean doLockStf(Long stfId, int timeoutSecs, int curRetryTimes);
+
+  protected abstract int[] doBatchLockStfs(List<Object[]> batchArgs);
 
   protected abstract boolean doMarkDone(Long stfId);
 
   protected abstract void doMarkDead(Long stfId);
-
-  @Deprecated
-  protected abstract boolean doReForward(Long stfId, int curRetryTimes);
 
   {
     worker = newWorkerOfStfCore();

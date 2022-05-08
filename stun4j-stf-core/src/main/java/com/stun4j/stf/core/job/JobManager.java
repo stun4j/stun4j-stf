@@ -19,14 +19,14 @@ import static com.stun4j.stf.core.job.JobConsts.ALL_JOB_GROUPS;
 import static com.stun4j.stf.core.support.executor.StfInternalExecutors.newWatcherOfJobManager;
 import static com.stun4j.stf.core.support.executor.StfInternalExecutors.newWorkerOfJobManager;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.tuple.Pair;
@@ -48,15 +48,15 @@ import sun.misc.Signal;
  * </ul>
  * @author Jay Meng
  */
+@SuppressWarnings("restriction")
 public class JobManager extends BaseLifeCycle {
   private static final int DFT_MIN_SCAN_FREQ_SECONDS = 3;
   private static final int DFT_SCAN_FREQ_SECONDS = 3;
 
   private static final int DFT_MIN_HANDLE_BATCH_SIZE = 5;
-  private static final int DFT_MAX_HANDLE_BATCH_SIZE = 5000;
+  private static final int DFT_MAX_HANDLE_BATCH_SIZE = 3000;
   private static final int DFT_HANDLE_BATCH_SIZE = 20;
 
-  private final ConcurrentHashMap<String, AtomicBoolean> handlings;
   private final StfCore stfCore;
   private final JobLoader loader;
   private final JobRunners runners;
@@ -136,15 +136,51 @@ public class JobManager extends BaseLifeCycle {
     }
   }
 
-  protected boolean tryLockJob(String jobGrp, Long jobId, int timeoutSecs, int curRetryTimes) {
-    if (!stfCore.tryLockStf(jobId, timeoutSecs, curRetryTimes)) {
-      LOG.warn("Try lock job#{} fail,it may be running [jobGrp={}]", jobId, jobGrp);
+  protected boolean lockJob(String jobGrp, Long jobId, int timeoutSecs, int curRetryTimes) {
+    if (!stfCore.lockStf(jobId, timeoutSecs, curRetryTimes)) {
+      LOG.warn("Lock job#{} fail,it may be running [jobGrp={}]", jobId, jobGrp);
       return false;
     }
     return true;
   }
 
-  public Stf takeUniqueJob(String jobGrp) {
+  private void takeJobsAndRun() {
+    workers.forEach((jobGrp, worker) -> {
+      worker.execute(() -> {
+        takeJobsAndRun(jobGrp);
+        /*
+         * Batch mode was written in advance, but for now, We don't see any practical advantages in using this mode.But
+         * one disadvantage is that large batch consumes more memory
+         */
+        // batchTakeJobsAndRun(jobGrp);
+      });
+    });
+  }
+
+  private void takeJobsAndRun(String jobGrp) {
+    int batchSize = handleBatchSize;
+    int availableThread = runners.getAvailablePoolSize(jobGrp);
+    availableThread *= 32;
+    int loop = availableThread % batchSize == 0 ? availableThread / batchSize : availableThread / batchSize + 1;
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Loop:{} [availableThread={}, normalBatchSize={}, jobGrp={}]", loop, availableThread, batchSize,
+          jobGrp);
+    }
+    start: for (int i = 1; i <= loop; i++) {
+      if (i == loop) {
+        batchSize = availableThread - batchSize * (loop - 1);
+      }
+      for (int j = 0; j < batchSize; j++) {
+        Stf job = takeUniqueJob(jobGrp);
+        if (job == null) {
+          break start;
+        }
+        runners.execute(jobGrp, job);
+      }
+    }
+  }
+
+  private Stf takeUniqueJob(String jobGrp) {
     while (!Thread.currentThread().isInterrupted()) {
       Stf job = null;
       try {
@@ -152,11 +188,12 @@ public class JobManager extends BaseLifeCycle {
         if (job == null) return null;
 
         Pair<Boolean, Integer> pair;
-        if (!(pair = runner.checkWhetherTheJobCanRun(job, stfCore)).getKey()) {
-          return null;
+        if (!(pair = runner.checkWhetherTheJobCanRun(job))
+            .getKey()) {/*-A double check here,meanwhile,pick up the dynamic timeout because we are using a custom gradient retry mechanism*/
+          continue;
         }
 
-        if (tryLockJob(jobGrp, job.getId(), pair.getValue(), job.getRetryTimes())) {
+        if (lockJob(jobGrp, job.getId(), pair.getValue(), job.getRetryTimes())) {
           // job.setExecutor(jobMayLocked.getExecutor());TODO mj:record who lock the stf-job if necessary
           return job;
         }
@@ -169,42 +206,62 @@ public class JobManager extends BaseLifeCycle {
     return null;
   }
 
-  private void takeJobsAndRun() {
-    workers.forEach((jobGrp, worker) -> {
-      worker.execute(() -> {
-        takeJobsAndRun(jobGrp);
-      });
-    });
-  }
-
-  private void takeJobsAndRun(String jobGrp) {
+  private void batchTakeJobsAndRun(String jobGrp) {
     int batchSize = handleBatchSize;
-    AtomicBoolean handling = handlings.computeIfAbsent(jobGrp, k -> new AtomicBoolean());
-    if (handling.compareAndSet(false, true)) {
+    int availableThread = runners.getAvailablePoolSize(jobGrp);
+    availableThread *= 32;
+    int loop = availableThread % batchSize == 0 ? availableThread / batchSize : availableThread / batchSize + 1;
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Loop:{} [availableThread={}, normalBatchSize={}, jobGrp={}]", loop, availableThread, batchSize,
+          jobGrp);
+    }
+    start: for (int i = 1; i <= loop; i++) {
+      if (i == loop) {
+        batchSize = availableThread - batchSize * (loop - 1);
+      }
+
+      List<Object[]> preBatchArgs = new ArrayList<>();
+      List<Stf> lockedJobs = null;
+      boolean isQueueEmpty = false;
       try {
-        int availableThread = runners.getAvailablePoolSize(jobGrp);
-        int it = availableThread % batchSize == 0 ? availableThread / batchSize : availableThread / batchSize + 1;
-        start: for (int i = 1; i <= it; i++) {
-          int size = batchSize;
-          if (i == it) {
-            size = availableThread - batchSize * (it - 1);
-          }
-          int finalSize = size;
-          for (int j = 0; j < finalSize; j++) {
-            Stf job = takeUniqueJob(jobGrp);
-            if (job == null) {
-              break start;
-            }
-            runners.execute(jobGrp, job);
+        for (int j = 0; j < batchSize; j++) {
+          isQueueEmpty = collectPreBatchArgs(jobGrp, preBatchArgs);
+          if (isQueueEmpty) {
+            break;
           }
         }
+        if (!preBatchArgs.isEmpty()) {
+          lockedJobs = stfCore.batchLockStfs(preBatchArgs);
+        }
+        if (lockedJobs != null) {
+          for (Stf lockedJob : lockedJobs) {
+            runners.execute(jobGrp, lockedJob);
+          }
+        }
+        if (isQueueEmpty) {
+          break start;
+        }
       } finally {
-        handling.compareAndSet(true, false);
+        loader.signalToLoadJobs(jobGrp);
       }
     }
   }
 
-  @SuppressWarnings("restriction")
+  private boolean collectPreBatchArgs(String jobGrp, List<Object[]> preBatchArgs) {
+    while (!Thread.currentThread().isInterrupted()) {
+      Stf job = loader.getJobFromQueue(jobGrp);
+      if (job == null) return true;
+
+      Pair<Boolean, Integer> pair;
+      if (!(pair = runner.checkWhetherTheJobCanRun(job)).getKey()) {
+        continue;
+      }
+      preBatchArgs.add(new Object[]{job, pair.getValue(), job.getId(), job.getRetryTimes()});
+      break;
+    }
+    return false;
+  }
+
   private void registerGracefulShutdown() {
     try {
       Signal.handle(new Signal(getOSSignalType()), s -> {
@@ -240,7 +297,6 @@ public class JobManager extends BaseLifeCycle {
     this.loader = loader;
     this.runners = runners;
     this.runner = runners.getRunner();
-    this.handlings = new ConcurrentHashMap<>();
     this.workers = Stream.of(ALL_JOB_GROUPS).reduce(new HashMap<String, ThreadPoolExecutor>(), (map, grp) -> {
       map.put(grp, newWorkerOfJobManager(grp));
       return map;

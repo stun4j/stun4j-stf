@@ -33,7 +33,6 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.stun4j.stf.core.Stf;
 import com.stun4j.stf.core.StfCall;
-import com.stun4j.stf.core.StfConsts;
 import com.stun4j.stf.core.StfCore;
 import com.stun4j.stf.core.support.JsonHelper;
 
@@ -48,7 +47,7 @@ public class JobRunner {
   private final LoadingCache<Integer, Map<Integer, Integer>> cachedRetryBehavior;
   private static JobRunner _instance;
 
-  Pair<Boolean, Integer> checkWhetherTheJobCanRun(Stf job, StfCore stfCore) {
+  Pair<Boolean, Integer> checkWhetherTheJobCanRun(Stf job) {
     // Determine job retry behavior
     Map<Integer, Integer> retryBehavior = _instance.determineJobRetryBehavior(job.getTimeoutSecs());
     int retryMaxTimes = retryBehavior.size();
@@ -57,7 +56,7 @@ public class JobRunner {
     int lastRetryTimes = job.getRetryTimes();
     Long jobId = job.getId();
     if (lastRetryTimes >= retryMaxTimes) {
-      // stfCore.markDead(jobId, false);//Delay this kinda mark for fast distribution
+      // stfCore.markDead(....);//Delay this kinda mark for fast distribution
       return Pair.of(false, null);
     }
     // Calculate trigger time,if the time does not arrive, no execution is performed
@@ -97,14 +96,13 @@ public class JobRunner {
     // Calculate trigger time,if the time does not arrive, no execution is performed
     int expectedRetryTimes = lastRetryTimes == 0 ? 1 : lastRetryTimes + 1;
     Integer nextIntervalSecondsAllowReSend = retryBehavior.get(expectedRetryTimes);
-    // if (nextIntervalSecondsAllowReSend == null || job.getUpAt() <= 0) {//Shouldn't happen
+    // if (nextIntervalSecondsAllowReSend == null || job.getUpAt() <= 0) {//Shouldn't happen->
     // LOG.error("Wrong stf-job#{}, retrying was cancelled [expectedRetryTimes={}] |error: '{}'",jobId,
     // expectedRetryTimes, "No 'nextIntervalSecondsAllowReSend' or missing job last update-time");
     // return;
     // }
     // <-
     Date expectedTriggerTime = DateUtils.addSeconds(new Date(job.getUpAt()), nextIntervalSecondsAllowReSend);
-    Date now = new Date();
     // if (now.compareTo(expectedTriggerTime) < 0) {//Shouldn't happen->
     // if (LOG.isDebugEnabled()) {
     // LOG.debug(
@@ -115,7 +113,7 @@ public class JobRunner {
     // return;
     // }
     // <-
-    logTriggerInformation(job, expectedRetryTimes, expectedTriggerTime, now, retryBehavior);
+    logTriggerInformation(job, expectedRetryTimes, expectedTriggerTime, retryBehavior);
     // Retry the job
     String calleeInfo = null;
     Object[] methodArgs = null;
@@ -130,20 +128,22 @@ public class JobRunner {
     stfCore.reForward(jobId, lastRetryTimes, calleeInfo, true, methodArgs);
   }
 
-  // private static int calculateJobInitialTimeoutSeconds(Stf job) {
-  // return (int)((job.getTimeoutAt() - job.getUpAt()) / 1000);// TODO Shouldn't be negative
-  // }
-
-  private static void logTriggerInformation(Stf job, int curRetryTimes, Date curTriggerTime, Date now,
+  private static void logTriggerInformation(Stf job, int curRetryTimes, Date curTriggerTime,
       Map<Integer, Integer> retryBehavior) {
-    Integer nextIntervalSecondsAllowReSend = retryBehavior.get(curRetryTimes + 1);
-    Date nextTriggerTime = nextIntervalSecondsAllowReSend != null
-        ? DateUtils.addSeconds(now, nextIntervalSecondsAllowReSend)
-        : null;
-    LOG.info(
-        "Retring stf-job#{} [curTime={}, expectedRetryTimes={}, expectedTriggerTime={}, lastTriggerTime={}, nextTriggerTime={}]",
-        job.getId(), DFT_DATE_FMT.format(now), curRetryTimes, DFT_DATE_FMT.format(curTriggerTime),
-        DFT_DATE_FMT.format(new Date(job.getUpAt())), DFT_DATE_FMT.format(nextTriggerTime));
+    if (LOG.isInfoEnabled()) {
+      LOG.info("Retring stf-job#{}", job.getId());
+    } else if (LOG.isDebugEnabled()) {
+      Date now = new Date();
+      Integer nextIntervalSecondsAllowReSend = retryBehavior.get(curRetryTimes + 1);
+      Date nextTriggerTime = nextIntervalSecondsAllowReSend != null
+          ? DateUtils.addSeconds(now, nextIntervalSecondsAllowReSend)
+          : null;
+      LOG.debug(
+          "Retring stf-job#{} [curTime={}, expectedRetryTimes={}, expectedTriggerTime={}, lastTriggerTime={}, nextTriggerTime={}]",
+          job.getId(), DFT_DATE_FMT.format(now), curRetryTimes, DFT_DATE_FMT.format(curTriggerTime),
+          DFT_DATE_FMT.format(new Date(job.getUpAt())),
+          nextTriggerTime != null ? DFT_DATE_FMT.format(nextTriggerTime) : null);
+    }
   }
 
   private static String toCallStringOf(StfCall call) {

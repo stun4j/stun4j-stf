@@ -35,7 +35,7 @@ public class AccountGen {
     ds.setUsername("root");
     ds.setPassword("1111");
     ds.setMaximumPoolSize(20);
-    JdbcTemplate jdbcOps = new JdbcTemplate(ds);
+    JdbcTemplate jdbc = new JdbcTemplate(ds);
 
     String sql = "insert into acct (no, amt, freeze_amt, st, up_at, ct_at) values(?, ?, ?, ?, ?, ?)";
 
@@ -50,7 +50,7 @@ public class AccountGen {
       E.execute(() -> {
         String acctNo = Data.ACCT_NO_PREFIX + acctNoSuffix + "";
         Date now = new Date();
-        jdbcOps.update(sql, Long.parseLong(acctNo), 1000_0000, 0, "N", now, now);
+        jdbc.update(sql, Long.parseLong(acctNo), 1000_0000, 0, "N", now, now);
         latch.countDown();
       });
     }

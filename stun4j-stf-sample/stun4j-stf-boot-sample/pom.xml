@@ -8,10 +8,11 @@
 	</parent>
 	<groupId>com.stun4j.boot</groupId>
 	<artifactId>stun4j-stf-boot-sample</artifactId>
-  <name>Stun4j Stf Boot Sample</name>
+	<name>Stun4j Stf Boot Sample</name>
 
 	<properties>
 		<mybatis-plus-boot-starter.verion>3.5.1</mybatis-plus-boot-starter.verion>
+		<start-class>com.stun4j.stf.sample.boot.StfSampleApplication</start-class>
 	</properties>
 
 	<dependencies>
@@ -72,6 +73,17 @@
 	</dependencies>
 
 	<build>
+		<resources>
+			<resource>
+				<directory>src/main/resources</directory>
+				<includes>
+					<include>**/*.conf</include>
+					<include>*.yml</include>
+					<include>*.xml</include>
+					<include>*.sql</include>
+				</includes>
+			</resource>
+		</resources>
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>

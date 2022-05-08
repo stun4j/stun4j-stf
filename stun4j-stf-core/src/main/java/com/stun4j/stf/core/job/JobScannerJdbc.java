@@ -67,16 +67,16 @@ public class JobScannerJdbc implements JobScanner, JdbcAware {
   private int includeHowManyDaysAgo;
 
   @Override
-  public Stream<Stf> scanTimeoutJobsWaitingRun(int limit) {
-    return doScanStillAlive(I, limit);
+  public Stream<Stf> scanTimeoutJobsWaitingRun(int limit, int pageNo) {
+    return doScanStillAlive(I, limit, pageNo);
   }
 
   @Override
-  public Stream<Stf> scanTimeoutJobsInProgress(int limit) {
-    return doScanStillAlive(P, limit);
+  public Stream<Stf> scanTimeoutJobsInProgress(int limit, int pageNo) {
+    return doScanStillAlive(P, limit, pageNo);
   }
 
-  public Stream<Stf> doScanStillAlive(StateEnum st, int limit, String... includeFields) {
+  public Stream<Stf> doScanStillAlive(StateEnum st, int limit, int pageNo, String... includeFields) {
     if (isDataSourceClose(dsCloser, jdbcOps.getDataSource())) {
       LOG.warn("The dataSource has been closed and the scan is cancelled.");
       return Stream.empty();
@@ -91,7 +91,14 @@ public class JobScannerJdbc implements JobScanner, JdbcAware {
     } else {
       sql = SQL_WITH_SINGLE_ST_ORACLE;
     }
-    Object[] args = new Object[]{idStart, idEnd, now, N.name(), st.name(), limit};
+    Object[] args;
+    if (pageNo <= 0) {
+      args = new Object[]{idStart, idEnd, now, N.name(), st.name(), limit};
+    } else {
+      sql = sql.replaceFirst("limit \\?", lenientFormat("limit %s,%s", pageNo * limit, limit));//TODO mj:indexof?
+      args = new Object[]{idStart, idEnd, now, N.name(), st.name()};
+    }
+    // FIXME mj:oracle&postgre
 
     MutableBoolean checkFields = new MutableBoolean(false);
     if (includeFields != null && includeFields.length > 0) {

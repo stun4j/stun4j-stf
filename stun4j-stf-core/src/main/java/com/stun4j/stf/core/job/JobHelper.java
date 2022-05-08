@@ -22,7 +22,7 @@ import javax.sql.DataSource;
 import org.apache.commons.lang3.reflect.MethodUtils;
 
 /** @author Jay Meng */
-final class JobHelper {
+public final class JobHelper {
   public static Method tryGetDataSourceCloser(DataSource dataSource) {
     Method dsCloser;
     try {
