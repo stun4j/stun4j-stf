@@ -57,6 +57,10 @@ public class JobManager extends BaseLifeCycle {
   private static final int DFT_MAX_HANDLE_BATCH_SIZE = 3000;
   private static final int DFT_HANDLE_BATCH_SIZE = 20;
 
+  private static final int DFT_MIN_BATCH_MULTIPLYING_FACTOR = 1;
+  private static final int DFT_MAX_BATCH_MULTIPLYING_FACTOR = 64;
+  private static final int DFT_BATCH_MULTIPLYING_FACTOR = 16;
+
   private final StfCore stfCore;
   private final JobLoader loader;
   private final JobRunners runners;
@@ -69,6 +73,7 @@ public class JobManager extends BaseLifeCycle {
 
   private int scanFreqSeconds;
   private int handleBatchSize;
+  private int batchMultiplyingFactor;
 
   private boolean vmResCheckEnabled;
 
@@ -160,11 +165,11 @@ public class JobManager extends BaseLifeCycle {
   private void takeJobsAndRun(String jobGrp) {
     int batchSize = handleBatchSize;
     int availableThread = runners.getAvailablePoolSize(jobGrp);
-    availableThread *= 32;
+    availableThread *= batchMultiplyingFactor;
     int loop = availableThread % batchSize == 0 ? availableThread / batchSize : availableThread / batchSize + 1;
     if (LOG.isDebugEnabled()) {
-      LOG.debug("Loop:{} [availableThread={}, normalBatchSize={}, jobGrp={}]", loop, availableThread, batchSize,
-          jobGrp);
+      LOG.debug("[takeJobsAndRun] Loop:{} [availableThread={}, normalBatchSize={}, jobGrp={}]", loop, availableThread,
+          batchSize, jobGrp);
     }
     start: for (int i = 1; i <= loop; i++) {
       if (i == loop) {
@@ -209,11 +214,11 @@ public class JobManager extends BaseLifeCycle {
   private void batchTakeJobsAndRun(String jobGrp) {
     int batchSize = handleBatchSize;
     int availableThread = runners.getAvailablePoolSize(jobGrp);
-    availableThread *= 32;
+    availableThread *= batchMultiplyingFactor;
     int loop = availableThread % batchSize == 0 ? availableThread / batchSize : availableThread / batchSize + 1;
     if (LOG.isDebugEnabled()) {
-      LOG.debug("Loop:{} [availableThread={}, normalBatchSize={}, jobGrp={}]", loop, availableThread, batchSize,
-          jobGrp);
+      LOG.debug("[batchTakeJobsAndRun] Loop:{} [availableThread={}, normalBatchSize={}, jobGrp={}]", loop,
+          availableThread, batchSize, jobGrp);
     }
     start: for (int i = 1; i <= loop; i++) {
       if (i == loop) {
@@ -292,6 +297,7 @@ public class JobManager extends BaseLifeCycle {
   public JobManager(JobLoader loader, JobRunners runners) {
     this.scanFreqSeconds = DFT_SCAN_FREQ_SECONDS;
     this.handleBatchSize = DFT_HANDLE_BATCH_SIZE;
+    this.batchMultiplyingFactor = DFT_BATCH_MULTIPLYING_FACTOR;
     this.vmResCheckEnabled = true;
     this.stfCore = runners.getStfCore();
     this.loader = loader;
@@ -311,6 +317,13 @@ public class JobManager extends BaseLifeCycle {
   public void setHandleBatchSize(int handleBatchSize) {
     this.handleBatchSize = handleBatchSize < DFT_MIN_HANDLE_BATCH_SIZE ? DFT_MIN_HANDLE_BATCH_SIZE
         : (handleBatchSize > DFT_MAX_HANDLE_BATCH_SIZE ? DFT_MAX_HANDLE_BATCH_SIZE : handleBatchSize);
+  }
+
+  public void setBatchMultiplyingFactor(int batchMultiplyingFactor) {
+    this.batchMultiplyingFactor = batchMultiplyingFactor < DFT_MIN_BATCH_MULTIPLYING_FACTOR
+        ? DFT_MIN_BATCH_MULTIPLYING_FACTOR
+        : (batchMultiplyingFactor > DFT_MAX_BATCH_MULTIPLYING_FACTOR ? DFT_MAX_BATCH_MULTIPLYING_FACTOR
+            : batchMultiplyingFactor);
   }
 
   public void setVmResCheckEnabled(boolean vmResCheckEnabled) {

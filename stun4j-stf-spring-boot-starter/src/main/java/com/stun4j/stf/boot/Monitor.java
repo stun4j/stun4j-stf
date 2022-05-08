@@ -39,9 +39,9 @@ public class Monitor {
   /**
    * Whether jvm-mem is taken into consider
    * <p>
-   * Default: true
+   * Default: false
    */
-  private boolean considerJvmMem = true;
+  private boolean considerJvmMem = false;
 
   private JvmMem jvmMem = new JvmMem();
   private JvmCpu jvmCpu = new JvmCpu();

@@ -72,7 +72,13 @@ public class Job {
   }
 
   static class JobLoader {
+    /**
+     * Default: 300
+     */
     private int loadSize = 300;
+    /**
+     * Default: 3
+     */
     private int scanFreqSecs = 3;
 
     public int getLoadSize() {
@@ -94,8 +100,18 @@ public class Job {
   }
 
   static class JobManager {
+    /**
+     * Default: 20
+     */
     private int handleBatchSize = 20;
+    /**
+     * Default: 3
+     */
     private int scanFreqSecs = 3;
+    /**
+     * Default: 16
+     */
+    private int batchMultiplyingFactor = 16;
 
     public int getHandleBatchSize() {
       return handleBatchSize;
@@ -111,6 +127,14 @@ public class Job {
 
     public void setScanFreqSecs(int scanFreqSecs) {
       this.scanFreqSecs = scanFreqSecs;
+    }
+
+    public int getBatchMultiplyingFactor() {
+      return batchMultiplyingFactor;
+    }
+
+    public void setBatchMultiplyingFactor(int batchMultiplyingFactor) {
+      this.batchMultiplyingFactor = batchMultiplyingFactor;
     }
 
   }

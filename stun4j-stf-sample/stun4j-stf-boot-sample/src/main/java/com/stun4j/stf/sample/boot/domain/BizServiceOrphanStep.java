@@ -15,12 +15,9 @@
  */
 package com.stun4j.stf.sample.boot.domain;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.stun4j.stf.core.StfContext;
 import com.stun4j.stf.core.StfTxnOps;
 import com.stun4j.stf.sample.boot.persistence.ReqDao;
 import com.stun4j.stf.sample.boot.persistence.ReqPo;
@@ -30,7 +27,6 @@ import com.stun4j.stf.sample.boot.persistence.ReqPo;
  */
 @Service("bizOrphanStep")
 public class BizServiceOrphanStep {
-  private static final Logger LOG = LoggerFactory.getLogger(BizServiceOrphanStep.class);
   @Autowired
   private ReqDao reqDao;
   @Autowired
@@ -38,11 +34,9 @@ public class BizServiceOrphanStep {
 
   public void handle(Req req) {
     String reqId = req.getId();
-    // String reqBody = req.toJson("insert");
-    // txnOps.executeWithoutResult(st -> {
-    // reqDao.insert(new ReqPo(reqId, reqBody));
-    // });
-    LOG.info("req#" + reqId);
-    StfContext.commitLastDone();
+    String reqBody = req.toJson("insert");
+    txnOps.executeWithoutResult(st -> {
+      reqDao.insert(new ReqPo(reqId, reqBody));
+    });
   }
 }

@@ -21,6 +21,16 @@ create table stn_stf (
 -- Table structure for a Simplified Business Scenario(Transfer transaction)
 -- -----------------------------------------------
 -- ----------------------------
+-- Table structure for the sample mock
+-- ----------------------------
+--drop table if exists stn_sample_mock;
+create table stn_sample_mock (
+  id varchar(255) not null,
+  value tinyint(3) not null,
+  primary key (id)
+);
+
+-- ----------------------------
 -- Table structure for account
 -- ----------------------------
 --drop table if exists acct;
