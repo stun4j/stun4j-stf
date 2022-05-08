@@ -38,11 +38,11 @@ public class BizServiceOrphanStep {
 
   public void handle(Req req) {
     String reqId = req.getId();
-    String reqBody = req.toJson("insert");
-    txnOps.executeWithoutResult(st -> {
-      reqDao.insert(new ReqPo(reqId, reqBody));
-    });
-    LOG.info("red#" + reqId);
-    // StfContext.commitLastDone();
+    // String reqBody = req.toJson("insert");
+    // txnOps.executeWithoutResult(st -> {
+    // reqDao.insert(new ReqPo(reqId, reqBody));
+    // });
+    LOG.info("req#" + reqId);
+    StfContext.commitLastDone();
   }
 }

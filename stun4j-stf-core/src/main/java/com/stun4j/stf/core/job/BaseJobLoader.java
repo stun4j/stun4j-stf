@@ -39,7 +39,7 @@ import com.stun4j.stf.core.support.BaseLifeCycle;
  */
 public abstract class BaseJobLoader extends BaseLifeCycle {
   private static final int DFT_MIN_LOAD_SIZE = 100;
-  private static final int DFT_MAX_LOAD_SIZE = 5000;
+  private static final int DFT_MAX_LOAD_SIZE = 3000;
   private static final int DFT_LOAD_SIZE = 300;
 
   private static final int DFT_MIN_SCAN_FREQ_SECONDS = 3;
@@ -64,7 +64,7 @@ public abstract class BaseJobLoader extends BaseLifeCycle {
   public void doStart() {
     int scanFreqSeconds;
     sf = watcher.scheduleWithFixedDelay(() -> {
-      smartLoadJobsToQueue();
+      doWatch();
     }, scanFreqSeconds = this.scanFreqSeconds, scanFreqSeconds, TimeUnit.SECONDS);
 
     LOG.debug("The stf-job-fetcher is successfully started");
@@ -90,6 +90,12 @@ public abstract class BaseJobLoader extends BaseLifeCycle {
     }
   }
 
+  private void doWatch() {
+    for (String jobGrp : allGrpsLoadingSignal) {
+      worker.execute(() -> doLoadJobsToQueue(jobGrp));
+    }
+  }
+
   /**
    * @return the result Stream, containing stf objects, needing to be closed once fully processed (e.g. through a
    *         try-with-resources clause)
@@ -105,12 +111,6 @@ public abstract class BaseJobLoader extends BaseLifeCycle {
   void signalToLoadJobs(String... grpsToLoad) {
     for (String grpToLoad : grpsToLoad) {
       allGrpsLoadingSignal.add(grpToLoad);
-    }
-  }
-
-  private void smartLoadJobsToQueue() {
-    for (String jobGrp : allGrpsLoadingSignal) {
-      worker.execute(() -> doLoadJobsToQueue(jobGrp));
     }
   }
 

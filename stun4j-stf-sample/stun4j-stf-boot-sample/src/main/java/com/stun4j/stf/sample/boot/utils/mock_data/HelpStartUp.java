@@ -20,6 +20,7 @@ import java.util.stream.Stream;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
@@ -37,8 +38,11 @@ public class HelpStartUp implements ApplicationContextAware {
       jdbc.update("delete from " + tbl);
     });
 
-    jdbc.update("delete from stn_mock");
-    jdbc.update("insert into stn_mock (id, value) values ('cnt', 3)");
+    jdbc.update("delete from stn_sample_mock");
+    try {
+      jdbc.update("insert into stn_sample_mock (id, value) values ('cnt', 3)");
+    } catch (DataAccessException e) {
+    }
     // <-
   }
 
