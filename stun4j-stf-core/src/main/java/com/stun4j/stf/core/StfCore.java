@@ -28,15 +28,12 @@ import org.apache.commons.lang3.tuple.Pair;
 public interface StfCore {
 
   @SuppressWarnings("unchecked")
-  Long init(String bizObjId, String bizMethodName, Integer timeoutSeconds, Pair<?, Class<?>>... typedArgs);
+  Long newStf(String bizObjId, String bizMethodName, Integer timeoutSeconds, Pair<?, Class<?>>... typedArgs);
 
   @SuppressWarnings("unchecked")
-  default Long init(String bizObjId, String bizMethodName, Pair<?, Class<?>>... typedArgs) {
-    return init(bizObjId, bizMethodName, null, typedArgs);
+  default Long newStf(String bizObjId, String bizMethodName, Pair<?, Class<?>>... typedArgs) {
+    return newStf(bizObjId, bizMethodName, null, typedArgs);
   }
-
-  @Deprecated
-  void forward(Long stfId, String calleeInfo, boolean async, Object... calleeMethodArgs);
 
   boolean lockStf(Long stfId, int timeoutSecs, int curRetryTimes);
 
@@ -46,15 +43,21 @@ public interface StfCore {
 
   void markDead(Long stfId, boolean async);
 
+  @Deprecated
+  void forward(Long stfId, String calleeInfo, boolean async, Object... calleeMethodArgs);
+
   void reForward(Long stfId, int lastRetryTimes, String calleeInfo, boolean async, Object... calleeMethodArgs);
 
   static StfCore empty() {
     return new StfCore() {
       static final String MODULE_ID = "stf-core";
 
+      @SuppressWarnings("unchecked")
       @Override
-      public void forward(Long stfId, String calleeInfo, boolean async, Object... calleeMethodArgs) {
+      public Long newStf(String bizObjId, String bizMethodName, Integer timeoutSeconds,
+          Pair<?, Class<?>>... typedArgs) {
         NOT_INITIALIZED_THROW.accept(MODULE_ID);
+        return null;
       }
 
       @Override
@@ -80,17 +83,16 @@ public interface StfCore {
       }
 
       @Override
+      public void forward(Long stfId, String calleeInfo, boolean async, Object... calleeMethodArgs) {
+        NOT_INITIALIZED_THROW.accept(MODULE_ID);
+      }
+
+      @Override
       public void reForward(Long stfId, int curRetryTimes, String calleeInfo, boolean async,
           Object... calleeMethodArgs) {
         NOT_INITIALIZED_THROW.accept(MODULE_ID);
       }
 
-      @SuppressWarnings("unchecked")
-      @Override
-      public Long init(String bizObjId, String bizMethodName, Integer timeoutSeconds, Pair<?, Class<?>>... typedArgs) {
-        NOT_INITIALIZED_THROW.accept(MODULE_ID);
-        return null;
-      }
     };
   }
 

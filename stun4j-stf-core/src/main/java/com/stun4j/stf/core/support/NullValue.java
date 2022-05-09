@@ -23,7 +23,7 @@ import java.io.Serializable;
  * @author Juergen Hoeller
  * @author Jay Meng
  *         <p>
- *         From spring-data-redis:2.6.3,changes listed below
+ *         From spring-data-redis:2.6.4,changes listed below
  *         <ul>
  *         <li>Disable all Spring dependency</li>
  *         <li>Change {@code serialVersionUID}</li>

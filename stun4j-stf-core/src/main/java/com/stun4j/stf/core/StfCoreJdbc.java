@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.stun4j.stf.core.store;
+package com.stun4j.stf.core;
 
 import static com.google.common.base.Strings.lenientFormat;
 import static com.stun4j.stf.core.StateEnum.F;
@@ -30,8 +30,6 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.function.Supplier;
 
-import com.stun4j.stf.core.BaseStfCore;
-import com.stun4j.stf.core.StfCall;
 import com.stun4j.stf.core.spi.StfJdbcOps;
 import com.stun4j.stf.core.support.JsonHelper;
 import com.stun4j.stf.core.utils.consumers.BaseConsumer;
@@ -146,7 +144,7 @@ public class StfCoreJdbc extends BaseStfCore {
   }
 
   @Override
-  protected void doInit(Long newStfId, StfCall callee, int timeoutSecs) {
+  protected void doNewStf(Long newStfId, StfCall callee, int timeoutSecs) {
     if (isDataSourceClose(dsCloser, jdbcOps.getDataSource())) {
       LOG.warn("[doInit] The dataSource has been closed and the operation on stf#{} is cancelled.", newStfId);
       return;
@@ -154,22 +152,6 @@ public class StfCoreJdbc extends BaseStfCore {
     String calleeJson = JsonHelper.toJson(callee);
     long now = System.currentTimeMillis();
     jdbcOps.update(INIT_SQL, newStfId, calleeJson, timeoutSecs, (now + timeoutSecs * 1000), now, now);
-  }
-
-  @Deprecated
-  @Override
-  public boolean doForward(Long stfId) {
-    long now;
-    int cnt = jdbcOps.update(FORWARD_SQL, now = System.currentTimeMillis(), now, stfId);
-    return cnt == 1;
-  }
-
-  @Deprecated
-  @Override
-  protected boolean doReForward(Long stfId, int curRetryTimes) {
-    long now;
-    int cnt = jdbcOps.update(RETRY_FORWARD_SQL, now = System.currentTimeMillis(), now, stfId, curRetryTimes);
-    return cnt == 1;
   }
 
   @Override
@@ -188,6 +170,22 @@ public class StfCoreJdbc extends BaseStfCore {
       return false;
     }
     int cnt = jdbcOps.update(MARK_DONE_SQL, System.currentTimeMillis(), stfId);
+    return cnt == 1;
+  }
+
+  @Deprecated
+  @Override
+  public boolean doForward(Long stfId) {
+    long now;
+    int cnt = jdbcOps.update(FORWARD_SQL, now = System.currentTimeMillis(), now, stfId);
+    return cnt == 1;
+  }
+
+  @Deprecated
+  @Override
+  protected boolean doReForward(Long stfId, int curRetryTimes) {
+    long now;
+    int cnt = jdbcOps.update(RETRY_FORWARD_SQL, now = System.currentTimeMillis(), now, stfId, curRetryTimes);
     return cnt == 1;
   }
 

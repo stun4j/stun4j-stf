@@ -2,6 +2,14 @@
 -- Table structure for Stun4j Stf framework
 -- (Copied from stun4j-stf-core project)
 -- ----------------------------------------------
+--drop table if exists stn_stf_cluster_member;
+create table stn_stf_cluster_member (
+  id varchar(255) not null,
+  ct_at bigint(20) unsigned not null,
+  up_at bigint(20) unsigned not null,
+  primary key (id)
+);
+
 --drop table if exists stn_stf;
 create table stn_stf (
   id bigint(20) unsigned not null,

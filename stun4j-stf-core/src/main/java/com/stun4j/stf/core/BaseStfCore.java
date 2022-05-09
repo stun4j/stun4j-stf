@@ -43,12 +43,12 @@ public abstract class BaseStfCore implements StfCore {
 
   @SuppressWarnings("unchecked")
   @Override
-  public Long init(String bizObjId, String bizMethodName, Integer timeoutSeconds, Pair<?, Class<?>>... typedArgs) {
+  public Long newStf(String bizObjId, String bizMethodName, Integer timeoutSeconds, Pair<?, Class<?>>... typedArgs) {
     int timeoutSecs = Optional.ofNullable(timeoutSeconds).orElse(StfConfigs.getActionTimeout(bizObjId, bizMethodName));
     StfCall callee = newCallee(bizObjId, bizMethodName, timeoutSecs, typedArgs);
     StfId newStfId = StfContext.newStfId(bizObjId, bizMethodName);
     Long idVal;
-    doInit(idVal = newStfId.getValue(), callee, timeoutSecs);
+    doNewStf(idVal = newStfId.getValue(), callee, timeoutSecs);
     return idVal;
   }
 
@@ -118,7 +118,7 @@ public abstract class BaseStfCore implements StfCore {
     }
   }
 
-  protected abstract void doInit(Long newStfId, StfCall callee, int timeoutSecs);
+  protected abstract void doNewStf(Long newStfId, StfCall callee, int timeoutSecs);
 
   @Deprecated
   protected abstract boolean doForward(Long stfId);

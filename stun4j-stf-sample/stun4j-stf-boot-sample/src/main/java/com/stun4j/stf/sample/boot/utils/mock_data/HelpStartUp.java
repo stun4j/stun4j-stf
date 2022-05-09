@@ -18,17 +18,23 @@ package com.stun4j.stf.sample.boot.utils.mock_data;
 import java.util.stream.Stream;
 
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
+import com.stun4j.stf.core.StfTxnOps;
+
 /**
  * @author Jay Meng
  */
 @Component
 public class HelpStartUp implements ApplicationContextAware {
+
+  @Autowired
+  private StfTxnOps txnOps;
 
   @Override
   public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
@@ -38,12 +44,15 @@ public class HelpStartUp implements ApplicationContextAware {
       jdbc.update("delete from " + tbl);
     });
 
-    jdbc.update("delete from stn_sample_mock");
-    try {
-      jdbc.update("insert into stn_sample_mock (id, value) values ('cnt', 3)");
-    } catch (DataAccessException e) {
-    }
+    txnOps.rawExecuteWithoutResult(st -> {
+      jdbc.update("delete from stn_sample_mock");
+      try {
+        jdbc.update("insert into stn_sample_mock (id, value) values ('cnt', 3)");
+      } catch (DataAccessException e) {
+      }
+    });
     // <-
+
   }
 
 }

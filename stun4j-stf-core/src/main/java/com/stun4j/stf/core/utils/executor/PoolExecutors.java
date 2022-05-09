@@ -63,6 +63,14 @@ public final class PoolExecutors {
     return exec;
   }
 
+  public static ExecutorService newSingleThreadPool(BlockingQueue<Runnable> queue, ThreadFactory threadFactory,
+      int keepAliveTimeSeconds, boolean allowCoreThreadTimeOut, RejectedExecutionHandler reject) {
+    ThreadPoolExecutor exec = new ThreadPoolExecutor(1, 1, keepAliveTimeSeconds, TimeUnit.SECONDS, queue, threadFactory,
+        reject);
+    exec.allowCoreThreadTimeOut(allowCoreThreadTimeOut);
+    return exec;
+  }
+
   public static ScheduledExecutorService newScheduler(int corePoolSize, String prefix, boolean daemon) {
     return newScheduler(corePoolSize, new NamedThreadFactory(prefix, daemon), DROP_WITH_EX_THROW_POLICY);
   }

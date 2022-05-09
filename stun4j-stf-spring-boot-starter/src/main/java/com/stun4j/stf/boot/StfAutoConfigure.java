@@ -63,9 +63,11 @@ import com.stun4j.stf.boot.Transaction.IsolationLevel;
 import com.stun4j.stf.boot.Transaction.Propagation;
 import com.stun4j.stf.core.StfContext;
 import com.stun4j.stf.core.StfCore;
+import com.stun4j.stf.core.StfCoreJdbc;
 import com.stun4j.stf.core.StfTxnOps;
 import com.stun4j.stf.core.build.StfConfig;
 import com.stun4j.stf.core.build.StfConfigs;
+import com.stun4j.stf.core.cluster.HeartbeatHandlerJdbc;
 import com.stun4j.stf.core.job.JobLoader;
 import com.stun4j.stf.core.job.JobManager;
 import com.stun4j.stf.core.job.JobRunners;
@@ -76,7 +78,6 @@ import com.stun4j.stf.core.monitor.StfMonitor;
 import com.stun4j.stf.core.monitor.SystemLoad;
 import com.stun4j.stf.core.spi.StfJdbcOps;
 import com.stun4j.stf.core.spi.StfRegistry;
-import com.stun4j.stf.core.store.StfCoreJdbc;
 import com.stun4j.stf.core.support.executor.StfExecutorService;
 import com.stun4j.stf.core.support.executor.StfInternalExecutors;
 import com.stun4j.stf.core.support.persistence.StfDefaultSpringJdbcOps;
@@ -160,7 +161,7 @@ public class StfAutoConfigure implements BeanClassLoaderAware, ApplicationContex
     JobScannerJdbc scanner = JobScannerJdbc.of(jdbcOps);
     JobLoader loader = new JobLoader(scanner);
     JobRunners runners = new JobRunners(stf);
-    JobManager jobMngr = new JobManager(loader, runners);
+    JobManager jobMngr = new JobManager(loader, runners).withHeartbeatHandler(new HeartbeatHandlerJdbc(jdbcOps));
 
     // configure loader
     loader.setLoadSize(props.getJob().getLoader().getLoadSize());
@@ -169,6 +170,7 @@ public class StfAutoConfigure implements BeanClassLoaderAware, ApplicationContex
     // configure manager
     jobMngr.setHandleBatchSize(props.getJob().getManager().getHandleBatchSize());
     jobMngr.setScanFreqSeconds(props.getJob().getManager().getScanFreqSecs());
+    jobMngr.setBatchMultiplyingFactor(props.getJob().getManager().getBatchMultiplyingFactor());
 
     // configure monitor->
     Monitor mon;

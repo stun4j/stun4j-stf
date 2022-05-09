@@ -15,9 +15,11 @@
  */
 package com.stun4j.stf.core.support.executor;
 
+import static com.stun4j.stf.core.utils.executor.PoolExecutors.SILENT_DROP_POLICY;
 import static com.stun4j.stf.core.utils.executor.PoolExecutors.defaultIoPrefer;
 import static com.stun4j.stf.core.utils.executor.PoolExecutors.defaultWorkStealingPool;
 import static com.stun4j.stf.core.utils.executor.PoolExecutors.newDynamicIoPrefer;
+import static com.stun4j.stf.core.utils.executor.PoolExecutors.newSingleThreadPool;
 import static com.stun4j.stf.core.utils.executor.PoolExecutors.newSingleThreadScheduler;
 
 import java.util.concurrent.ExecutorService;
@@ -40,6 +42,15 @@ public final class StfInternalExecutors {
 
   public static ScheduledExecutorService newWatcherOfJobLoading() {
     return newSingleThreadScheduler("stf-job-load-watcher", true);
+  }
+
+  public static ScheduledExecutorService newWatcherOfMemberHeartbeat() {
+    return newSingleThreadScheduler("stf-member-hb-watcher", true);
+  }
+
+  public static ExecutorService newWorkerOfMemberHeartbeat() {
+    return newSingleThreadPool(new LinkedBlockingQueue<>(1), new NamedThreadFactory("stf-member-hb-worker", true), 0,
+        false, SILENT_DROP_POLICY);
   }
 
   public static ExecutorService newWorkerOfJobLoading() {

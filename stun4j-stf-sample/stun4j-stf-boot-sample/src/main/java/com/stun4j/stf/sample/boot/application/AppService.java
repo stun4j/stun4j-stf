@@ -88,7 +88,7 @@ public class AppService {
      * (More transparent, but the code above is better in performance)
      */
     // You can comment out the above block and uncomment the following block->
-    // if (errorCnt.decrementAndGet() >= 0) {
+    // if (mock.decrementAndGet() >= 0) {
     // LOG.error("Notification of request#{} has timed out...", reqId);
     // return;
     // }
@@ -100,7 +100,6 @@ public class AppService {
 
   @Autowired
   MockHelper mock;
-  // private AtomicInteger errorCnt = new AtomicInteger(3);// Just for simulate 3 timeouts
   // @Autowired
   // private StfTxnOps txnOps;
 }

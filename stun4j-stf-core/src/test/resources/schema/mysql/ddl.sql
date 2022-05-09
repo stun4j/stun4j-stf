@@ -11,3 +11,10 @@ create table stn_stf (
   primary key(id),
   key idx_timeout_at (timeout_at) using btree
 );
+
+create table stn_stf_cluster_member (
+  id varchar(255) not null,
+  ct_at bigint(20) unsigned not null,
+  up_at bigint(20) unsigned not null,
+  primary key (id)
+);

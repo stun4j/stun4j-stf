@@ -20,8 +20,8 @@ import static com.stun4j.stf.core.job.JobConsts.JOB_GROUP_TIMEOUT_WAITING_RUN;
 
 import java.util.stream.Stream;
 
-import com.stun4j.guid.core.LocalGuid;
 import com.stun4j.stf.core.Stf;
+import com.stun4j.stf.core.cluster.StfClusterMembers;
 
 /**
  * @author Jay Meng
@@ -31,8 +31,7 @@ public class JobLoader extends BaseJobLoader {
 
   @Override
   protected Stream<Stf> loadJobs(String jobGrp, int loadSize) {
-    int workerId = (int)LocalGuid.instance().getWorkerId();
-    int pageNo = workerId % 5;
+    int pageNo = StfClusterMembers.determineBlockToTakeOver();
     switch (jobGrp) {
       case JOB_GROUP_TIMEOUT_WAITING_RUN:
         return scanner.scanTimeoutJobsWaitingRun(loadSize, pageNo);

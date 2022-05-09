@@ -20,7 +20,6 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 
-import com.stun4j.stf.core.store.StfCoreJdbc;
 import com.stun4j.stf.core.support.JdbcAware;
 import com.stun4j.stf.core.support.persistence.StfDefaultSpringJdbcOps;
 

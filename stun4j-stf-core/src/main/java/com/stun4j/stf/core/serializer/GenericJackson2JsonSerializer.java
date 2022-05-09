@@ -46,7 +46,7 @@ import static com.stun4j.stf.core.utils.Asserts.*;
  * @author Mao Shuai
  * @author Jay Meng
  *         <p>
- *         From spring-data-redis:2.6.3,changes listed below
+ *         From spring-data-redis:2.6.4,changes listed below
  *         <ul>
  *         <li>Disable all Spring dependency,use Asserts#notNull,commons-lang3 instead</li>
  *         <li>Use Serializer instead of RedisSerializer</li>

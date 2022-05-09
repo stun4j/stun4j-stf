@@ -76,7 +76,7 @@ public final class StfContext {
 
   @SafeVarargs
   public static Long preCommitNextStep(String bizObjId, String bizMethodName, Pair<?, Class<?>>... typedArgs) {
-    return stf.init(bizObjId, bizMethodName, typedArgs);
+    return stf.newStf(bizObjId, bizMethodName, typedArgs);
   }
 
   public static StfId laStfId() {

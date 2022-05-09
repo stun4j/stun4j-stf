@@ -33,8 +33,11 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import com.stun4j.stf.core.Stf;
 import com.stun4j.stf.core.StfCore;
+import com.stun4j.stf.core.cluster.StfClusterMember;
+import com.stun4j.stf.core.cluster.HeartbeatHandler;
 import com.stun4j.stf.core.monitor.StfMonitor;
 import com.stun4j.stf.core.support.BaseLifeCycle;
+import com.stun4j.stf.core.support.StfEventBus;
 
 import sun.misc.Signal;
 
@@ -66,6 +69,8 @@ public class JobManager extends BaseLifeCycle {
   private final JobRunners runners;
   private final JobRunner runner;
 
+  private HeartbeatHandler heartbeatHandler;
+
   private final ScheduledExecutorService watcher;
   private final Map<String, ThreadPoolExecutor> workers;
 
@@ -79,6 +84,7 @@ public class JobManager extends BaseLifeCycle {
 
   @Override
   protected void doStart() {
+    heartbeatHandler.doStart();
     loader.doStart();
 
     if (vmResCheckEnabled) {
@@ -95,9 +101,9 @@ public class JobManager extends BaseLifeCycle {
             return;
           }
         }
-        takeJobsAndRun();
+        onSchedule();
       } catch (Throwable e) {
-        LOG.error("[on schedule] Handle stf-jobs error", e);
+        LOG.error("[onSchedule] Handle stf-jobs error", e);
       }
     }, scanFreqSeconds = this.scanFreqSeconds, scanFreqSeconds, TimeUnit.SECONDS);
 
@@ -139,6 +145,8 @@ public class JobManager extends BaseLifeCycle {
     if (vmResCheckEnabled) {
       StfMonitor.INSTANCE.shutdown();
     }
+
+    heartbeatHandler.shutdown();
   }
 
   protected boolean lockJob(String jobGrp, Long jobId, int timeoutSecs, int curRetryTimes) {
@@ -149,7 +157,8 @@ public class JobManager extends BaseLifeCycle {
     return true;
   }
 
-  private void takeJobsAndRun() {
+  private void onSchedule() {
+    StfClusterMember.sendHeartbeat();
     workers.forEach((jobGrp, worker) -> {
       worker.execute(() -> {
         takeJobsAndRun(jobGrp);
@@ -308,6 +317,12 @@ public class JobManager extends BaseLifeCycle {
       return map;
     }, (a, b) -> null);
     this.watcher = newWatcherOfJobManager();
+  }
+
+  public JobManager withHeartbeatHandler(HeartbeatHandler heartbeatHandler) {
+    StfEventBus.registerHandler(heartbeatHandler);
+    this.heartbeatHandler = heartbeatHandler;
+    return this;
   }
 
   public void setScanFreqSeconds(int scanFreqSeconds) {

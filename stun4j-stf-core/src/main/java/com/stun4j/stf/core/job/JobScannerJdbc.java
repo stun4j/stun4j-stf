@@ -78,7 +78,7 @@ public class JobScannerJdbc implements JobScanner, JdbcAware {
 
   public Stream<Stf> doScanStillAlive(StateEnum st, int limit, int pageNo, String... includeFields) {
     if (isDataSourceClose(dsCloser, jdbcOps.getDataSource())) {
-      LOG.warn("The dataSource has been closed and the scan is cancelled.");
+      LOG.warn("[doScanStillAlive] The dataSource has been closed and the operation is cancelled.");
       return Stream.empty();
     }
     long now = System.currentTimeMillis();
@@ -95,7 +95,7 @@ public class JobScannerJdbc implements JobScanner, JdbcAware {
     if (pageNo <= 0) {
       args = new Object[]{idStart, idEnd, now, N.name(), st.name(), limit};
     } else {
-      sql = sql.replaceFirst("limit \\?", lenientFormat("limit %s,%s", pageNo * limit, limit));//TODO mj:indexof?
+      sql = sql.replaceFirst("limit \\?", lenientFormat("limit %s,%s", pageNo * limit, limit));// TODO mj:indexof?
       args = new Object[]{idStart, idEnd, now, N.name(), st.name()};
     }
     // FIXME mj:oracle&postgre

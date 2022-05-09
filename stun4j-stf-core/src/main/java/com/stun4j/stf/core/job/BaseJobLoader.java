@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.stun4j.stf.core.Stf;
+import com.stun4j.stf.core.cluster.StfClusterMember;
 import com.stun4j.stf.core.support.BaseLifeCycle;
 
 /**
@@ -64,7 +65,7 @@ public abstract class BaseJobLoader extends BaseLifeCycle {
   public void doStart() {
     int scanFreqSeconds;
     sf = watcher.scheduleWithFixedDelay(() -> {
-      doWatch();
+      onSchedule();
     }, scanFreqSeconds = this.scanFreqSeconds, scanFreqSeconds, TimeUnit.SECONDS);
 
     LOG.debug("The stf-job-fetcher is successfully started");
@@ -90,7 +91,8 @@ public abstract class BaseJobLoader extends BaseLifeCycle {
     }
   }
 
-  private void doWatch() {
+  private void onSchedule() {
+    StfClusterMember.sendHeartbeat();
     for (String jobGrp : allGrpsLoadingSignal) {
       worker.execute(() -> doLoadJobsToQueue(jobGrp));
     }

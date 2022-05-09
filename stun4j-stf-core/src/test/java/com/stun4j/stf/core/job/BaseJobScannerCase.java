@@ -87,7 +87,7 @@ public abstract class BaseJobScannerCase extends BaseContainerCase<JobScanner> {
 
     long theVeryBegining = System.currentTimeMillis();
     if (isNormal) {
-      stf.init("foo", "bar", 1);// give a shortest timeout
+      stf.newStf("foo", "bar", 1);// give a shortest timeout
     }
     Utils.sleepSeconds(1);
     if (isNormal) {
@@ -108,8 +108,8 @@ public abstract class BaseJobScannerCase extends BaseContainerCase<JobScanner> {
     BaseStfCore stf = newStfCore(biz);
     // Initialize two pieces of data, both in initial state 'I'
     if (isNormal) {
-      stf.init("foo", "bar");
-      stf.init("foo2", "bar2");
+      stf.newStf("foo", "bar");
+      stf.newStf("foo2", "bar2");
     }
     // Change the state of 1 data item to 'P'
     Long stfId = StfContext.safeGetLaStfIdValue();
