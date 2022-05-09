@@ -32,10 +32,10 @@ public abstract class StfClusterMembers {
   private static final Logger LOG = LoggerFactory.getLogger(StfClusterMembers.class);
   static final AtomicReference<String[]> availableMembers = new AtomicReference<>();
 
-  public static void replaceWith(Stream<StfClusterMember> allMembers, int hbTimeoutSeconds) {
+  public static void replaceWith(Stream<StfClusterMember> allMembers, int hbTimeoutMs) {
     long now = System.currentTimeMillis();
     String[] memberIds = allMembers.filter(m -> {
-      return now - m.getUpAt() <= hbTimeoutSeconds * 1000;
+      return now - m.getUpAt() <= hbTimeoutMs;
     }).sorted().map(m -> m.getId()).toArray(String[]::new);
     availableMembers.set(memberIds);
   }
