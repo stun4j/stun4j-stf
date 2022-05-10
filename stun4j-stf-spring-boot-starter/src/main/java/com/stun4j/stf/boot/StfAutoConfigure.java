@@ -161,26 +161,28 @@ public class StfAutoConfigure implements BeanClassLoaderAware, ApplicationContex
     JobScannerJdbc scanner = JobScannerJdbc.of(jdbcOps);
     JobLoader loader = new JobLoader(scanner);
     JobRunners runners = new JobRunners(stf);
-    JobManager jobMngr = new JobManager(loader, runners).withHeartbeatHandler(new HeartbeatHandlerJdbc(jdbcOps));
+    JobManager jobMngr = new JobManager(loader, runners).withHeartbeatHandler(HeartbeatHandlerJdbc.of(jdbcOps));
 
     // configure loader
-    loader.setLoadSize(props.getJob().getLoader().getLoadSize());
-    loader.setScanFreqSeconds(props.getJob().getLoader().getScanFreqSecs());
+    com.stun4j.stf.boot.Job.JobLoader loaderCfg;
+    loader.setLoadSize((loaderCfg = props.getJob().getLoader()).getLoadSize());
+    loader.setScanFreqSeconds(loaderCfg.getScanFreqSecs());
 
     // configure manager
-    jobMngr.setHandleBatchSize(props.getJob().getManager().getHandleBatchSize());
-    jobMngr.setScanFreqSeconds(props.getJob().getManager().getScanFreqSecs());
-    jobMngr.setBatchMultiplyingFactor(props.getJob().getManager().getBatchMultiplyingFactor());
+    com.stun4j.stf.boot.Job.JobManager mngrCfg;
+    jobMngr.setHandleBatchSize((mngrCfg = props.getJob().getManager()).getHandleBatchSize());
+    jobMngr.setScanFreqSeconds(mngrCfg.getScanFreqSecs());
+    jobMngr.setBatchMultiplyingFactor(mngrCfg.getBatchMultiplyingFactor());
 
     // configure monitor->
-    Monitor mon;
-    boolean isVmResCheckEnabled;
-    jobMngr.setVmResCheckEnabled(isVmResCheckEnabled = (mon = props.getMonitor()).isVmResCheckEnabled());
-    StfMonitor.INSTANCE.withConsiderSystemLoad(mon.isConsiderSysLoad()).withConsiderJvmMemory(mon.isConsiderJvmMem());
-    JvmMemory.INSTANCE.withHighFactor(mon.getJvmMem().getHighFactor())
-        .withIncludeNonHeap(mon.getJvmMem().isIncludeNonHeap());
-    JvmCpu.INSTANCE.withHighFactor(mon.getJvmCpu().getHighFactor());
-    SystemLoad.INSTANCE.withHighFactor(mon.getSysLoad().getHighFactor());
+    Monitor monCfg;
+    jobMngr.setVmResCheckEnabled((monCfg = props.getMonitor()).isVmResCheckEnabled());
+    StfMonitor.INSTANCE.withConsiderSystemLoad(monCfg.isConsiderSysLoad())
+        .withConsiderJvmMemory(monCfg.isConsiderJvmMem());
+    JvmMemory.INSTANCE.withHighFactor(monCfg.getJvmMem().getHighFactor())
+        .withIncludeNonHeap(monCfg.getJvmMem().isIncludeNonHeap());
+    JvmCpu.INSTANCE.withHighFactor(monCfg.getJvmCpu().getHighFactor());
+    SystemLoad.INSTANCE.withHighFactor(monCfg.getSysLoad().getHighFactor());
     // <-
     jobMngr.start();
   }

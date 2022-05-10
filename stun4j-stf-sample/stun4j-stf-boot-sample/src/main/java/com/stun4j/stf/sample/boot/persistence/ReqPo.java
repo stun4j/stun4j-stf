@@ -22,7 +22,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 /**
  * @author Jay Meng
  */
-@TableName("req")
+@TableName("stn_stf_sample_req")
 public class ReqPo {
   private final String id;
   private final String body;

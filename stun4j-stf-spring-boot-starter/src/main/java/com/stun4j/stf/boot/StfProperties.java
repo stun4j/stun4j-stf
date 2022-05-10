@@ -18,6 +18,7 @@ package com.stun4j.stf.boot;
 import static com.stun4j.guid.core.utils.Asserts.argument;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
 import com.stun4j.stf.core.support.BaseVo;
 
@@ -67,12 +68,16 @@ public class StfProperties extends BaseVo {
    */
   private String[] confFullLoadOrder;
 
+  @NestedConfigurationProperty
   private Transaction transaction = new Transaction();
 
+  @NestedConfigurationProperty
   private Job job = new Job();
 
+  @NestedConfigurationProperty
   private Monitor monitor = new Monitor();
 
+  @NestedConfigurationProperty
   private DefaultExecutor defaultExecutor = new DefaultExecutor();
 
   public void setConfRootPath(String confRootPath) {
@@ -115,32 +120,16 @@ public class StfProperties extends BaseVo {
     return transaction;
   }
 
-  public void setTransaction(Transaction transaction) {
-    this.transaction = transaction;
-  }
-
   public Job getJob() {
     return job;
-  }
-
-  public void setJob(Job job) {
-    this.job = job;
   }
 
   public Monitor getMonitor() {
     return monitor;
   }
 
-  public void setMonitor(Monitor monitor) {
-    this.monitor = monitor;
-  }
-
   public DefaultExecutor getDefaultExecutor() {
     return defaultExecutor;
-  }
-
-  public void setDefaultExecutor(DefaultExecutor defaultExecutor) {
-    this.defaultExecutor = defaultExecutor;
   }
 
 }

@@ -145,7 +145,7 @@ public class JobScannerJdbc implements JobScanner, JdbcAware {
   }
 
   public static JobScannerJdbc of(StfJdbcOps jdbcOps) {
-    return new JobScannerJdbc(jdbcOps, StfConsts.DFT_TBL_NAME);
+    return new JobScannerJdbc(jdbcOps, StfConsts.DFT_CORE_TBL_NAME);
   }
 
   public JobScannerJdbc(StfJdbcOps jdbcOps, String tblName) throws RuntimeException {

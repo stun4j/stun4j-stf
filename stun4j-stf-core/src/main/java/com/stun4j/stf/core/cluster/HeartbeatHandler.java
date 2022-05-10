@@ -27,7 +27,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.common.eventbus.Subscribe;
-import com.stun4j.guid.core.LocalGuid;
 import com.stun4j.stf.core.support.BaseLifeCycle;
 
 /**
@@ -38,7 +37,6 @@ public abstract class HeartbeatHandler extends BaseLifeCycle {
   private static final int DFT_MAX_HB_TIMEOUT_SECONDS = 60;
   private static final int DFT_HB_TIMEOUT_SECONDS = 10;
   private final ExecutorService worker;
-  private final LocalGuid guid;
 
   private final AtomicInteger cnt;
   private final ScheduledExecutorService watcher;
@@ -50,7 +48,7 @@ public abstract class HeartbeatHandler extends BaseLifeCycle {
 
   @Override
   public void doStart() {
-    onStartup(StfClusterMember.calculateId(guid));
+    onStartup();
 
     sf = watcher.scheduleWithFixedDelay(() -> {
       onSchedule();
@@ -80,9 +78,9 @@ public abstract class HeartbeatHandler extends BaseLifeCycle {
     String memberId = null;
     try {
       onShutdown(memberId = StfClusterMember
-          .calculateId(guid));/*- Recalculate the latest local-member-id for more robust deregister */
+          .calculateId());/*- Recalculate the latest local-member-id for more robust deregister */
     } catch (Throwable e) {
-      LOG.error("The local-member#{} with the local-member-tracing-memo:{} deregister error", memberId,
+      LOG.error("The local-member#{} deregister error with local-member-tracing-memo:{} ", memberId,
           localMemberTracingMemo, e);
     }
   }
@@ -98,25 +96,23 @@ public abstract class HeartbeatHandler extends BaseLifeCycle {
     }
     cnt.set(0);
     worker.execute(() -> {
-      String memberId = StfClusterMember.calculateId(guid);
       try {
-        doSendHeartbeat(memberId);
+        doSendHeartbeat();
       } catch (Throwable e) {
-        LOG.error("Send heartbeat error [memberId={}]", memberId, e);
+        LOG.error("Send heartbeat error", e);
       }
     });
   }
 
-  protected abstract void onStartup(String memberId);
+  protected abstract void onStartup();
 
   protected abstract void onShutdown(String memberId);
 
-  protected abstract void doSendHeartbeat(String memberId);
+  protected abstract void doSendHeartbeat();
 
   {
     worker = newWorkerOfMemberHeartbeat();
     watcher = newWatcherOfMemberHeartbeat();
-    guid = LocalGuid.instance();
     cnt = new AtomicInteger();
     timeoutMs = DFT_HB_TIMEOUT_SECONDS * 1000;
     localMemberTracingMemo = new ConcurrentHashMap<>();

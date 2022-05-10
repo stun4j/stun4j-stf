@@ -23,8 +23,6 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.stun4j.guid.core.LocalGuid;
-
 /**
  * @author JayMeng
  */
@@ -45,7 +43,7 @@ public abstract class StfClusterMembers {
     if (LOG.isDebugEnabled()) {
       LOG.debug("Found availableMembers: {}", Arrays.toString(availableMemberIds));
     }
-    String localMemberId = StfClusterMember.calculateId(LocalGuid.instance());
+    String localMemberId = StfClusterMember.calculateId();
     if (availableMemberIds == null) {
       if (LOG.isDebugEnabled()) {
         LOG.debug("The local-member#{} will take over block#{}", localMemberId, 0);

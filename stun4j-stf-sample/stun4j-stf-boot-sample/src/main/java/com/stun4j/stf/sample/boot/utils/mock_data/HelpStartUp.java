@@ -40,14 +40,15 @@ public class HelpStartUp implements ApplicationContextAware {
   public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
     // Clean business related datas,comment out the following code block if you don't need it//->
     JdbcTemplate jdbc = applicationContext.getBean(JdbcTemplate.class);
-    Stream.of(new String[]{"stn_stf", "req", "tx", "acct_op"}).forEach((tbl) -> {
-      jdbc.update("delete from " + tbl);
-    });
+    Stream.of(new String[]{"stn_stf", "stn_stf_sample_req", "stn_stf_sample_tx", "stn_stf_sample_acct_op"})
+        .forEach((tbl) -> {
+          jdbc.update("delete from " + tbl);
+        });
 
     txnOps.rawExecuteWithoutResult(st -> {
-      jdbc.update("delete from stn_sample_mock");
+      jdbc.update("delete from stn_stf_sample_mock");
       try {
-        jdbc.update("insert into stn_sample_mock (id, value) values ('cnt', 3)");
+        jdbc.update("insert into stn_stf_sample_mock (id, value) values ('cnt', 3)");
       } catch (DataAccessException e) {
       }
     });

@@ -43,7 +43,7 @@ public final class StfContext {
   private static final Logger LOG = LoggerFactory.getLogger(StfContext.class);
   private static final TransmittableThreadLocal<StfId> TTL;
   private static final ThreadLocal<Boolean> LAST_COMMITTED;
-  private static final Map<?, LocalGuid> CACHED_GUID;// TODO mj:extract 'single value cache' utility class(not strict)
+  private static final Map<?, LocalGuid> CACHED_GUID;
 
   private static StfCore stf;
   private static StfRegistry bizReg;
@@ -126,11 +126,16 @@ public final class StfContext {
   }
 
   static StfId newStfId(String oid, String methodName) {
-    Long stfId = CACHED_GUID.computeIfAbsent(null, k -> LocalGuid.instance()).next();
+    Long stfId = guid().next();
     String identity = StfConfigs.actionPathBy(oid, methodName);
     StfId id;
     TTL.set(id = new StfId(stfId, identity));
     return id;
+  }
+
+  public static LocalGuid guid() {
+    // TODO mj:extract 'single null-value cache' utility?or upgrade LocalGuid by applying empty-object pattern?
+    return CACHED_GUID.computeIfAbsent(null, k -> LocalGuid.instance());
   }
 
   static void withStfId(StfId stfId) {
@@ -152,7 +157,7 @@ public final class StfContext {
 
   static {
     printBanner();
-    CACHED_GUID = new HashMap<>(1);// not very strict in high concurrency scenarios
+    CACHED_GUID = new HashMap<>(1);// not very strict in high concurrency scenarios,dosen't matter
     TTL = new TransmittableThreadLocal<>();
     LAST_COMMITTED = ThreadLocal.withInitial(() -> false);
 

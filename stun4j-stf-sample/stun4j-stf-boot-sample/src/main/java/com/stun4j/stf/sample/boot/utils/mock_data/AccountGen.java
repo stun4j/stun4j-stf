@@ -37,7 +37,7 @@ public class AccountGen {
     ds.setMaximumPoolSize(20);
     JdbcTemplate jdbc = new JdbcTemplate(ds);
 
-    String sql = "insert into acct (no, amt, freeze_amt, st, up_at, ct_at) values(?, ?, ?, ?, ?, ?)";
+    String sql = "insert into stn_stf_sample_acct (no, amt, freeze_amt, st, up_at, ct_at) values(?, ?, ?, ?, ?, ?)";
 
     ThreadPoolExecutor E = new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), 40, 60L, TimeUnit.SECONDS,
         new LinkedBlockingQueue<Runnable>(1024), new ThreadPoolExecutor.CallerRunsPolicy());

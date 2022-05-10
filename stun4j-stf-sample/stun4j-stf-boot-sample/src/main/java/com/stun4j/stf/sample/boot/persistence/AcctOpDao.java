@@ -28,7 +28,7 @@ import com.stun4j.stf.sample.boot.domain.DecrIncrEnum;
  * @author Jay Meng
  */
 public interface AcctOpDao extends BaseMapper<Void> {
-  @Insert("insert into acct_op (id, acct_no, amt_dt, decr_incr, tx_id, ct_at) values(#{acctOpSeqNo}, #{acctNoFrom}, abs(#{amtDt}), #{op}, #{txId}, #{ctAt})")
+  @Insert("insert into stn_stf_sample_acct_op (id, acct_no, amt_dt, decr_incr, tx_id, ct_at) values(#{acctOpSeqNo}, #{acctNoFrom}, abs(#{amtDt}), #{op}, #{txId}, #{ctAt})")
   void insertAcctOp(@Param("acctOpSeqNo") Long acctOpSeqNo, @Param("acctNoFrom") Long acctNoFrom,
       @Param("amtDt") BigDecimal amtDt, @Param("op") DecrIncrEnum op, @Param("txId") Long txId,
       @Param("ctAt") Date ctAt);

@@ -23,7 +23,7 @@ import com.stun4j.stf.sample.boot.domain.StatusEnum;
 /**
  * @author Jay Meng
  */
-@TableName("tx")
+@TableName("stn_stf_sample_tx")
 public class TxPo {
   private final Long id;
   private final String reqId;

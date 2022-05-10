@@ -27,7 +27,7 @@ import com.stun4j.stf.sample.boot.domain.StatusEnum;
  * @author Jay Meng
  */
 public interface TxDao extends BaseMapper<TxPo> {
-  @Update("update tx set st = #{st}, up_at = #{upAt} where id= #{txId} and st not in (#{excludeSt0}, #{excludeSt1})")
+  @Update("update stn_stf_sample_tx set st = #{st}, up_at = #{upAt} where id= #{txId} and st not in (#{excludeSt0}, #{excludeSt1})")
   int markTxEnd(@Param("txId") Long txId, @Param("st") StatusEnum st, @Param("upAt") Date upAt,
       @Param("excludeSt0") StatusEnum excludeSt0, @Param("excludeSt1") StatusEnum excludeSt1);
 

@@ -16,6 +16,7 @@
 package com.stun4j.stf.core.cluster;
 
 import com.stun4j.guid.core.LocalGuid;
+import com.stun4j.stf.core.StfContext;
 import com.stun4j.stf.core.support.BaseEntity;
 import com.stun4j.stf.core.support.StfEventBus;
 
@@ -49,10 +50,12 @@ public class StfClusterMember extends BaseEntity<String> implements Comparable<S
     return upAt;
   }
 
-  public static String calculateId(
-      LocalGuid guid) {/*-TODO mj:trace all the ids which might be generated during the runtime(e.g. for a more thorough cleanup?but be care of the rarely happened reuse problem)*/
-    synchronized (guid) {
-      return guid.getDatacenterId() + "-" + guid.getWorkerId();
+  public static String calculateId() {/*-TODO mj:trace all the ids which might be generated during the runtime(e.g. for a more thorough cleanup?but be care of the rarely happened reuse problem)*/
+    LocalGuid guid;
+    synchronized (guid = StfContext
+        .guid()) {/*- TODO mj:This is not necessary if LocalGuid applying that 'empty-object' upgrade*/
+      return guid.getDatacenterId() + "-" + guid
+          .getWorkerId();/*-TODO mj:This may lead to a 'thundering herd', but what if that's the desired effect?Meanwhile,also a slight performance advantage here*/
     }
   }
 }

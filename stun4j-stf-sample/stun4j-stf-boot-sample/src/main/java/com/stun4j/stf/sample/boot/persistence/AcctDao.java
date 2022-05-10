@@ -25,10 +25,10 @@ import org.apache.ibatis.annotations.Update;
  * @author Jay Meng
  */
 public interface AcctDao {
-  @Update("update acct set amt = amt - abs(#{amtDt}), up_at = #{upAt} where no = #{acctNoFrom} and amt - abs(#{amtDt}) >= 0")
+  @Update("update stn_stf_sample_acct set amt = amt - abs(#{amtDt}), up_at = #{upAt} where no = #{acctNoFrom} and amt - abs(#{amtDt}) >= 0")
   int decreaseAcctAmt(@Param("amtDt") BigDecimal amtDt, @Param("acctNoFrom") Long acctNoFrom, @Param("upAt") Date upAt);
 
-  @Update("update acct set amt = amt + abs(#{amtDt}), up_at = #{upAt} where no = #{acctNoTo}")
+  @Update("update stn_stf_sample_acct set amt = amt + abs(#{amtDt}), up_at = #{upAt} where no = #{acctNoTo}")
   int increaseAcctAmt(@Param("amtDt") BigDecimal amtDt, @Param("acctNoTo") Long acctNoTo, @Param("upAt") Date upAt);
 
   default boolean decreaseAcctAmt(BigDecimal amtDt, Long acctNoFrom) {

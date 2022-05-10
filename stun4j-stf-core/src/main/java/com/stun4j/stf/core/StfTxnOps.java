@@ -298,7 +298,7 @@ public class StfTxnOps {
   }
 
   public StfTxnOps(TransactionOperations rawTxnOps) {
-    this(rawTxnOps, StfConsts.DFT_TBL_NAME);
+    this(rawTxnOps, StfConsts.DFT_CORE_TBL_NAME);
   }
 
   public StfTxnOps(TransactionOperations rawTxnOps, String stfTblName) {

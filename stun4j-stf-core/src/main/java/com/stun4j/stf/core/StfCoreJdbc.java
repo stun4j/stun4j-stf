@@ -20,7 +20,7 @@ import static com.stun4j.stf.core.StateEnum.F;
 import static com.stun4j.stf.core.StateEnum.I;
 import static com.stun4j.stf.core.StateEnum.P;
 import static com.stun4j.stf.core.StateEnum.S;
-import static com.stun4j.stf.core.StfConsts.DFT_TBL_NAME;
+import static com.stun4j.stf.core.StfConsts.DFT_CORE_TBL_NAME;
 import static com.stun4j.stf.core.YesNoEnum.N;
 import static com.stun4j.stf.core.YesNoEnum.Y;
 import static com.stun4j.stf.core.job.JobHelper.isDataSourceClose;
@@ -190,7 +190,7 @@ public class StfCoreJdbc extends BaseStfCore {
   }
 
   public StfCoreJdbc(StfJdbcOps jdbc) {
-    this(jdbc, DFT_TBL_NAME);
+    this(jdbc, DFT_CORE_TBL_NAME);
   }
 
   public StfCoreJdbc(StfJdbcOps jdbc, String tblName) {

@@ -29,10 +29,10 @@ create table stn_stf (
 -- Table structure for a Simplified Business Scenario(Transfer transaction)
 -- -----------------------------------------------
 -- ----------------------------
--- Table structure for the sample mock
+-- Table structure for the purpose do some mock
 -- ----------------------------
---drop table if exists stn_sample_mock;
-create table stn_sample_mock (
+--drop table if exists stn_stf_sample_mock;
+create table stn_stf_sample_mock (
   id varchar(255) not null,
   value tinyint(3) not null,
   primary key (id)
@@ -41,8 +41,8 @@ create table stn_sample_mock (
 -- ----------------------------
 -- Table structure for account
 -- ----------------------------
---drop table if exists acct;
-create table acct (
+--drop table if exists stn_stf_sample_acct;
+create table stn_stf_sample_acct (
   no bigint(20) unsigned not null,
   amt decimal(19,2) not null,
   freeze_amt decimal(19,2) not null,
@@ -55,8 +55,8 @@ create table acct (
 -- ----------------------------
 -- Table structure for request
 -- ----------------------------
---drop table if exists req;
-create table req (
+--drop table if exists stn_stf_sample_req;
+create table stn_stf_sample_req (
   id varchar(255) not null,
   body json default null,
   ct_at datetime default null,
@@ -66,8 +66,8 @@ create table req (
 -- ----------------------------
 -- Table structure for transaction
 -- ----------------------------
---drop table if exists tx;
-create table tx (
+--drop table if exists stn_stf_sample_tx;
+create table stn_stf_sample_tx (
   id bigint(20) unsigned not null,
   req_id varchar(255) not null,
   body json not null,
@@ -81,8 +81,8 @@ create table tx (
 -- ----------------------------
 -- Table structure for account operation
 -- ----------------------------
---drop table if exists acct_op;
-create table acct_op (
+--drop table if exists stn_stf_sample_acct_op;
+create table stn_stf_sample_acct_op (
   id bigint(20) unsigned not null,
   acct_no bigint(20) unsigned not null,
   amt_dt decimal(19,2) unsigned not null,

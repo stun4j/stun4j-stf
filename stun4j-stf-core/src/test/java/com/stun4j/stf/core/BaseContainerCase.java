@@ -52,7 +52,7 @@ public abstract class BaseContainerCase<BEAN_TYPE> {
   }
 
   protected BaseContainerCase(GenericContainer db) {
-    this(db, StfConsts.DFT_TBL_NAME);
+    this(db, StfConsts.DFT_CORE_TBL_NAME);
   }
 
   protected BaseContainerCase(GenericContainer db, String tblName) {

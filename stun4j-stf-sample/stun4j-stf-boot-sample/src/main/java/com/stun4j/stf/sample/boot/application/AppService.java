@@ -65,7 +65,7 @@ public class AppService {
             raiseIllegalStateException(LOG, reqId, "Insufficient balance of account#%s",
                 step2TxRes.getTx().getAcctNoFrom());
           }
-          return step2TxRes.getTx();// 4.Here is an example of a transformation where we convert 'step2TxRes' to the
+          return step2TxRes.getTx();// 5.Here is an example of a transformation where we convert 'step2TxRes' to the
                                     // input parameter of the downstream method
         }).thenAcceptAsync(txToEnd -> {
           svc.endTx(txToEnd);

@@ -15,6 +15,7 @@
  */
 package com.stun4j.stf.core.cluster;
 
+import static com.google.common.base.Strings.lenientFormat;
 import static com.stun4j.stf.core.job.JobHelper.isDataSourceClose;
 import static com.stun4j.stf.core.job.JobHelper.tryGetDataSourceCloser;
 
@@ -22,6 +23,7 @@ import java.lang.reflect.Method;
 import java.util.Objects;
 import java.util.stream.Stream;
 
+import com.stun4j.stf.core.StfConsts;
 import com.stun4j.stf.core.spi.StfJdbcOps;
 
 /**
@@ -36,27 +38,29 @@ public class HeartbeatHandlerJdbc extends HeartbeatHandler {
   private final Method dsCloser;
 
   @Override
-  protected void onStartup(String memberId) {
-    register(memberId);
+  protected void onStartup() {
+    registerSelf();
     refreshAllMembers();
   }
 
   @Override
   protected void onShutdown(String memberId) {
-    deregister(memberId);
+    deregisterSelf(memberId);
   }
 
   @Override
-  protected void doSendHeartbeat(String memberId) {
+  protected void doSendHeartbeat() {
     if (isDataSourceClose(dsCloser, jdbcOps.getDataSource())) {
       LOG.warn("[doSendHeartbeat] The dataSource has been closed and the operation is cancelled.");
       return;
     }
+    String memberId;
     long now;
-    int cnt = jdbcOps.update(HB_KEEP_ALIVE_SQL, now = System.currentTimeMillis(), memberId);
+    int cnt = jdbcOps.update(HB_KEEP_ALIVE_SQL, now = System.currentTimeMillis(),
+        memberId = StfClusterMember.calculateId());
     if (cnt != 1) {
       LOG.warn("Found invalid heartbeat sending [memberId={}] > Stf member-id changes?", memberId);
-      register(memberId);
+      registerSelf();
     }
     localMemberTracingMemo.put(memberId, now);
     refreshAllMembers();
@@ -74,33 +78,44 @@ public class HeartbeatHandlerJdbc extends HeartbeatHandler {
     }
   }
 
-  private void register(String memberId) {
+  private void registerSelf() {
+    String memberId;
     long now;
-    jdbcOps.update(HB_UPSERT_SQL, memberId, now = System.currentTimeMillis(), now);
+    jdbcOps.update(HB_UPSERT_SQL, memberId = StfClusterMember.calculateId(), now = System.currentTimeMillis(), now);
     localMemberTracingMemo.put(memberId, now);
   }
 
-  private void deregister(String memberId) {
+  private void deregisterSelf(String memberId) {
+    if (isDataSourceClose(dsCloser, jdbcOps.getDataSource())) {
+      LOG.warn("[deregisterSelf] The dataSource has been closed and the operation is cancelled.");
+      return;
+    }
     localMemberTracingMemo.forEach((everGeneratedMemberIdOfCurrentProcess, lastUpAt) -> {
-      if (Objects.equals(memberId, everGeneratedMemberIdOfCurrentProcess)) {// Check for the safe deregister
+      if (Objects.equals(memberId, everGeneratedMemberIdOfCurrentProcess)) {// Check for safe deregister
         jdbcOps.update(HB_DELETE_SQL, memberId);
       } else {
-        if (System.currentTimeMillis() - lastUpAt > this
-            .getTimeoutMs()) {/*- Hope this is the relatively safe check for the deregister */
+        if (System.currentTimeMillis() - lastUpAt > this.getTimeoutMs()) {// Just expect relative safe here
           jdbcOps.update(HB_DELETE_SQL, everGeneratedMemberIdOfCurrentProcess);
         }
       }
     });
   }
 
-  public HeartbeatHandlerJdbc(StfJdbcOps jdbcOps) {
+  public static HeartbeatHandlerJdbc of(StfJdbcOps jdbcOps) {
+    return new HeartbeatHandlerJdbc(jdbcOps, StfConsts.DFT_CLUSTER_MEMBER_TBL_NAME);
+  }
+
+  public HeartbeatHandlerJdbc(StfJdbcOps jdbcOps, String tblName) {
     this.jdbcOps = jdbcOps;
     this.dsCloser = tryGetDataSourceCloser(jdbcOps.getDataSource());
 
-    HB_KEEP_ALIVE_SQL = "update stn_stf_cluster_member set up_at = ? where id = ?";
-    HB_UPSERT_SQL = "insert into stn_stf_cluster_member(id, ct_at, up_at) values (?, ?, ?) on duplicate key update ct_at = values(ct_at), up_at = values(up_at)";
-    HB_ALL_SQL = "select id, up_at from stn_stf_cluster_member limit ?";/*-TODO mj:what is the upper limit,this may change*/
-    HB_DELETE_SQL = "delete from stn_stf_cluster_member where id =?";
+    HB_KEEP_ALIVE_SQL = lenientFormat("update %s set up_at = ? where id = ?", tblName);
+    HB_UPSERT_SQL = lenientFormat(
+        "insert into %s(id, ct_at, up_at) values (?, ?, ?) on duplicate key update ct_at = values(ct_at), up_at = values(up_at)",
+        tblName);
+    HB_ALL_SQL = lenientFormat("select id, up_at from %s limit ?",
+        tblName);/*-TODO mj:what is the upper limit,this may change*/
+    HB_DELETE_SQL = lenientFormat("delete from %s where id =?", tblName);
   }
 
 }
