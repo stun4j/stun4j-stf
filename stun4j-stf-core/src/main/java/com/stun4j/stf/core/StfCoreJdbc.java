@@ -23,15 +23,14 @@ import static com.stun4j.stf.core.StateEnum.S;
 import static com.stun4j.stf.core.StfConsts.DFT_CORE_TBL_NAME;
 import static com.stun4j.stf.core.YesNoEnum.N;
 import static com.stun4j.stf.core.YesNoEnum.Y;
-import static com.stun4j.stf.core.job.JobHelper.isDataSourceClose;
-import static com.stun4j.stf.core.job.JobHelper.tryGetDataSourceCloser;
+import static com.stun4j.stf.core.support.StfHelper.H;
 
-import java.lang.reflect.Method;
 import java.util.List;
 import java.util.function.Supplier;
 
 import com.stun4j.stf.core.spi.StfJdbcOps;
 import com.stun4j.stf.core.support.JsonHelper;
+import com.stun4j.stf.core.support.StfHelper;
 import com.stun4j.stf.core.utils.consumers.BaseConsumer;
 import com.stun4j.stf.core.utils.consumers.Consumer;
 import com.stun4j.stf.core.utils.consumers.QuadruConsumer;
@@ -51,7 +50,6 @@ public class StfCoreJdbc extends BaseStfCore {
   private final String LOCK_SQL;
 
   private final StfJdbcOps jdbcOps;
-  private final Method dsCloser;
 
   private final SextuConsumer<Long, String, Object[], Integer, Boolean, BaseConsumer<Long>> coreFn = (stfId, calleeInfo,
       calleeMethodArgs, lastRetryTimes, async, bizFn) -> {
@@ -123,7 +121,7 @@ public class StfCoreJdbc extends BaseStfCore {
 
   @Override
   protected boolean doLockStf(Long stfId, int timeoutSecs, int curRetryTimes) {
-    if (isDataSourceClose(dsCloser, jdbcOps.getDataSource())) {
+    if (H.isDataSourceClose()) {
       LOG.warn("[doLockStf] The dataSource has been closed and the operation on stf#{} is cancelled.", stfId);
       return false;
     }
@@ -135,7 +133,7 @@ public class StfCoreJdbc extends BaseStfCore {
 
   @Override
   public int[] doBatchLockStfs(List<Object[]> batchArgs) {
-    if (isDataSourceClose(dsCloser, jdbcOps.getDataSource())) {
+    if (H.isDataSourceClose()) {
       LOG.warn("[doBatchLockStfs] The dataSource has been closed and the operations on stfs is cancelled.");
       return null;
     }
@@ -145,7 +143,7 @@ public class StfCoreJdbc extends BaseStfCore {
 
   @Override
   protected void doNewStf(Long newStfId, StfCall callee, int timeoutSecs) {
-    if (isDataSourceClose(dsCloser, jdbcOps.getDataSource())) {
+    if (H.isDataSourceClose()) {
       LOG.warn("[doInit] The dataSource has been closed and the operation on stf#{} is cancelled.", newStfId);
       return;
     }
@@ -156,7 +154,7 @@ public class StfCoreJdbc extends BaseStfCore {
 
   @Override
   protected void doMarkDead(Long stfId) {
-    if (isDataSourceClose(dsCloser, jdbcOps.getDataSource())) {
+    if (H.isDataSourceClose()) {
       LOG.warn("[doMarkDead] The dataSource has been closed and the operation on stf#{} is cancelled.", stfId);
       return;
     }
@@ -165,7 +163,7 @@ public class StfCoreJdbc extends BaseStfCore {
 
   @Override
   public boolean doMarkDone(Long stfId) {
-    if (isDataSourceClose(dsCloser, jdbcOps.getDataSource())) {
+    if (H.isDataSourceClose()) {
       LOG.warn("[doMarkDone] The dataSource has been closed and the operation on stf#{} is cancelled.", stfId);
       return false;
     }
@@ -189,13 +187,13 @@ public class StfCoreJdbc extends BaseStfCore {
     return cnt == 1;
   }
 
-  public StfCoreJdbc(StfJdbcOps jdbc) {
-    this(jdbc, DFT_CORE_TBL_NAME);
+  public StfCoreJdbc(StfJdbcOps jdbcOps) {
+    this(jdbcOps, DFT_CORE_TBL_NAME);
   }
 
-  public StfCoreJdbc(StfJdbcOps jdbc, String tblName) {
-    this.jdbcOps = jdbc;
-    this.dsCloser = tryGetDataSourceCloser(jdbcOps.getDataSource());
+  public StfCoreJdbc(StfJdbcOps jdbcOps, String tblName) {
+    StfHelper.init(jdbcOps);
+    this.jdbcOps = jdbcOps;
 
     String initTemplateSql = lenientFormat(
         "insert into %s (id, callee, st, is_dead, retry_times, timeout_secs, timeout_at, ct_at, up_at) values(?, ?, '%s', '%s', %s, ?, ?, ?, ?)",

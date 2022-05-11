@@ -19,17 +19,13 @@ import static com.google.common.base.Strings.lenientFormat;
 import static com.stun4j.stf.core.StateEnum.I;
 import static com.stun4j.stf.core.StateEnum.P;
 import static com.stun4j.stf.core.YesNoEnum.N;
-import static com.stun4j.stf.core.job.JobHelper.isDataSourceClose;
-import static com.stun4j.stf.core.job.JobHelper.tryGetDataSourceCloser;
+import static com.stun4j.stf.core.support.StfHelper.H;
 import static com.stun4j.stf.core.utils.DataSourceUtils.DB_VENDOR_MY_SQL;
 import static com.stun4j.stf.core.utils.DataSourceUtils.DB_VENDOR_POSTGRE_SQL;
 
-import java.lang.reflect.Method;
 import java.util.Comparator;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
-
-import javax.sql.DataSource;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -43,7 +39,6 @@ import com.stun4j.stf.core.Stf;
 import com.stun4j.stf.core.StfConsts;
 import com.stun4j.stf.core.spi.StfJdbcOps;
 import com.stun4j.stf.core.support.JdbcAware;
-import com.stun4j.stf.core.utils.DataSourceUtils;
 
 /**
  * The jdbc implementation of {@link JobScanner}
@@ -56,9 +51,6 @@ import com.stun4j.stf.core.utils.DataSourceUtils;
 public class JobScannerJdbc implements JobScanner, JdbcAware {
   private static final Logger LOG = LoggerFactory.getLogger(JobScannerJdbc.class);
   private final StfJdbcOps jdbcOps;
-  private final String dbVendor;
-  private final LocalGuid guid;
-  private final Method dsCloser;
 
   final String SQL_WITH_SINGLE_ST;
   final String SQL_WITH_SINGLE_ST_MYSQL;
@@ -76,25 +68,18 @@ public class JobScannerJdbc implements JobScanner, JdbcAware {
     return doScanStillAlive(P, limit, pageNo);
   }
 
-  // public static void main(String[] args) {
-  // String sql = "select * from a in (select id from a order by timeout_at) limit 1 offset 2";
-  // String limitClause = "limit 1 offset 2";
-  // int idx;
-  // sql = sql.substring(0, idx = sql.indexOf(" order by timeout_at)"));
-  // sql += (") order by timeout_at " + limitClause);
-  // System.out.println(sql);
-  // }
-
   public Stream<Stf> doScanStillAlive(StateEnum st, int limit, int pageNo, String... includeFields) {
-    if (isDataSourceClose(dsCloser, jdbcOps.getDataSource())) {
+    if (H.isDataSourceClose()) {
       LOG.warn("[doScanStillAlive] The dataSource has been closed and the operation is cancelled.");
       return Stream.empty();
     }
     long now = System.currentTimeMillis();
-    long idEnd = guid.from(now);
+    LocalGuid guid;
+    long idEnd = (guid = H.cachedGuid()).from(now);
     long idStart = guid.from(now - TimeUnit.DAYS.toMillis(includeHowManyDaysAgo));
 
     String sql;
+    String dbVendor = H.getDbVendor();
     if (DB_VENDOR_MY_SQL.equals(dbVendor) || DB_VENDOR_POSTGRE_SQL.equals(dbVendor)) {
       sql = SQL_WITH_SINGLE_ST_MYSQL;
     } else {
@@ -172,11 +157,7 @@ public class JobScannerJdbc implements JobScanner, JdbcAware {
 
   public JobScannerJdbc(StfJdbcOps jdbcOps, String tblName) throws RuntimeException {
     this.jdbcOps = jdbcOps;
-    DataSource ds;
-    this.dbVendor = DataSourceUtils.getDatabaseProductName(ds = jdbcOps.getDataSource());
-    this.guid = LocalGuid.instance();
     this.includeHowManyDaysAgo = DFT_INCLUDE_HOW_MANY_DAYS_AGO;
-    this.dsCloser = tryGetDataSourceCloser(ds);
 
     SQL_WITH_SINGLE_ST = lenientFormat(
         "select * from %s where id in (select id from %s where id between ? and ? and timeout_at <= ? and is_dead = ? and st = ? order by timeout_at) ",
@@ -187,11 +168,8 @@ public class JobScannerJdbc implements JobScanner, JdbcAware {
         SQL_WITH_SINGLE_ST);
   }
 
-  public String getDbVendor() {
-    return dbVendor;
-  }
-
   @Override
+  @Deprecated
   public StfJdbcOps getJdbcOps() {
     return jdbcOps;
   }

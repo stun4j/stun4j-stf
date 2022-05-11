@@ -15,6 +15,7 @@
  */
 package com.stun4j.stf.core;
 
+import static com.stun4j.stf.core.support.StfHelper.H;
 import static com.stun4j.stf.core.utils.Asserts.requireNonNull;
 
 import java.util.HashMap;
@@ -27,7 +28,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.alibaba.ttl.TransmittableThreadLocal;
-import com.stun4j.guid.core.LocalGuid;
 import com.stun4j.stf.core.build.StfConfigs;
 import com.stun4j.stf.core.spi.StfRegistry;
 import com.stun4j.stf.core.support.banner.Banner;
@@ -43,7 +43,6 @@ public final class StfContext {
   private static final Logger LOG = LoggerFactory.getLogger(StfContext.class);
   private static final TransmittableThreadLocal<StfId> TTL;
   private static final ThreadLocal<Boolean> LAST_COMMITTED;
-  private static final Map<?, LocalGuid> CACHED_GUID;
 
   private static StfCore core;
   private static StfRegistry bizReg;
@@ -126,16 +125,11 @@ public final class StfContext {
   }
 
   static StfId newStfId(String oid, String methodName) {
-    Long stfId = guid().next();
+    Long stfId = H.cachedGuid().next();
     String identity = StfConfigs.actionPathBy(oid, methodName);
     StfId id;
     TTL.set(id = new StfId(stfId, identity));
     return id;
-  }
-
-  public static LocalGuid guid() {
-    // TODO mj:extract 'single null-value cache' utility?or upgrade LocalGuid by applying empty-object pattern?
-    return CACHED_GUID.computeIfAbsent(null, k -> LocalGuid.instance());
   }
 
   static void withStfId(StfId stfId) {
@@ -157,7 +151,6 @@ public final class StfContext {
 
   static {
     printBanner();
-    CACHED_GUID = new HashMap<>(1);// not very strict in high concurrency scenarios,dosen't matter
     TTL = new TransmittableThreadLocal<>();
     LAST_COMMITTED = ThreadLocal.withInitial(() -> false);
 

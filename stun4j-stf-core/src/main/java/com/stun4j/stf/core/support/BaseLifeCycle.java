@@ -20,6 +20,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.stun4j.stf.core.utils.Exceptions;
+
 /**
  * Base class for Lifecycle management
  * <ul>
@@ -44,7 +46,7 @@ public class BaseLifeCycle implements LifeCycle {
       LOG.error("Unexpected start error, now try shutting down", e);
       // TODO mj:terminate current jvm in the very-beginning,instead of throwing error(support more strategy)
       shutdown();
-      System.exit(-1);// TODO mj:Not good!!!
+      Exceptions.sneakyThrow(e);
     }
 
   }
