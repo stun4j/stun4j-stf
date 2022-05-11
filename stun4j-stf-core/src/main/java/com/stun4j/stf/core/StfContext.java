@@ -45,23 +45,23 @@ public final class StfContext {
   private static final ThreadLocal<Boolean> LAST_COMMITTED;
   private static final Map<?, LocalGuid> CACHED_GUID;
 
-  private static StfCore stf;
+  private static StfCore core;
   private static StfRegistry bizReg;
 
   /** must be called in the very beginning */
   public static void init(StfCore stfCore, StfRegistry bizReg) {
-    StfContext.stf = requireNonNull(stfCore, "The stf-core can't be null");
+    StfContext.core = requireNonNull(stfCore, "The stf-core can't be null");
     StfContext.bizReg = requireNonNull(bizReg, "The stf-biz-reg can't be null");
   }
 
   public static void commitLastDone(Long laStfId) {// TODO mj:build-in idempotent mechanism?
     markLastCommitted();
-    stf.markDone(laStfId, true);
+    core.markDone(laStfId, true);
   }
 
   public static void commitLastDead(Long laStfId) {
     markLastCommitted();
-    stf.markDead(laStfId, true);
+    core.markDead(laStfId, true);
   }
 
   public static void commitLastDone() {
@@ -76,7 +76,7 @@ public final class StfContext {
 
   @SafeVarargs
   public static Long preCommitNextStep(String bizObjId, String bizMethodName, Pair<?, Class<?>>... typedArgs) {
-    return stf.newStf(bizObjId, bizMethodName, typedArgs);
+    return core.newStf(bizObjId, bizMethodName, typedArgs);
   }
 
   public static StfId laStfId() {
@@ -161,7 +161,7 @@ public final class StfContext {
     TTL = new TransmittableThreadLocal<>();
     LAST_COMMITTED = ThreadLocal.withInitial(() -> false);
 
-    stf = StfCore.empty();
+    core = StfCore.empty();
     bizReg = StfRegistry.empty();
   }
 

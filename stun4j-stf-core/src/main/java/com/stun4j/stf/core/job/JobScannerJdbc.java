@@ -76,6 +76,15 @@ public class JobScannerJdbc implements JobScanner, JdbcAware {
     return doScanStillAlive(P, limit, pageNo);
   }
 
+  // public static void main(String[] args) {
+  // String sql = "select * from a in (select id from a order by timeout_at) limit 1 offset 2";
+  // String limitClause = "limit 1 offset 2";
+  // int idx;
+  // sql = sql.substring(0, idx = sql.indexOf(" order by timeout_at)"));
+  // sql += (") order by timeout_at " + limitClause);
+  // System.out.println(sql);
+  // }
+
   public Stream<Stf> doScanStillAlive(StateEnum st, int limit, int pageNo, String... includeFields) {
     if (isDataSourceClose(dsCloser, jdbcOps.getDataSource())) {
       LOG.warn("[doScanStillAlive] The dataSource has been closed and the operation is cancelled.");
@@ -95,14 +104,27 @@ public class JobScannerJdbc implements JobScanner, JdbcAware {
     if (pageNo <= 0) {
       args = new Object[]{idStart, idEnd, now, N.name(), st.name(), limit};
     } else {
-      sql = sql.replaceFirst("limit \\?", lenientFormat("limit %s,%s", pageNo * limit, limit));// TODO mj:indexof?
+      if (!SQL_WITH_SINGLE_ST_ORACLE.equals(dbVendor)) {
+        sql = sql.substring(0, sql.indexOf("limit ?"));
+        if (DB_VENDOR_MY_SQL.equals(dbVendor)) {
+          sql += lenientFormat("limit %s, %s", pageNo * limit, limit);
+        } else {
+          String limitClause;
+          sql += (limitClause = lenientFormat("limit %s offset %s", limit, pageNo * limit));
+          sql = sql.substring(0, sql.indexOf(" order by timeout_at)"));
+          sql += (") order by timeout_at " + limitClause);// Get certain order when using postgres
+        }
+      } else {
+        // FIXME mj:oracle implementation...
+      }
       args = new Object[]{idStart, idEnd, now, N.name(), st.name()};
     }
-    // FIXME mj:oracle&postgre
 
     MutableBoolean checkFields = new MutableBoolean(false);
     if (includeFields != null && includeFields.length > 0) {
-      sql = sql.replaceFirst("select \\*", "select " + StringUtils.join(includeFields, ","));
+      // sql = sql.replaceFirst("select \\*", "select " + StringUtils.join(includeFields, ","));
+      sql = sql.substring(sql.indexOf("*") + 1);
+      sql = "select " + StringUtils.join(includeFields, ",") + sql;
       checkFields.setValue(true);
     }
     Stream<Stf> stfs = jdbcOps.queryForStream(sql, args, (rs, arg) -> {

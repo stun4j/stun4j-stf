@@ -1,3 +1,10 @@
+create table stn_stf_cluster_member (
+  id varchar(255) not null,
+  ct_at bigint not null,
+  up_at bigint not null,
+  primary key (id)
+);
+
 create table stn_stf (
   id bigint not null,
   callee text not null,

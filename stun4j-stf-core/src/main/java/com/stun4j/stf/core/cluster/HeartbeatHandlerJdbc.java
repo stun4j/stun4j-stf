@@ -18,13 +18,18 @@ package com.stun4j.stf.core.cluster;
 import static com.google.common.base.Strings.lenientFormat;
 import static com.stun4j.stf.core.job.JobHelper.isDataSourceClose;
 import static com.stun4j.stf.core.job.JobHelper.tryGetDataSourceCloser;
+import static com.stun4j.stf.core.utils.DataSourceUtils.DB_VENDOR_MY_SQL;
+import static com.stun4j.stf.core.utils.DataSourceUtils.DB_VENDOR_POSTGRE_SQL;
 
 import java.lang.reflect.Method;
 import java.util.Objects;
 import java.util.stream.Stream;
 
+import javax.sql.DataSource;
+
 import com.stun4j.stf.core.StfConsts;
 import com.stun4j.stf.core.spi.StfJdbcOps;
+import com.stun4j.stf.core.utils.DataSourceUtils;
 
 /**
  * @author JayMeng
@@ -34,7 +39,9 @@ public class HeartbeatHandlerJdbc extends HeartbeatHandler {
   private final String HB_KEEP_ALIVE_SQL;
   private final String HB_ALL_SQL;
   private final String HB_DELETE_SQL;
+
   private final StfJdbcOps jdbcOps;
+  private final String dbVendor;
   private final Method dsCloser;
 
   @Override
@@ -107,15 +114,27 @@ public class HeartbeatHandlerJdbc extends HeartbeatHandler {
 
   public HeartbeatHandlerJdbc(StfJdbcOps jdbcOps, String tblName) {
     this.jdbcOps = jdbcOps;
-    this.dsCloser = tryGetDataSourceCloser(jdbcOps.getDataSource());
+    DataSource ds;
+    this.dbVendor = DataSourceUtils.getDatabaseProductName(ds = jdbcOps.getDataSource());
+    this.dsCloser = tryGetDataSourceCloser(ds);
 
     HB_KEEP_ALIVE_SQL = lenientFormat("update %s set up_at = ? where id = ?", tblName);
-    HB_UPSERT_SQL = lenientFormat(
-        "insert into %s(id, ct_at, up_at) values (?, ?, ?) on duplicate key update ct_at = values(ct_at), up_at = values(up_at)",
-        tblName);
     HB_ALL_SQL = lenientFormat("select id, up_at from %s limit ?",
         tblName);/*-TODO mj:what is the upper limit,this may change*/
     HB_DELETE_SQL = lenientFormat("delete from %s where id =?", tblName);
+
+    if (DB_VENDOR_MY_SQL.equals(dbVendor)) {
+      HB_UPSERT_SQL = lenientFormat(
+          "insert into %s (id, ct_at, up_at) values (?, ?, ?) on duplicate key update ct_at = values(ct_at), up_at = values(up_at)",
+          tblName);
+    } else if (DB_VENDOR_POSTGRE_SQL.equals(dbVendor)) {
+      HB_UPSERT_SQL = lenientFormat(
+          "insert into %s (id, ct_at, up_at) values (?, ?, ?) on conflict (id) do update set ct_at = excluded.ct_at, up_at = excluded.up_at",
+          tblName);
+    } else {
+      // FIXME mj:oracle implementation
+      HB_UPSERT_SQL = null;
+    }
   }
 
 }
