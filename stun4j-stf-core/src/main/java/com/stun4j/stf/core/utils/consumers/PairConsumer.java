@@ -17,13 +17,12 @@ package com.stun4j.stf.core.utils.consumers;
 
 @FunctionalInterface
 /** @author Jay Meng */
-public interface TriConsumer<T, U, V> extends BaseConsumer<T> {
+public interface PairConsumer<T, U> extends BaseConsumer<T> {
 
   /**
    * Performs this operation on the given arguments.
    * @param t the first input argument
    * @param u the second input argument
-   * @param v the third input argument
    */
-  void accept(T t, U u, V v);
+  void accept(T t, U u);
 }

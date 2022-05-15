@@ -68,7 +68,7 @@ public abstract class BaseJobLoader extends BaseLifeCycle {
       onSchedule();
     }, scanFreqSeconds = this.scanFreqSeconds, scanFreqSeconds, TimeUnit.SECONDS);
 
-    LOG.debug("The stf-job-fetcher is successfully started");
+    LOG.debug("The stf-job-loader is successfully started");
   }
 
   @Override
@@ -78,17 +78,18 @@ public abstract class BaseJobLoader extends BaseLifeCycle {
       if (sf != null) {
         sf.cancel(true);
       }
-      LOG.info("Watcher is successfully shut down");
+      LOG.debug("Watcher is successfully shut down");
     } catch (Throwable e) {
       LOG.error("Unexpected watcher shutdown error", e);
     }
 
     try {
       worker.shutdownNow();
-      LOG.info("Worker is successfully shut down");
+      LOG.debug("Worker is successfully shut down");
     } catch (Throwable e) {
       LOG.error("Unexpected worker shut down error", e);
     }
+    LOG.debug("The stf-job-loader is successfully shut down");
   }
 
   private void onSchedule() {

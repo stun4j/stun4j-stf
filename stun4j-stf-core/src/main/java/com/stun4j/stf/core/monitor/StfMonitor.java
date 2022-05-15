@@ -47,7 +47,7 @@ public class StfMonitor extends BaseLifeCycle {
       systemLoad.doStart();
     }
 
-    LOG.info("The stf-monitor is successfully started");
+    LOG.debug("The stf-monitor is successfully started");
   }
 
   @Override
@@ -56,7 +56,7 @@ public class StfMonitor extends BaseLifeCycle {
     if (StfMonitor.INSTANCE.considerSystemLoad) {
       systemLoad.shutdown();
     }
-    LOG.info("The stf-monitor is successfully shut down");
+    LOG.debug("The stf-monitor is successfully shut down");
   }
 
   public Pair<Boolean, Map<String, Object>> isVmResourceNotEnough() {

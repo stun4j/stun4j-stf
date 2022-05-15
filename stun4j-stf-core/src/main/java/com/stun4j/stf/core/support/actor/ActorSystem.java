@@ -13,17 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.stun4j.stf.core.utils.consumers;
+package com.stun4j.stf.core.support.actor;
 
-@FunctionalInterface
-/** @author Jay Meng */
-public interface TriConsumer<T, U, V> extends BaseConsumer<T> {
+import com.stun4j.stf.core.utils.executor.NamedThreadFactory;
 
-  /**
-   * Performs this operation on the given arguments.
-   * @param t the first input argument
-   * @param u the second input argument
-   * @param v the third input argument
-   */
-  void accept(T t, U u, V v);
+/**
+ * Why does actor framework(e.g. akka,quasar etc.) do so much:)
+ * <p>
+ * There is no doubt that JDK will eventually solve the core problem that actors are trying to solve.
+ * @author Jay Meng
+ */
+public class ActorSystem {
+  public static Thread newActor(String actorName, Runnable runnable) {
+    return NamedThreadFactory.of(actorName).newThread(runnable);
+  }
 }

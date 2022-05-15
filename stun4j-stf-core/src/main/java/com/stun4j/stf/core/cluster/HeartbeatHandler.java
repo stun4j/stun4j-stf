@@ -64,14 +64,14 @@ public abstract class HeartbeatHandler extends BaseLifeCycle {
       if (sf != null) {
         sf.cancel(true);
       }
-      LOG.info("Watcher is successfully shut down");
+      LOG.debug("Watcher is successfully shut down");
     } catch (Throwable e) {
       LOG.error("Unexpected watcher shutdown error", e);
     }
 
     try {
       worker.shutdownNow();
-      LOG.info("Worker is successfully shut down");
+      LOG.debug("Worker is successfully shut down");
     } catch (Throwable e) {
       LOG.error("Unexpected worker shut down error", e);
     }
@@ -83,6 +83,8 @@ public abstract class HeartbeatHandler extends BaseLifeCycle {
       LOG.error("The local-member#{} deregister error with local-member-tracing-memo:{} ", memberId,
           localMemberTracingMemo, e);
     }
+
+    LOG.debug("The heartbeat-handler is successfully shut down");
   }
 
   private void onSchedule() {

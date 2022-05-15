@@ -28,10 +28,10 @@ import com.google.common.collect.Maps;
 import com.stun4j.guid.core.LocalGuid;
 import com.stun4j.guid.core.utils.Utils;
 import com.stun4j.stf.core.BaseContainerCase;
-import com.stun4j.stf.core.BaseStfCore;
 import com.stun4j.stf.core.StateEnum;
 import com.stun4j.stf.core.Stf;
 import com.stun4j.stf.core.StfContext;
+import com.stun4j.stf.core.StfCore;
 import com.stun4j.stf.core.support.JdbcAware;
 import com.stun4j.stf.core.support.persistence.StfDefaultSpringJdbcOps;
 
@@ -83,7 +83,7 @@ public abstract class BaseJobScannerCase extends BaseContainerCase<JobScanner> {
   @SuppressWarnings("unchecked")
   private void _01_06_template(boolean isNormal) {
     JobScanner biz = bizBean();
-    BaseStfCore stf = newStfCore(biz);
+    StfCore stf = newStfCore(biz);
 
     long theVeryBegining = System.currentTimeMillis();
     if (isNormal) {
@@ -105,7 +105,7 @@ public abstract class BaseJobScannerCase extends BaseContainerCase<JobScanner> {
 
   private void _02_03_07_08_template(StateEnum jobType, boolean isNormal) {
     JobScanner biz = bizBean();
-    BaseStfCore stf = newStfCore(biz);
+    StfCore stf = newStfCore(biz);
     // Initialize two pieces of data, both in initial state 'I'
     if (isNormal) {
       stf.newStf("foo", "bar");

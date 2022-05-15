@@ -41,6 +41,8 @@ public interface StfCore {
 
   void markDone(Long stfId, boolean async);
 
+  int[] batchMarkDone(List<Object[]> stfIdsInfo);
+
   void markDead(Long stfId, boolean async);
 
   @Deprecated
@@ -75,6 +77,12 @@ public interface StfCore {
       @Override
       public void markDone(Long stfId, boolean async) {
         NOT_INITIALIZED_THROW.accept(MODULE_ID);
+      }
+
+      @Override
+      public int[] batchMarkDone(List<Object[]> stfIdsInfo) {
+        NOT_INITIALIZED_THROW.accept(MODULE_ID);
+        return null;
       }
 
       @Override

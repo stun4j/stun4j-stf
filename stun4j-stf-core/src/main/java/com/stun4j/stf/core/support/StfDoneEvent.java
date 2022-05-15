@@ -13,17 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.stun4j.stf.core.utils.consumers;
+package com.stun4j.stf.core.support;
 
-@FunctionalInterface
-/** @author Jay Meng */
-public interface TriConsumer<T, U, V> extends BaseConsumer<T> {
+/**
+ * @author JayMeng
+ */
+public class StfDoneEvent {
+  private final Long stfId;
 
-  /**
-   * Performs this operation on the given arguments.
-   * @param t the first input argument
-   * @param u the second input argument
-   * @param v the third input argument
-   */
-  void accept(T t, U u, V v);
+  public StfDoneEvent(Long stfId) {
+    this.stfId = stfId;
+  }
+
+  public Long getStfId() {
+    return stfId;
+  }
+
 }

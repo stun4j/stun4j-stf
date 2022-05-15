@@ -58,13 +58,13 @@ public final class JvmCpu extends BaseLifeCycle {
   @Override
   public void doStart() {
     thread.start();
-    LOG.info("The stf-jvm-cpu monitor is successfully started");
+    LOG.debug("The stf-jvm-cpu monitor is successfully started");
   }
 
   @Override
   public void doShutdown() {
     thread.interrupt();
-    LOG.info("The stf-jvm-cpu monitor is successfully shut down");
+    LOG.debug("The stf-jvm-cpu monitor is successfully shut down");
   }
 
   public Pair<Boolean/* judgment result */, Double/* rate */> isHigh() {

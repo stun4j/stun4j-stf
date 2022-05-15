@@ -50,13 +50,13 @@ public final class SystemLoad extends BaseLifeCycle {
   @Override
   public void doStart() {
     thread.start();
-    LOG.info("The stf-system-load monitor is successfully started");
+    LOG.debug("The stf-system-load monitor is successfully started");
   }
 
   @Override
   public void doShutdown() {
     thread.interrupt();
-    LOG.info("The stf-system-load monitor is successfully shut down");
+    LOG.debug("The stf-system-load monitor is successfully shut down");
   }
 
   public Pair<Boolean/* judgment result */, Double/* load */> isHigh() {

@@ -28,11 +28,16 @@ import static com.stun4j.stf.core.support.StfHelper.H;
 import java.util.List;
 import java.util.function.Supplier;
 
+import org.apache.commons.lang3.tuple.Pair;
+
 import com.stun4j.stf.core.spi.StfJdbcOps;
 import com.stun4j.stf.core.support.JsonHelper;
+import com.stun4j.stf.core.support.StfDoneEvent;
+import com.stun4j.stf.core.support.StfEventBus;
 import com.stun4j.stf.core.support.StfHelper;
 import com.stun4j.stf.core.utils.consumers.BaseConsumer;
 import com.stun4j.stf.core.utils.consumers.Consumer;
+import com.stun4j.stf.core.utils.consumers.PairConsumer;
 import com.stun4j.stf.core.utils.consumers.QuadruConsumer;
 import com.stun4j.stf.core.utils.consumers.SextuConsumer;
 import com.stun4j.stf.core.utils.consumers.TriConsumer;
@@ -50,18 +55,20 @@ public class StfCoreJdbc extends BaseStfCore {
   private final String LOCK_SQL;
 
   private final StfJdbcOps jdbcOps;
-
-  private final SextuConsumer<Long, String, Object[], Integer, Boolean, BaseConsumer<Long>> coreFn = (stfId, calleeInfo,
-      calleeMethodArgs, lastRetryTimes, async, bizFn) -> {
+  private final SextuConsumer<Long, Pair<String, Object[]>, Integer, Boolean, Boolean, BaseConsumer<Long>> coreFn = (
+      stfId, calleePair, lastRetryTimes, async, batch, bizFn) -> {
     if (checkFail(stfId)) {
       return;
     }
+    String calleeInfo = calleePair.getKey();
+    Object[] calleeMethodArgs = calleePair.getValue();
     if (!async) {
-      invokeConsumer(stfId, calleeInfo, calleeMethodArgs, lastRetryTimes, bizFn);
+      invokeConsumer(stfId, calleeInfo, calleeMethodArgs, lastRetryTimes, batch, bizFn);
       return;
     }
-    worker.execute(() -> invokeConsumer(stfId, calleeInfo, calleeMethodArgs, lastRetryTimes, bizFn));
+    worker.execute(() -> invokeConsumer(stfId, calleeInfo, calleeMethodArgs, lastRetryTimes, batch, bizFn));
   };
+  private static final Pair<String, Object[]> EMPTY_CALLEE_PAIR = Pair.of(null, null);
 
   @Deprecated
   private final TriConsumer<Long, String, Object[]> forward = (stfId, calleeInfo, calleeMethodArgs) -> {
@@ -81,8 +88,8 @@ public class StfCoreJdbc extends BaseStfCore {
     invokeCall(stfId, calleeInfo, calleeMethodArgs);
   };
 
-  private final Consumer<Long> markDone = stfId -> {
-    if (!doMarkDone(stfId)) {
+  private final PairConsumer<Long, Boolean> markDone = (stfId, batch) -> {
+    if (!doMarkDone(stfId, batch)) {
       LOG.error("The stf#{} can't be marked done", stfId);
     }
   };
@@ -93,7 +100,7 @@ public class StfCoreJdbc extends BaseStfCore {
 
   @Override
   public void forward(Long stfId, String calleeInfo, boolean async, Object... calleeMethodArgs) {
-    coreFn.accept(stfId, calleeInfo, calleeMethodArgs, null, async, forward);
+    coreFn.accept(stfId, Pair.of(calleeInfo, calleeMethodArgs), null, async, false, forward);
   }
 
   @Override
@@ -106,17 +113,17 @@ public class StfCoreJdbc extends BaseStfCore {
 
   @Override
   public void markDone(Long stfId, boolean async) {
-    coreFn.accept(stfId, null, null, null, async, markDone);
+    coreFn.accept(stfId, EMPTY_CALLEE_PAIR, null, async, true, markDone);
   }
 
   @Override
   public void markDead(Long stfId, boolean async) {
-    coreFn.accept(stfId, null, null, null, async, markDead);
+    coreFn.accept(stfId, EMPTY_CALLEE_PAIR, null, async, false, markDead);
   }
 
   @Override
   public void reForward(Long stfId, int lastRetryTimes, String calleeInfo, boolean async, Object... calleeMethodArgs) {
-    coreFn.accept(stfId, calleeInfo, calleeMethodArgs, lastRetryTimes, async, reForward);
+    coreFn.accept(stfId, Pair.of(calleeInfo, calleeMethodArgs), lastRetryTimes, async, false, reForward);
   }
 
   @Override
@@ -162,13 +169,27 @@ public class StfCoreJdbc extends BaseStfCore {
   }
 
   @Override
-  public boolean doMarkDone(Long stfId) {
+  public boolean doMarkDone(Long stfId, boolean batch) {
     if (H.isDataSourceClose()) {
       LOG.warn("[doMarkDone] The dataSource has been closed and the operation on stf#{} is cancelled.", stfId);
       return false;
     }
+    if (batch) {
+      StfEventBus.post(new StfDoneEvent(stfId));
+      return true;
+    }
     int cnt = jdbcOps.update(MARK_DONE_SQL, System.currentTimeMillis(), stfId);
     return cnt == 1;
+  }
+
+  @Override
+  public int[] batchMarkDone(List<Object[]> stfIdsInfo) {
+    if (H.isDataSourceClose()) {
+      LOG.warn("[batchMarkDone] The dataSource has been closed and the operations on stfs is cancelled.");
+      return null;
+    }
+    int[] res = jdbcOps.batchUpdate(MARK_DONE_SQL, stfIdsInfo);
+    return res;
   }
 
   @Deprecated
@@ -226,10 +247,16 @@ public class StfCoreJdbc extends BaseStfCore {
         tblName, P.name(), I.name(), P.name());
   }
 
+  public StfJdbcOps getJdbcOps() {
+    return jdbcOps;
+  }
+
   private void invokeConsumer(Long stfId, String calleeInfo, Object[] calleeMethodArgs, Integer curRetryTimes,
-      BaseConsumer<Long> bizFn) {
+      boolean batch, BaseConsumer<Long> bizFn) {
     if (bizFn instanceof Consumer) {
       ((Consumer<Long>)bizFn).accept(stfId);
+    } else if (bizFn instanceof PairConsumer) {
+      ((PairConsumer<Long, Boolean>)bizFn).accept(stfId, batch);
     } else if (bizFn instanceof TriConsumer) {
       ((TriConsumer<Long, String, Object[]>)bizFn).accept(stfId, calleeInfo, calleeMethodArgs);
     } else if (bizFn instanceof QuadruConsumer) {

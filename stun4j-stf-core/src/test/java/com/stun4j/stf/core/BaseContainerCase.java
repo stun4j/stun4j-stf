@@ -66,7 +66,7 @@ public abstract class BaseContainerCase<BEAN_TYPE> {
   }
 
   // push-down 1 level
-  protected BaseStfCore newStfCore(BEAN_TYPE biz) {
+  protected StfCore newStfCore(BEAN_TYPE biz) {
     if (biz instanceof JdbcAware) {
       return new StfCoreJdbc(((JdbcAware)biz).getJdbcOps(), tblName);
     }

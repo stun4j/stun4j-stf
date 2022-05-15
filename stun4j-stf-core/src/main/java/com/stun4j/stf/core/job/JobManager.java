@@ -33,8 +33,8 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import com.stun4j.stf.core.Stf;
 import com.stun4j.stf.core.StfCore;
-import com.stun4j.stf.core.cluster.StfClusterMember;
 import com.stun4j.stf.core.cluster.HeartbeatHandler;
+import com.stun4j.stf.core.cluster.StfClusterMember;
 import com.stun4j.stf.core.monitor.StfMonitor;
 import com.stun4j.stf.core.support.BaseLifeCycle;
 import com.stun4j.stf.core.support.StfEventBus;
@@ -68,6 +68,7 @@ public class JobManager extends BaseLifeCycle {
   private final JobLoader loader;
   private final JobRunners runners;
   private final JobRunner runner;
+  private final JobMarkActor marker;
 
   private HeartbeatHandler heartbeatHandler;
 
@@ -85,6 +86,7 @@ public class JobManager extends BaseLifeCycle {
   @Override
   protected void doStart() {
     heartbeatHandler.doStart();
+    marker.doStart();
     loader.doStart();
 
     if (vmResCheckEnabled) {
@@ -120,7 +122,7 @@ public class JobManager extends BaseLifeCycle {
       if (sf != null) {
         sf.cancel(false);
       }
-      LOG.info("Watcher is successfully shut down");
+      LOG.debug("Watcher is successfully shut down");
     } catch (Throwable e) {
       LOG.error("Unexpected watcher shutdown error", e);
       if (e instanceof InterruptedException) {
@@ -131,7 +133,7 @@ public class JobManager extends BaseLifeCycle {
       try {
         worker.shutdown();
         worker.awaitTermination(15, TimeUnit.SECONDS);
-        LOG.info("Worker is successfully shut down [grp={}]", grp);
+        LOG.debug("Worker is successfully shut down [grp={}]", grp);
       } catch (Throwable e) {
         LOG.error("Unexpected worker shutdown error [grp={}]", grp, e);
         if (e instanceof InterruptedException) {
@@ -146,7 +148,10 @@ public class JobManager extends BaseLifeCycle {
       StfMonitor.INSTANCE.shutdown();
     }
 
+    marker.shutdown();
     heartbeatHandler.shutdown();
+
+    LOG.info("The stf-job-manager is successfully shut down");
   }
 
   protected boolean lockJob(String jobGrp, Long jobId, int timeoutSecs, int curRetryTimes) {
@@ -220,6 +225,7 @@ public class JobManager extends BaseLifeCycle {
     return null;
   }
 
+  @SuppressWarnings("unused")
   private void batchTakeJobsAndRun(String jobGrp) {
     int batchSize = handleBatchSize;
     int availableThread = runners.getAvailablePoolSize(jobGrp);
@@ -293,7 +299,6 @@ public class JobManager extends BaseLifeCycle {
     // Never use 'System.exit' here!!!
     try {
       shutdown();
-      LOG.info("[on jvm-shutdown] The stf-job-manager is gracefully shut down");
     } catch (Throwable e) {
       LOG.error("[on jvm-shutdown] The stf-job-manager shutdown error", e);
     }
@@ -312,6 +317,8 @@ public class JobManager extends BaseLifeCycle {
     this.loader = loader;
     this.runners = runners;
     this.runner = runners.getRunner();
+    this.marker = new JobMarkActor(this.stfCore, 16384);// TODO mj:to be configured
+    StfEventBus.registerHandler(this.marker);
     this.workers = Stream.of(ALL_JOB_GROUPS).reduce(new HashMap<String, ThreadPoolExecutor>(), (map, grp) -> {
       map.put(grp, newWorkerOfJobManager(grp));
       return map;

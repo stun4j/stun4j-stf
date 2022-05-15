@@ -61,7 +61,7 @@ public class JobRunners extends BaseLifeCycle {
       try {
         worker.shutdown();
         worker.awaitTermination(30, TimeUnit.SECONDS);
-        LOG.info("Worker is successfully shut down [grp={}]", grp);
+        LOG.debug("Worker is successfully shut down [grp={}]", grp);
       } catch (Throwable e) {
         LOG.error("Unexpected worker shutdown error [grp={}]", grp, e);
         if (e instanceof InterruptedException) {

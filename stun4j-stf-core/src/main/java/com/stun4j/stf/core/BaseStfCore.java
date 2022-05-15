@@ -130,7 +130,8 @@ public abstract class BaseStfCore implements StfCore {
 
   protected abstract int[] doBatchLockStfs(List<Object[]> batchArgs);
 
-  protected abstract boolean doMarkDone(Long stfId);
+  @Deprecated // TODO mj:to be refactored
+  public abstract boolean doMarkDone(Long stfId, boolean batch);
 
   protected abstract void doMarkDead(Long stfId);
 
