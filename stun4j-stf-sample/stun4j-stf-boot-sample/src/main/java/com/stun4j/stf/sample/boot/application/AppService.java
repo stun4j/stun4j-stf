@@ -62,8 +62,8 @@ public class AppService {
     CompletableFuture.supplyAsync(() -> svc.step1Tx(txId, reqId), stfExec).thenApplyAsync(svc::step2Tx, stfExec)
         .thenApply(step2TxRes -> {
           if (Objects.equals(step2TxRes.getErrorCode(), 1)) {
-            raiseIllegalStateException(LOG, reqId, "Insufficient balance of account#%s",
-                step2TxRes.getTx().getAcctNoFrom());
+            raiseIllegalStateException(LOG, "Insufficient balance of account#%s [reqId=%s]",
+                step2TxRes.getTx().getAcctNoFrom(), reqId);
           }
           return step2TxRes.getTx();// 5.Here is an example of a transformation where we convert 'step2TxRes' to the
                                     // input parameter of the downstream method
