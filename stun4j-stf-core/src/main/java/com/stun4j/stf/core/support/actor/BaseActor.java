@@ -73,7 +73,7 @@ public abstract class BaseActor<T> extends BaseLifeCycle implements Runnable {
         try {
           onMsgs(msgs);
         } catch (Throwable e) {
-          LOG.error("[onMsgs] Handle msgs error", name, e);
+          LOG.error("[onMsgs] Handle msgs error", e);
         }
         adjustMsgSizeScaleStepBy(drained);
       }

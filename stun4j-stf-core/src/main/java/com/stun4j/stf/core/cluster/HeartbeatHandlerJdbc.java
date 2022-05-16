@@ -19,6 +19,7 @@ import static com.google.common.base.Strings.lenientFormat;
 import static com.stun4j.stf.core.support.StfHelper.H;
 import static com.stun4j.stf.core.utils.DataSourceUtils.DB_VENDOR_MY_SQL;
 import static com.stun4j.stf.core.utils.DataSourceUtils.DB_VENDOR_POSTGRE_SQL;
+import static com.stun4j.stf.core.utils.DataSourceUtils.DB_VENDOR_ORACLE;
 
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -80,8 +81,12 @@ public class HeartbeatHandlerJdbc extends HeartbeatHandler {
 
   private void registerSelf() {
     String memberId;
-    long now;
-    jdbcOps.update(HB_UPSERT_SQL, memberId = StfClusterMember.calculateId(), now = System.currentTimeMillis(), now);
+    long now = System.currentTimeMillis();
+    if (DB_VENDOR_ORACLE.equals(H.getDbVendor())) {
+      jdbcOps.update(HB_UPSERT_SQL, memberId = StfClusterMember.calculateId(), now, now, memberId, now, now);
+    } else {
+      jdbcOps.update(HB_UPSERT_SQL, memberId = StfClusterMember.calculateId(), now, now);
+    }
     localMemberTracingMemo.put(memberId, now);
   }
 
@@ -109,12 +114,17 @@ public class HeartbeatHandlerJdbc extends HeartbeatHandler {
     this.jdbcOps = jdbcOps;
 
     HB_KEEP_ALIVE_SQL = lenientFormat("update %s set up_at = ? where id = ?", tblName);
-    HB_ALL_SQL = lenientFormat("select id, up_at from %s limit ?",
-        tblName);/*-TODO mj:what is the upper limit,this may change*/
-    HB_DELETE_SQL = lenientFormat("delete from %s where id =?", tblName);
 
     String dbVendor;
-    if (DB_VENDOR_MY_SQL.equals(dbVendor = H.getDbVendor())) {
+    String hbAllSqlTpl = lenientFormat("select id, up_at from %s", tblName);
+    if (!DB_VENDOR_ORACLE.equals(dbVendor = H.getDbVendor())) {
+      HB_ALL_SQL = lenientFormat("%s limit ?", hbAllSqlTpl);/*-TODO mj:what is the upper limit,this may change*/
+    } else {
+      HB_ALL_SQL = lenientFormat(
+          "select * from (select t_temp.*, rownum rn from (%s) t_temp where rownum <= ?) where rn > 0", hbAllSqlTpl);
+    }
+    HB_DELETE_SQL = lenientFormat("delete from %s where id =?", tblName);
+    if (DB_VENDOR_MY_SQL.equals(dbVendor)) {
       HB_UPSERT_SQL = lenientFormat(
           "insert into %s (id, ct_at, up_at) values (?, ?, ?) on duplicate key update ct_at = values(ct_at), up_at = values(up_at)",
           tblName);
@@ -122,9 +132,10 @@ public class HeartbeatHandlerJdbc extends HeartbeatHandler {
       HB_UPSERT_SQL = lenientFormat(
           "insert into %s (id, ct_at, up_at) values (?, ?, ?) on conflict (id) do update set ct_at = excluded.ct_at, up_at = excluded.up_at",
           tblName);
-    } else {
-      // FIXME mj:oracle implementation
-      HB_UPSERT_SQL = null;
+    } else {// oracle implementation
+      HB_UPSERT_SQL = lenientFormat(
+          "merge into %s using dual on (id = ?) when matched then update set ct_at = ?, up_at = ? when not matched then insert values (?, ?, ?)",
+          tblName);
     }
   }
 

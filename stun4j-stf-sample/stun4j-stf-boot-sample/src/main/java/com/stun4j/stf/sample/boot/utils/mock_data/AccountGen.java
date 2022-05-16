@@ -32,7 +32,8 @@ public class AccountGen {
   public static void main(String[] args) throws Exception {
     HikariDataSource ds = new HikariDataSource();
     ds.setJdbcUrl("jdbc:mysql://localhost/test");
-    // ds.setJdbcUrl("jdbc:postgresql://localhost/postgres?currentSchema=test");
+    //ds.setJdbcUrl("jdbc:postgresql://localhost/test");
+    // ds.setJdbcUrl("jdbc:oracle:thin:@localhost:1521:xe");
     ds.setUsername("root");
     ds.setPassword("1111");
     ds.setMaximumPoolSize(20);
