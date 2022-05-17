@@ -64,6 +64,7 @@ import com.stun4j.stf.boot.Transaction.Propagation;
 import com.stun4j.stf.core.StfContext;
 import com.stun4j.stf.core.StfCore;
 import com.stun4j.stf.core.StfCoreJdbc;
+import com.stun4j.stf.core.StfDelayQueue;
 import com.stun4j.stf.core.StfTxnOps;
 import com.stun4j.stf.core.build.StfConfig;
 import com.stun4j.stf.core.build.StfConfigs;
@@ -126,14 +127,19 @@ public class StfAutoConfigure implements BeanClassLoaderAware, ApplicationContex
         rejectPolicy, cfg.isAllowCoreThreadTimeOut());
   }
 
+  @Bean
+  StfDelayQueue stfDelayQueue() {
+    return new StfDelayQueue(StfContext.delayQueueCore());
+  }
+
   private void doEarlyInitialize() {
     DataSource dataSource = applicationContext.getBean(props.getDatasourceBeanName(), DataSource.class);
 
     // the initialization
     StfRegistry bizReg = new StfDefaultSpringRegistry(applicationContext);
     StfJdbcOps jdbcOps = new StfDefaultSpringJdbcOps(dataSource);
-    StfCore stf = new StfCoreJdbc(jdbcOps);
-    StfContext.init(stf, bizReg);
+    StfCore stfCore = new StfCoreJdbc(jdbcOps);
+    StfContext.init(stfCore, bizReg);
 
     // load, sort, and validate the stf-flow configuration
     String confPath = props.getConfRootPath();
@@ -160,7 +166,7 @@ public class StfAutoConfigure implements BeanClassLoaderAware, ApplicationContex
     // stf start
     JobScannerJdbc scanner = JobScannerJdbc.of(jdbcOps);
     JobLoader loader = new JobLoader(scanner);
-    JobRunners runners = new JobRunners(stf);
+    JobRunners runners = new JobRunners(stfCore);
     JobManager jobMngr = new JobManager(loader, runners).withHeartbeatHandler(HeartbeatHandlerJdbc.of(jdbcOps));
 
     // configure loader

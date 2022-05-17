@@ -15,18 +15,15 @@
  */
 package com.stun4j.stf.sample.boot.facade;
 
-import static com.stun4j.stf.sample.boot.utils.mock_data.Data.generateAcctNos;
-import static com.stun4j.stf.sample.boot.utils.mock_data.Data.generateAmount;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.stun4j.guid.core.LocalGuid;
 import com.stun4j.stf.core.StfTxnOps;
 import com.stun4j.stf.core.support.executor.StfRunnable;
 import com.stun4j.stf.sample.boot.domain.BizServiceOrphanStep;
 import com.stun4j.stf.sample.boot.domain.Req;
+import com.stun4j.stf.sample.boot.utils.mock_data.Data;
 
 /**
  * @author Jay Meng
@@ -41,19 +38,13 @@ public class TestRs2 {
 
   @RequestMapping
   public String index() {
-    String[] acctNos = generateAcctNos();
-    String acctNoFrom = acctNos[0];
-    String acctNoTo = acctNos[1];
-    String amt = generateAmount();
-    String reqId = LocalGuid.uuid();
-
     /*-
      * 1.Sometimes a method has neither upstream nor downstream, and it is an orphan
      * method(BizServiceOrphanStep#handle). Stf also supports retry on orphan.
      * 
      * 2.In addition to thread pool, Stf also supports independent thread to complete asynchronous workflows.
      */
-    Req req = txnOps.executeWithFinalResult(() -> new Req(reqId, acctNoFrom, acctNoTo, amt), st -> {
+    Req req = txnOps.executeWithFinalResult(() -> Data.generateReq(), st -> {
     });
 
     /*-
@@ -68,7 +59,9 @@ public class TestRs2 {
       svc.handle(req);
     })).start();
     // <-
+    // Or you just need a simple DelayQueue interface that doesn't require any configuration and doesn't have any
+    // upstream and downstream implications. If so, take a look at TestRs3
 
-    return reqId;
+    return req.getId();
   }
 }

@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -73,19 +74,7 @@ public class ActionMethodChecker implements Checker<String> {
       }).toArray(Class[]::new);
 
       // Ensure that each arg class has a default constructor to avoid potential serialization error
-      Stream.of(actionMethodArgClzs).filter(argClz -> !StfConfig.SUPPORTED_PRIMITIVE_KEYWORDS.containsValue(argClz))
-          .forEach(argClz -> {
-            constructorCheckMemo.computeIfAbsent(argClz, c -> {
-              try {
-                c.getDeclaredConstructor();
-              } catch (Exception e) {
-                throw new RuntimeException(lenientFormat(
-                    "Class '%s' is missing the default constructor > Potential serialization error may occured",
-                    c.getName()));
-              }
-              return "";
-            });
-          });
+      ensureDefaultConstructor(constructorCheckMemo, actionMethodArgClzs);
 
       /*
        * #getAccessibleMethod strictly distinguishes types (able to identify wrapped/unwrapped types), but
@@ -98,5 +87,22 @@ public class ActionMethodChecker implements Checker<String> {
               bizObjClz, actionMethodName,
               Arrays.toString(actionMethodArgClzs).replaceFirst("\\[", "(").replaceFirst("\\]", ")")));
     });
+  }
+
+  public static void ensureDefaultConstructor(Map<Class<?>, Object> constructorCheckMemo,
+      Class<?>[] actionMethodArgClzs) {
+    Stream.of(actionMethodArgClzs).filter(argClz -> !StfConfig.SUPPORTED_PRIMITIVE_KEYWORDS.containsValue(argClz))
+        .forEach(argClz -> {
+          constructorCheckMemo.computeIfAbsent(argClz, c -> {
+            try {
+              c.getDeclaredConstructor();
+            } catch (Exception e) {
+              throw new RuntimeException(lenientFormat(
+                  "Class '%s' is missing the default constructor > Potential serialization error may occured",
+                  c.getName()));
+            }
+            return "";
+          });
+        });
   }
 }

@@ -34,16 +34,16 @@ import com.stun4j.stf.core.utils.Exceptions;
 import com.stun4j.stf.core.utils.shaded.guava.common.primitives.Primitives;
 
 /**
- * Base class for the core operations of Stf
+ * Base class for the core operations of Stf.
  * @author JayMeng
  */
-public abstract class BaseStfCore implements StfCore {
+abstract class BaseStfCore implements StfCore, StfBatchable, StfDelayQueueCore {
   protected final Logger LOG = LoggerFactory.getLogger(this.getClass());
   protected final ExecutorService worker;
 
-  @SuppressWarnings("unchecked")
   @Override
-  public Long newStf(String bizObjId, String bizMethodName, Integer timeoutSeconds, Pair<?, Class<?>>... typedArgs) {
+  public Long newStf(String bizObjId, String bizMethodName, Integer timeoutSeconds,
+      @SuppressWarnings("unchecked") Pair<?, Class<?>>... typedArgs) {
     int timeoutSecs = Optional.ofNullable(timeoutSeconds).orElse(StfConfigs.getActionTimeout(bizObjId, bizMethodName));
     StfCall callee = newCallee(bizObjId, bizMethodName, timeoutSecs, typedArgs);
     StfId newStfId = StfContext.newStfId(bizObjId, bizMethodName);
@@ -52,8 +52,9 @@ public abstract class BaseStfCore implements StfCore {
     return idVal;
   }
 
-  @SuppressWarnings("unchecked")
-  StfCall newCallee(String bizObjId, String bizMethodName, Integer timeoutSeconds, Pair<?, Class<?>>... typedArgs) {
+  @Override
+  public StfCall newCallee(String bizObjId, String bizMethodName, Integer timeoutSeconds,
+      @SuppressWarnings("unchecked") Pair<?, Class<?>>... typedArgs) {
     if (ArrayUtils.isNotEmpty(typedArgs)) {
       StfCall callee = StfCall.ofInJvm(bizObjId, bizMethodName, typedArgs.length);
       int argIdx = 0;
@@ -118,7 +119,8 @@ public abstract class BaseStfCore implements StfCore {
     }
   }
 
-  protected abstract void doNewStf(Long newStfId, StfCall callee, int timeoutSecs);
+  @Override
+  public abstract void doNewStf(Long newStfId, StfCall callee, int timeoutSecs);
 
   @Deprecated
   protected abstract boolean doForward(Long stfId);
@@ -130,8 +132,12 @@ public abstract class BaseStfCore implements StfCore {
 
   protected abstract int[] doBatchLockStfs(List<Object[]> batchArgs);
 
-  @Deprecated // TODO mj:to be refactored
-  public abstract boolean doMarkDone(Long stfId, boolean batch);
+  @Override
+  public boolean fallbackToSingleMarkDone(Long stfId) {
+    return doMarkDone(stfId, false);
+  }
+
+  protected abstract boolean doMarkDone(Long stfId, boolean batch);
 
   protected abstract void doMarkDead(Long stfId);
 

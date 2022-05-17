@@ -36,7 +36,7 @@ import com.stun4j.stf.core.support.banner.Stun4jStfBannerPrinter;
 
 /**
  * The core mediator with dozens of convenient static methods,which is responsible for interacting with core components
- * such as stf-registry, stf-core-ops, threadlocal-memo and so on
+ * such as stf-registry, stf-core-ops, threadlocal-memo and so on.
  * @author Jay Meng
  */
 public final class StfContext {
@@ -53,14 +53,8 @@ public final class StfContext {
     StfContext.bizReg = requireNonNull(bizReg, "The stf-biz-reg can't be null");
   }
 
-  public static void commitLastDone(Long laStfId) {// TODO mj:build-in idempotent mechanism?
-    markLastCommitted();
-    core.markDone(laStfId, true);
-  }
-
-  public static void commitLastDead(Long laStfId) {
-    markLastCommitted();
-    core.markDead(laStfId, true);
+  public static StfDelayQueueCore delayQueueCore() {
+    return (StfDelayQueueCore)StfContext.core;
   }
 
   public static void commitLastDone() {
@@ -73,16 +67,26 @@ public final class StfContext {
     commitLastDead(laStfId);
   }
 
-  @SafeVarargs
-  public static Long preCommitNextStep(String bizObjId, String bizMethodName, Pair<?, Class<?>>... typedArgs) {
-    return core.newStf(bizObjId, bizMethodName, typedArgs);
-  }
-
   public static StfId laStfId() {
     return TTL.get();
   }
 
-  public static Object getBizObj(String bizObjId) {
+  static void commitLastDone(Long laStfId) {// TODO mj:build-in idempotent mechanism?
+    markLastCommitted();
+    core.markDone(laStfId, true);
+  }
+
+  static void commitLastDead(Long laStfId) {
+    markLastCommitted();
+    core.markDead(laStfId, true);
+  }
+
+  @SafeVarargs
+  static Long preCommitNextStep(String bizObjId, String bizMethodName, Pair<?, Class<?>>... typedArgs) {
+    return core.newStf(bizObjId, bizMethodName, typedArgs);
+  }
+
+  static Object getBizObj(String bizObjId) {
     return bizReg.getObj(bizObjId);
   }
 

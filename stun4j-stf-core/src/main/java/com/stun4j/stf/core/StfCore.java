@@ -25,7 +25,7 @@ import org.apache.commons.lang3.tuple.Pair;
  * Stf's core operations,which basically covers the whole life cycle of Stf
  * @author JayMeng
  */
-public interface StfCore {
+public interface StfCore extends StfBatchable {
 
   @SuppressWarnings("unchecked")
   Long newStf(String bizObjId, String bizMethodName, Integer timeoutSeconds, Pair<?, Class<?>>... typedArgs);
@@ -37,11 +37,7 @@ public interface StfCore {
 
   boolean lockStf(Long stfId, int timeoutSecs, int curRetryTimes);
 
-  List<Stf> batchLockStfs(List<Object[]> preBatchArgs);
-
   void markDone(Long stfId, boolean async);
-
-  int[] batchMarkDone(List<Object[]> stfIdsInfo);
 
   void markDead(Long stfId, boolean async);
 
@@ -99,6 +95,12 @@ public interface StfCore {
       public void reForward(Long stfId, int curRetryTimes, String calleeInfo, boolean async,
           Object... calleeMethodArgs) {
         NOT_INITIALIZED_THROW.accept(MODULE_ID);
+      }
+
+      @Override
+      public boolean fallbackToSingleMarkDone(Long stfId) {
+        NOT_INITIALIZED_THROW.accept(MODULE_ID);
+        return false;
       }
 
     };

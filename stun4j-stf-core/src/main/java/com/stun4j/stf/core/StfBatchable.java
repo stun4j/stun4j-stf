@@ -13,29 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.stun4j.stf.sample.boot.facade;
+package com.stun4j.stf.core;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import com.stun4j.stf.sample.boot.application.AppService;
-import com.stun4j.stf.sample.boot.domain.Req;
-import com.stun4j.stf.sample.boot.utils.mock_data.Data;
+import java.util.List;
 
 /**
+ * The abstraction of Stf's batch capabilities.
  * @author Jay Meng
  */
-@RestController
-@RequestMapping("test")
-public class TestRs {
-  @Autowired
-  private AppService svc;
+public interface StfBatchable {
+  boolean fallbackToSingleMarkDone(Long stfId);
 
-  @RequestMapping
-  String index() {
-    Req req = Data.generateReq();
-    svc.acceptReq(req);
-    return req.getId();
-  }
+  int[] batchMarkDone(List<Object[]> stfIdsInfo);
+
+  List<Stf> batchLockStfs(List<Object[]> preBatchArgs);
 }

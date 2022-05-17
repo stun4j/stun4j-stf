@@ -17,12 +17,24 @@ package com.stun4j.stf.sample.boot.utils.mock_data;
 
 import java.util.concurrent.ThreadLocalRandom;
 
+import com.stun4j.guid.core.LocalGuid;
+import com.stun4j.stf.sample.boot.domain.Req;
+
 /**
  * @author Jay Meng
  */
 public class Data {
   static long ACCT_NO_PREFIX = 1000_0000_0000_0000L;
   static int ACCT_NO_RANGE = 10_0000;
+
+  public static Req generateReq() {
+    String[] acctNos = generateAcctNos();
+    String acctNoFrom = acctNos[0];
+    String acctNoTo = acctNos[1];
+    String amt = generateAmount();
+    String reqId = LocalGuid.uuid();
+    return new Req(reqId, acctNoFrom, acctNoTo, amt);
+  }
 
   public static String generateAccountNo() {
     ThreadLocalRandom rand = ThreadLocalRandom.current();

@@ -149,7 +149,7 @@ public class StfCoreJdbc extends BaseStfCore {
   }
 
   @Override
-  protected void doNewStf(Long newStfId, StfCall callee, int timeoutSecs) {
+  public void doNewStf(Long newStfId, StfCall callee, int timeoutSecs) {
     if (H.isDataSourceClose()) {
       LOG.warn("[doInit] The dataSource has been closed and the operation on stf#{} is cancelled.", newStfId);
       return;

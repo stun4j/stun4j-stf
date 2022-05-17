@@ -19,29 +19,27 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.google.common.eventbus.Subscribe;
-import com.stun4j.stf.core.BaseStfCore;
-import com.stun4j.stf.core.StfCore;
+import com.stun4j.stf.core.StfBatchable;
 import com.stun4j.stf.core.support.StfDoneEvent;
 import com.stun4j.stf.core.support.actor.BaseActor;
 
 /**
- * An ad-hoc actor used to batch commit the results of stf-jobs
+ * An ad-hoc actor used to batch commit the results of stf-jobs.
  * @author Jay Meng
  */
 public class JobMarkActor extends BaseActor<Long> {
-  private final StfCore stfCore;
+  private final StfBatchable stfCore;
 
   @Subscribe
   public void onStfDone(StfDoneEvent eve) {
     super.tell(eve.getStfId());
   }
 
-  @SuppressWarnings("deprecation")
   @Override
   public void onMsgs(List<Long> stfIds) {
     if (stfIds.size() == 1) {
       Long stfId = stfIds.get(0);
-      ((BaseStfCore)stfCore).doMarkDone(stfId, false);
+      stfCore.fallbackToSingleMarkDone(stfId);
       return;
     }
     long now = System.currentTimeMillis();
@@ -52,7 +50,7 @@ public class JobMarkActor extends BaseActor<Long> {
     // TODO mj:log stuff
   }
 
-  public JobMarkActor(StfCore stfCore, int baseCapacity) {
+  public JobMarkActor(StfBatchable stfCore, int baseCapacity) {
     super("stf-job-mark-actor", baseCapacity);
     this.stfCore = stfCore;
   }
