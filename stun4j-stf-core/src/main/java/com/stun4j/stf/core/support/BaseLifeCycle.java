@@ -37,7 +37,7 @@ public class BaseLifeCycle implements LifeCycle {
 
   @Override
   public final void start() {
-    if (!startOnce.compareAndSet(false, true)) {
+    if (!startOnce.compareAndSet(false, true)) {// TODO mj:log stuff
       return;
     }
     try {

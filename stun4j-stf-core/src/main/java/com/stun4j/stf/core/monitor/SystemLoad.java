@@ -23,6 +23,7 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import com.stun4j.guid.core.utils.Utils;
 import com.stun4j.stf.core.support.BaseLifeCycle;
+import com.stun4j.stf.core.utils.executor.NamedThreadFactory;
 import com.sun.management.OperatingSystemMXBean;
 
 /**
@@ -40,22 +41,20 @@ public final class SystemLoad extends BaseLifeCycle {
   private double lastWindowSecondsTotal;
   private double lastWindowSecondsAvg;
 
-  public double getLastWindowSecondsAvg() {
-    return lastWindowSecondsAvg;
-  }
-
   private int elapsedSeconds;
-  private Thread thread;
+  private final Thread worker;
+  private volatile boolean shutdown;
 
   @Override
   public void doStart() {
-    thread.start();
+    worker.start();
     LOG.debug("The stf-system-load monitor is successfully started");
   }
 
   @Override
   public void doShutdown() {
-    thread.interrupt();
+    shutdown = true;
+    worker.interrupt();
     LOG.debug("The stf-system-load monitor is successfully shut down");
   }
 
@@ -71,8 +70,7 @@ public final class SystemLoad extends BaseLifeCycle {
   private SystemLoad() {
     this.os = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
     this.processorCnt = os.getAvailableProcessors();
-
-    thread = new Thread(() -> {
+    this.worker = new NamedThreadFactory("stf-system-load mon worker", true).newThread(() -> {
       do {
         Utils.sleepSeconds(1);
 
@@ -88,9 +86,12 @@ public final class SystemLoad extends BaseLifeCycle {
           lastWindowSecondsTotal = 0;
           elapsedSeconds = 0;
         }
-      } while (!Thread.currentThread().isInterrupted());
+      } while (!Thread.currentThread().isInterrupted() && !shutdown);
     });
-    thread.setDaemon(true);
+  }
+
+  public double getLastWindowSecondsAvg() {
+    return lastWindowSecondsAvg;
   }
 
   public SystemLoad withHighFactor(float highFactor) {

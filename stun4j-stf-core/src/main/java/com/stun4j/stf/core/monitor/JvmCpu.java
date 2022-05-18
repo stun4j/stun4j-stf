@@ -26,6 +26,7 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import com.stun4j.guid.core.utils.Utils;
 import com.stun4j.stf.core.support.BaseLifeCycle;
+import com.stun4j.stf.core.utils.executor.NamedThreadFactory;
 import com.sun.management.OperatingSystemMXBean;
 
 /**
@@ -53,17 +54,19 @@ public final class JvmCpu extends BaseLifeCycle {
   private double lastWindowSecondsAvgRate;
 
   private int elapsedSeconds;
-  private Thread thread;
+  private final Thread worker;
+  private volatile boolean shutdown;
 
   @Override
   public void doStart() {
-    thread.start();
+    worker.start();
     LOG.debug("The stf-jvm-cpu monitor is successfully started");
   }
 
   @Override
   public void doShutdown() {
-    thread.interrupt();
+    shutdown = true;
+    worker.interrupt();
     LOG.debug("The stf-jvm-cpu monitor is successfully shut down");
   }
 
@@ -114,8 +117,7 @@ public final class JvmCpu extends BaseLifeCycle {
     this.gcms = ManagementFactory.getGarbageCollectorMXBeans();
     this.processorCnt = os.getAvailableProcessors();
     this.highFactorHalfProcessors = (processorCnt / 2) * 100 * highFactor;
-
-    thread = new Thread(() -> {
+    this.worker = new NamedThreadFactory("stf-jvm-cpu mon worker", true).newThread(() -> {
       do {
         this.lastUpTime = runtime.getUptime();
         this.lastProcessCpuTime = os.getProcessCpuTime();
@@ -133,9 +135,8 @@ public final class JvmCpu extends BaseLifeCycle {
           lastWindowSecondsTotal = 0;
           elapsedSeconds = 0;
         }
-      } while (!Thread.currentThread().isInterrupted());
+      } while (!Thread.currentThread().isInterrupted() && !shutdown);
     });
-    thread.setDaemon(true);
   }
 
   public double getLastWindowSecondsAvgRate() {

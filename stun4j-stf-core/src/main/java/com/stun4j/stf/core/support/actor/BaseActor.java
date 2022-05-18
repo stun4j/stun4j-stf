@@ -23,35 +23,39 @@ import org.slf4j.LoggerFactory;
 
 import com.stun4j.stf.core.support.BaseLifeCycle;
 import com.stun4j.stf.core.utils.Utils;
+import com.stun4j.stf.core.utils.executor.NamedThreadFactory;
 
 /**
  * Base class for actor implementation
  * @author Jay Meng
  */
-public abstract class BaseActor<T> extends BaseLifeCycle implements Runnable {
+public abstract class BaseActor<T> extends BaseLifeCycle implements Actor<T> {
   protected final Logger LOG = LoggerFactory.getLogger(this.getClass());
   private static final int[] MSGS_SIZE_LADDER;
   private static final int MSGS_SIZE_LADDER_LENGTH;
   private static final int MSGS_SIZE_LADDER_LENGTH_MINUS_ONE;
   private final Mailbox<T> mailbox;
-  private final Thread actor;
+  private final Thread worker;
   private final String name;
 
+  private volatile boolean shutdown;
   private int msgSizeScaleStep;
   private int msgsLastDrained;
 
   @Override
   public void doStart() {
-    actor.start();
+    worker.start();
     LOG.debug("The {} is successfully started", name);
   }
 
   @Override
   public void doShutdown() {
-    actor.interrupt();
+    shutdown = true;
+    worker.interrupt();
     LOG.debug("The {} is successfully shut down", name);
   }
 
+  @Override
   public void tell(T msg) {
     try {
       mailbox.deliver(msg);
@@ -60,18 +64,20 @@ public abstract class BaseActor<T> extends BaseLifeCycle implements Runnable {
     }
   }
 
-  protected abstract void onMsgs(List<T> msgs);
+  protected abstract void onMsgs(List<T> msgs) throws InterruptedException;
 
   @Override
   public void run() {
     try {
-      while (!Thread.currentThread().isInterrupted()) {
-        mailbox.await();
+      while (!Thread.currentThread().isInterrupted() && !shutdown) {
+        mailbox.await();// FIXME mj:处理这里的中断!!!
         List<T> msgs;
         int drained = mailbox.drainTo(msgs = new ArrayList<>(MSGS_SIZE_LADDER[msgSizeScaleStep]),
             1000);/*-TODO mj:to be configured*/
         try {
           onMsgs(msgs);
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
         } catch (Throwable e) {
           LOG.error("[onMsgs] Handle msgs error", e);
         }
@@ -104,7 +110,7 @@ public abstract class BaseActor<T> extends BaseLifeCycle implements Runnable {
 
   public BaseActor(String name, int baseCapacity) {
     this.mailbox = new Mailbox<>(baseCapacity);
-    this.actor = ActorSystem.newActor(this.name = name, this);
+    this.worker = NamedThreadFactory.of(this.name = name).newThread(this);
   }
 
   static {

@@ -15,16 +15,12 @@
  */
 package com.stun4j.stf.core.support.actor;
 
-import com.stun4j.stf.core.utils.executor.NamedThreadFactory;
-
 /**
  * Why does actor framework(e.g. akka,quasar etc.) do so much:)
  * <p>
  * There is no doubt that JDK will eventually solve the core problem that actors are trying to solve.
  * @author Jay Meng
  */
-public class ActorSystem {
-  public static Thread newActor(String actorName, Runnable runnable) {
-    return NamedThreadFactory.of(actorName).newThread(runnable);
-  }
+public interface Actor<T> extends Runnable {
+  void tell(T msg);
 }

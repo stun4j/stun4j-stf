@@ -82,6 +82,7 @@ public class JobManager extends BaseLifeCycle {
   private int batchMultiplyingFactor;
 
   private boolean vmResCheckEnabled;
+  private volatile boolean shutdown;
 
   @Override
   protected void doStart() {
@@ -114,6 +115,7 @@ public class JobManager extends BaseLifeCycle {
 
   @Override
   protected void doShutdown() {
+    shutdown = true;
     // TODO mj:extract close utility...
     try {
       watcher.shutdown();
@@ -200,7 +202,7 @@ public class JobManager extends BaseLifeCycle {
   }
 
   private Stf takeUniqueJob(String jobGrp) {
-    while (!Thread.currentThread().isInterrupted()) {
+    while (!Thread.currentThread().isInterrupted() && !shutdown) {
       Stf job = null;
       try {
         job = loader.getJobFromQueue(jobGrp);
@@ -268,7 +270,7 @@ public class JobManager extends BaseLifeCycle {
   }
 
   private boolean collectPreBatchArgs(String jobGrp, List<Object[]> preBatchArgs) {
-    while (!Thread.currentThread().isInterrupted()) {
+    while (!Thread.currentThread().isInterrupted() && !shutdown) {
       Stf job = loader.getJobFromQueue(jobGrp);
       if (job == null) return true;
 

@@ -36,7 +36,7 @@ public class JobMarkActor extends BaseActor<Long> {
   }
 
   @Override
-  public void onMsgs(List<Long> stfIds) {
+  public void onMsgs(List<Long> stfIds) throws InterruptedException {
     if (stfIds.size() == 1) {
       Long stfId = stfIds.get(0);
       stfCore.fallbackToSingleMarkDone(stfId);
