@@ -33,6 +33,7 @@ import java.util.stream.Stream;
 import com.stun4j.stf.core.Stf;
 import com.stun4j.stf.core.cluster.StfClusterMember;
 import com.stun4j.stf.core.support.BaseLifeCycle;
+import com.stun4j.stf.core.utils.Exceptions;
 
 /**
  * Base class for loading stf-jobs into queue to speed up their retrieval
@@ -74,20 +75,20 @@ public abstract class BaseJobLoader extends BaseLifeCycle {
   @Override
   public void doShutdown() {
     try {
-      watcher.shutdownNow();
       if (sf != null) {
         sf.cancel(true);
       }
+      watcher.shutdownNow();
       LOG.debug("Watcher is successfully shut down");
     } catch (Throwable e) {
-      LOG.error("Unexpected watcher shutdown error", e);
+      Exceptions.swallow(e, LOG, "Unexpected error occurred while shutting down watcher");
     }
 
     try {
       worker.shutdownNow();
       LOG.debug("Worker is successfully shut down");
     } catch (Throwable e) {
-      LOG.error("Unexpected worker shut down error", e);
+      Exceptions.swallow(e, LOG, "Unexpected error occurred while shutting down worker");
     }
     LOG.debug("The stf-job-loader is successfully shut down");
   }
@@ -144,7 +145,7 @@ public abstract class BaseJobLoader extends BaseLifeCycle {
         LOG.debug("The stf-jobs are enqueued [grp={}, queue size after={}]", jobGrp, queue.size());
       }
     } catch (Throwable e) {
-      LOG.error("Enqueue stf-job error", e);
+      Exceptions.swallow(e, LOG, "An error occurred while enqueuing stf-job");
     } finally {
       allGrpsLoadingSignal.remove(jobGrp);
     }

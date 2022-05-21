@@ -15,7 +15,7 @@
  */
 package com.stun4j.stf.core.job;
 
-import static com.stun4j.stf.core.StfMetaGroupEnum.CORE;
+import static com.stun4j.stf.core.StfMetaGroupEnum.DELAY;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -23,17 +23,17 @@ import java.util.stream.Collectors;
 import com.google.common.eventbus.Subscribe;
 import com.stun4j.stf.core.StfBatchable;
 import com.stun4j.stf.core.support.actor.BaseActor;
-import com.stun4j.stf.core.support.event.StfDoneEvent;
+import com.stun4j.stf.core.support.event.StfDelayTriggeredEvent;
 
 /**
- * An ad-hoc actor used to batch commit the results of stf-jobs.
+ * An ad-hoc actor used to batch commit the results of stf-delay-jobs.
  * @author Jay Meng
  */
-public class JobMarkActor extends BaseActor<Long> {
+public class JobDelayMarkActor extends BaseActor<Long> {
   private final StfBatchable stfCore;
 
   @Subscribe
-  public void on(StfDoneEvent eve) {
+  public void on(StfDelayTriggeredEvent eve) {
     super.tell(eve.getStfId());
   }
 
@@ -41,19 +41,19 @@ public class JobMarkActor extends BaseActor<Long> {
   public void onMsgs(List<Long> stfIds) throws InterruptedException {
     if (stfIds.size() == 1) {
       Long stfId = stfIds.get(0);
-      stfCore.fallbackToSingleMarkDone(CORE, stfId);
+      stfCore.fallbackToSingleMarkDone(DELAY, stfId);
       return;
     }
     long now = System.currentTimeMillis();
     List<Object[]> stfIdsInfo = stfIds.stream().map(stfId -> {
       return new Object[]{now, stfId};
     }).collect(Collectors.toList());
-    stfCore.batchMarkDone(CORE, stfIdsInfo);
+    stfCore.batchMarkDone(DELAY, stfIdsInfo);
     // TODO mj:log stuff
   }
 
-  public JobMarkActor(StfBatchable stfCore, int baseCapacity) {
-    super("stf-job-mark-actor", baseCapacity);
+  public JobDelayMarkActor(StfBatchable stfCore, int baseCapacity) {
+    super("stf-delay-job-mark-actor", baseCapacity);
     this.stfCore = stfCore;
   }
 }

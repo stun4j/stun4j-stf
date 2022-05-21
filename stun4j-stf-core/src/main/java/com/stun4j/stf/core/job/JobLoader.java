@@ -15,8 +15,10 @@
  */
 package com.stun4j.stf.core.job;
 
-import static com.stun4j.stf.core.job.JobConsts.JOB_GROUP_TIMEOUT_RUNNING;
 import static com.stun4j.stf.core.job.JobConsts.JOB_GROUP_TIMEOUT_WAITING_RUN;
+import static com.stun4j.stf.core.job.JobConsts.JOB_GROUP_TIMEOUT_IN_PROGRESS;
+import static com.stun4j.stf.core.job.JobConsts.JOB_GROUP_TIMEOUT_DELAY_WAITING_RUN;
+import static com.stun4j.stf.core.job.JobConsts.JOB_GROUP_TIMEOUT_DELAY_IN_PROGRESS;
 
 import java.util.stream.Stream;
 
@@ -34,9 +36,13 @@ public class JobLoader extends BaseJobLoader {
     int pageNo = StfClusterMembers.determineBlockToTakeOver();
     switch (jobGrp) {
       case JOB_GROUP_TIMEOUT_WAITING_RUN:
-        return scanner.scanTimeoutJobsWaitingRun(loadSize, pageNo);
-      case JOB_GROUP_TIMEOUT_RUNNING:
-        return scanner.scanTimeoutJobsInProgress(loadSize, pageNo);
+        return scanner.scanTimeoutCoreJobsWaitingRun(loadSize, pageNo);
+      case JOB_GROUP_TIMEOUT_IN_PROGRESS:
+        return scanner.scanTimeoutCoreJobsInProgress(loadSize, pageNo);
+      case JOB_GROUP_TIMEOUT_DELAY_WAITING_RUN:
+        return scanner.scanTimeoutDelayJobsWaitingRun(loadSize, pageNo);
+      case JOB_GROUP_TIMEOUT_DELAY_IN_PROGRESS:
+        return scanner.scanTimeoutDelayJobsInProgress(loadSize, pageNo);
       default:
         return Stream.empty();
     }

@@ -91,14 +91,14 @@ public abstract class BaseJobScannerCase extends BaseContainerCase<JobScanner> {
     }
     Utils.sleepSeconds(1);
     if (isNormal) {
-      try (Stream<Stf> stfs = biz.scanTimeoutJobsWaitingRun(1)) {
+      try (Stream<Stf> stfs = biz.scanTimeoutCoreJobsWaitingRun(1)) {
         assert stfs.count() == 1 : "should find 1 timeout job";
       }
     }
 
     // Only sql programmar is tested
     if (isNormal) {
-      try (Stream<Stf> stfs = biz.scanTimeoutJobsInProgress(1)) {
+      try (Stream<Stf> stfs = biz.scanTimeoutCoreJobsInProgress(1)) {
       }
     }
   }
@@ -139,11 +139,11 @@ public abstract class BaseJobScannerCase extends BaseContainerCase<JobScanner> {
     try {
       if (StateEnum.I == jobType) {
         if (isNormal) {
-          stfs = biz.scanTimeoutJobsWaitingRun(1);
+          stfs = biz.scanTimeoutCoreJobsWaitingRun(1);
         }
       } else {
         if (isNormal) {
-          stfs = biz.scanTimeoutJobsInProgress(1);
+          stfs = biz.scanTimeoutCoreJobsInProgress(1);
         }
       }
       Stf[] stfArray = stfs.toArray(Stf[]::new);
@@ -165,11 +165,11 @@ public abstract class BaseJobScannerCase extends BaseContainerCase<JobScanner> {
     try {
       if (StateEnum.I == jobType) {
         if (isNormal) {
-          stfs2 = biz.scanTimeoutJobsWaitingRun(1);
+          stfs2 = biz.scanTimeoutCoreJobsWaitingRun(1);
         }
       } else {
         if (isNormal) {
-          stfs2 = biz.scanTimeoutJobsInProgress(1);
+          stfs2 = biz.scanTimeoutCoreJobsInProgress(1);
         }
       }
       assert stfs2.count() == 0 : "should find 0 timeout job when timeout just not happened";

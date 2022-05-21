@@ -16,7 +16,6 @@
 package com.stun4j.stf.core;
 
 import static com.google.common.base.Strings.lenientFormat;
-import static com.stun4j.stf.core.support.StfHelper.H;
 import static com.stun4j.stf.core.utils.Asserts.notNull;
 import static com.stun4j.stf.core.utils.Asserts.requireNonNull;
 
@@ -28,6 +27,8 @@ import java.util.stream.Stream;
 
 import org.apache.commons.lang3.reflect.MethodUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.stun4j.stf.core.build.ActionMethodChecker;
 
@@ -37,18 +38,20 @@ import com.stun4j.stf.core.build.ActionMethodChecker;
  * @author Jay Meng
  */
 public final class StfDelayQueue {
+  private static final Logger LOG = LoggerFactory.getLogger(StfDelayQueue.class);
   private final StfDelayQueueCore core;
   private final Map<Class<?>, Object> CONSTRUCTOR_CHECK_MEMO;
   private final Map<String, Boolean> TASK_METHOD_HEAD_MEMO;
 
-  public final Long offer(String taskObjId, String taskMethodName, int delaySeconds, Object... taskParams) {
+  public final Long offer(String taskObjId, String taskMethodName, int timeoutSeconds, int delaySeconds,
+      Object... taskParams) {
     Stream<Pair<?/* arg-value */, Class<?>/* arg-type */>> pairStream = Stream.of(taskParams)
         .map(p -> Pair.of(p, p.getClass()));
-    return offer(taskObjId, taskMethodName, delaySeconds, pairStream);
+    return offer(taskObjId, taskMethodName, timeoutSeconds, delaySeconds, pairStream);
   }
 
   @SuppressWarnings("unchecked")
-  public final Long offer(String taskObjId, String taskMethodName, int delaySeconds,
+  public final Long offer(String taskObjId, String taskMethodName, int timeoutSeconds, int delaySeconds,
       Stream<Pair<?/* arg-value */, Class<?>/* arg-type */>> taskParams) {
     // Inspired from ActionMethodChecker->
     Pair<?, Class<?>>[] taskParamsPair = taskParams.toArray(Pair[]::new);
@@ -75,10 +78,12 @@ public final class StfDelayQueue {
     });
     // <-
 
-    StfCall callee = core.newCallee(taskObjId, taskMethodName, delaySeconds, taskParamsPair);
-    Long stfId = H.cachedGuid().next();
-    core.doNewStf(stfId, callee, delaySeconds);
-    return stfId;
+    StfCall callee = core.newCallee(taskObjId, taskMethodName, taskParamsPair);
+    Long stfDelayId = core.newStfDelay(callee, timeoutSeconds, delaySeconds);
+    if (LOG.isInfoEnabled()) {
+      LOG.info("The stf-delay-job#{} is successfully scheduled.", stfDelayId);
+    }
+    return stfDelayId;
   }
 
   public StfDelayQueue(StfDelayQueueCore core) {

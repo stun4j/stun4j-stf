@@ -13,20 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.stun4j.stf.core.support;
+package com.stun4j.stf.core.support.event;
 
 /**
  * @author JayMeng
  */
-public class StfDoneEvent {
+public class StfDelayTriggeredEvent {
   private final Long stfId;
 
-  public StfDoneEvent(Long stfId) {
+  public StfDelayTriggeredEvent(Long stfId) {
     this.stfId = stfId;
   }
 
   public Long getStfId() {
     return stfId;
   }
-
 }

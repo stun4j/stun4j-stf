@@ -20,8 +20,15 @@ import org.slf4j.Logger;
 
 /**
  * Inspired by lombok
+ * @author Jay Meng
+ *         <p>
+ *         <ul>
+ *         <li>Made some simplifications</li>
+ *         <li>Introduce silent handle strategy</li>
+ *         <li>Introduce log mechanism</li>
+ *         </ul>
  */
-public class Exceptions {
+public final class Exceptions {
   /**
    * Throws any throwable 'sneakily' - you don't need to catch it, nor declare that you throw it onwards. The exception
    * is still thrown - javac will just stop whining about it.
@@ -46,9 +53,40 @@ public class Exceptions {
    * @return A dummy RuntimeException; this method never returns normally, it <em>always</em> throws an exception!
    */
   public static RuntimeException sneakyThrow(Throwable t) {
-    if (t == null) throw new NullPointerException("t");
+    swallow(t);
     Exceptions.<RuntimeException> sneakyThrow0(t);
     return null;
+  }
+
+  public static RuntimeException sneakyThrow(Throwable t, Logger logger, String msgOrFmt, Object... msgArgs) {
+    swallow(t, logger, msgOrFmt, msgArgs);
+    Exceptions.<RuntimeException> sneakyThrow0(t);
+    return null;
+  }
+
+  public static void swallow(Throwable t) {
+    swallow(t, null, null);
+  }
+
+  public static void swallow(Throwable t, Logger logger, String msgOrFmt, Object... msgArgs) {
+    if (t == null) {
+      return;
+    }
+    if (t instanceof InterruptedException) {
+      Thread.currentThread().interrupt();
+    }
+    if (logger == null || msgOrFmt == null) {// TODO mj:sysout,printstack?
+      return;
+    }
+    if (!ArrayUtils.isEmpty(msgArgs)) {
+      if (msgArgs[msgArgs.length - 1] instanceof Throwable) {
+        logger.error(msgOrFmt, msgArgs);
+      } else {
+        logger.error(msgOrFmt, ArrayUtils.add(msgArgs, t));
+      }
+    } else {
+      logger.error(msgOrFmt, t);
+    }
   }
 
   @SuppressWarnings("unchecked")
@@ -56,39 +94,6 @@ public class Exceptions {
     throw (T)t;
   }
 
-  public static RuntimeException sneakyThrow(Throwable t, Logger log, String msg) {
-    if (t == null) throw new NullPointerException("t");
-    log.error(msg, t);
-    Exceptions.<RuntimeException> sneakyThrow0(t);
-    return null;
-  }
-
-  public static RuntimeException sneakyThrow(Throwable t, Logger log, String format, Object arg1) {
-    if (t == null) throw new NullPointerException("t");
-    log.error(format, arg1, t);
-    Exceptions.<RuntimeException> sneakyThrow0(t);
-    return null;
-  }
-
-  public static RuntimeException sneakyThrow(Throwable t, Logger log, String format, Object arg1, Object arg2) {
-    if (t == null) throw new NullPointerException("t");
-    log.error(format, arg1, arg2, t);
-    Exceptions.<RuntimeException> sneakyThrow0(t);
-    return null;
-  }
-
-  public static RuntimeException sneakyThrow(Throwable t, Logger log, String format, Object... args) {
-    if (t == null) throw new NullPointerException("t");
-    if (!ArrayUtils.isEmpty(args)) {
-      if (args[args.length - 1] instanceof Throwable) {
-        log.error(format, args);
-      } else {
-        log.error(format, ArrayUtils.add(args, t));
-      }
-    } else {
-      log.error(format, t);
-    }
-    Exceptions.<RuntimeException> sneakyThrow0(t);
-    return null;
+  private Exceptions() {
   }
 }

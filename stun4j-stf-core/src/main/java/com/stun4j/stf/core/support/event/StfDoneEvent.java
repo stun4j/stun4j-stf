@@ -13,18 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.stun4j.stf.core;
-
-import java.util.List;
+package com.stun4j.stf.core.support.event;
 
 /**
- * The abstraction of Stf's batch capabilities.
- * @author Jay Meng
+ * @author JayMeng
  */
-public interface StfBatchable {
-  boolean fallbackToSingleMarkDone(StfMetaGroupEnum metaGrp, Long stfId);
+public class StfDoneEvent {
+  private final Long stfId;
 
-  int[] batchMarkDone(StfMetaGroupEnum metaGrp, List<Object[]> stfIdsInfo);
+  public StfDoneEvent(Long stfId) {
+    this.stfId = stfId;
+  }
 
-  List<Stf> batchLockStfs(String jobGrp, List<Object[]> preBatchArgs);
+  public Long getStfId() {
+    return stfId;
+  }
+
 }

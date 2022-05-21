@@ -15,7 +15,7 @@
  */
 package com.stun4j.stf.core;
 
-import static com.stun4j.stf.core.support.StfHelper.H;
+import static com.stun4j.stf.core.StfHelper.H;
 import static com.stun4j.stf.core.utils.Asserts.requireNonNull;
 
 import java.util.HashMap;
@@ -44,17 +44,17 @@ public final class StfContext {
   private static final TransmittableThreadLocal<StfId> TTL;
   private static final ThreadLocal<Boolean> LAST_COMMITTED;
 
-  private static StfCore core;
-  private static StfRegistry bizReg;
+  private static StfCore _core;
+  private static StfRegistry _bizReg;
 
   /** must be called in the very beginning */
   public static void init(StfCore stfCore, StfRegistry bizReg) {
-    StfContext.core = requireNonNull(stfCore, "The stf-core can't be null");
-    StfContext.bizReg = requireNonNull(bizReg, "The stf-biz-reg can't be null");
+    StfContext._core = requireNonNull(stfCore, "The stf-core can't be null");
+    StfContext._bizReg = requireNonNull(bizReg, "The stf-biz-reg can't be null");
   }
 
   public static StfDelayQueueCore delayQueueCore() {
-    return (StfDelayQueueCore)StfContext.core;
+    return (StfDelayQueueCore)StfContext._core;
   }
 
   public static void commitLastDone() {
@@ -73,33 +73,33 @@ public final class StfContext {
 
   static void commitLastDone(Long laStfId) {// TODO mj:build-in idempotent mechanism?
     markLastCommitted();
-    core.markDone(laStfId, true);
+    _core.markDone(StfMetaGroupEnum.CORE, laStfId, true);
   }
 
   static void commitLastDead(Long laStfId) {
     markLastCommitted();
-    core.markDead(laStfId, true);
+    _core.markDead(StfMetaGroupEnum.CORE, laStfId, true);
   }
 
   @SafeVarargs
   static Long preCommitNextStep(String bizObjId, String bizMethodName, Pair<?, Class<?>>... typedArgs) {
-    return core.newStf(bizObjId, bizMethodName, typedArgs);
+    return _core.newStf(bizObjId, bizMethodName, typedArgs);
   }
 
   static Object getBizObj(String bizObjId) {
-    return bizReg.getObj(bizObjId);
+    return _bizReg.getObj(bizObjId);
   }
 
   public static Class<?> getBizObjClass(String bizObjId) {
-    return bizReg.getObjClass(bizObjId);
+    return _bizReg.getObjClass(bizObjId);
   }
 
   public static void putBizObj(String bizObjId, Object obj) {
-    bizReg.putObj(bizObjId, obj);
+    _bizReg.putObj(bizObjId, obj);
   }
 
   public static void putBizObjClass(String bizObjId, Supplier<Class<?>> classProvider) {
-    bizReg.putObjClass(bizObjId, classProvider.get());
+    _bizReg.putObjClass(bizObjId, classProvider.get());
   }
 
   public static Long safeGetLaStfIdValue() {
@@ -107,7 +107,7 @@ public final class StfContext {
   }
 
   static String getBizObjId(Class<?> bizClass) {
-    return (String)bizReg.getObj(bizClass);
+    return (String)_bizReg.getObj(bizClass);
   }
 
   static void markLastCommitted() {
@@ -158,8 +158,8 @@ public final class StfContext {
     TTL = new TransmittableThreadLocal<>();
     LAST_COMMITTED = ThreadLocal.withInitial(() -> false);
 
-    core = StfCore.empty();
-    bizReg = StfRegistry.empty();
+    _core = StfCore.empty();
+    _bizReg = StfRegistry.empty();
   }
 
   private StfContext() {

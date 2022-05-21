@@ -19,6 +19,7 @@ import static com.stun4j.stf.core.utils.executor.PoolExecutors.SILENT_DROP_POLIC
 import static com.stun4j.stf.core.utils.executor.PoolExecutors.defaultIoPrefer;
 import static com.stun4j.stf.core.utils.executor.PoolExecutors.defaultWorkStealingPool;
 import static com.stun4j.stf.core.utils.executor.PoolExecutors.newDynamicIoPrefer;
+import static com.stun4j.stf.core.utils.executor.PoolExecutors.newScheduler;
 import static com.stun4j.stf.core.utils.executor.PoolExecutors.newSingleThreadPool;
 import static com.stun4j.stf.core.utils.executor.PoolExecutors.newSingleThreadScheduler;
 
@@ -58,7 +59,7 @@ public final class StfInternalExecutors {
   }
 
   public static ScheduledExecutorService newWatcherOfJobManager() {
-    return newSingleThreadScheduler("stf-job-mngr-watcher", true);
+    return newScheduler(2, "stf-job-mngr-watcher", true);// Consider we have another stf-meta-group: DELAY
   }
 
   public static ThreadPoolExecutor newWorkerOfJobManager(String jobGrp) {

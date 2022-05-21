@@ -15,8 +15,12 @@
  */
 package com.stun4j.stf.core.job;
 
+import static com.stun4j.stf.core.StfMetaGroupEnum.CORE;
+import static com.stun4j.stf.core.StfMetaGroupEnum.DELAY;
 import static com.stun4j.stf.core.job.JobConsts.ALL_JOB_GROUPS;
-import static com.stun4j.stf.core.job.JobConsts.JOB_GROUP_TIMEOUT_RUNNING;
+import static com.stun4j.stf.core.job.JobConsts.JOB_GROUP_TIMEOUT_DELAY_IN_PROGRESS;
+import static com.stun4j.stf.core.job.JobConsts.JOB_GROUP_TIMEOUT_DELAY_WAITING_RUN;
+import static com.stun4j.stf.core.job.JobConsts.JOB_GROUP_TIMEOUT_IN_PROGRESS;
 import static com.stun4j.stf.core.job.JobConsts.JOB_GROUP_TIMEOUT_WAITING_RUN;
 import static com.stun4j.stf.core.support.executor.StfInternalExecutors.newWorkerOfJobRunner;
 
@@ -35,6 +39,7 @@ import com.stun4j.stf.core.Stf;
 import com.stun4j.stf.core.StfCore;
 import com.stun4j.stf.core.support.BaseLifeCycle;
 import com.stun4j.stf.core.support.NullValue;
+import com.stun4j.stf.core.utils.Exceptions;
 
 /** @author Jay Meng */
 public class JobRunners extends BaseLifeCycle {
@@ -63,10 +68,7 @@ public class JobRunners extends BaseLifeCycle {
         worker.awaitTermination(30, TimeUnit.SECONDS);
         LOG.debug("Worker is successfully shut down [grp={}]", grp);
       } catch (Throwable e) {
-        LOG.error("Unexpected worker shutdown error [grp={}]", grp, e);
-        if (e instanceof InterruptedException) {
-          Thread.currentThread().interrupt();
-        }
+        Exceptions.swallow(e, LOG, "Unexpected error occurred while shutting down worker [grp={}]", grp);
       }
     });
   }
@@ -75,22 +77,23 @@ public class JobRunners extends BaseLifeCycle {
     workers.get(jobGrp).execute(() -> {
       Long jobId = job.getId();
       try {
+        JobRunners.this.runnings.get(jobGrp).register(jobId);
         switch (jobGrp) {
           case JOB_GROUP_TIMEOUT_WAITING_RUN:
-            JobRunners.this.runnings.get(jobGrp).register(jobId);
-            JobRunner.doHandleTimeoutJob(job, stfCore);
+          case JOB_GROUP_TIMEOUT_IN_PROGRESS:
+            JobRunner.doHandleTimeoutJob(CORE, job, stfCore);
             break;
 
-          case JOB_GROUP_TIMEOUT_RUNNING:
-            JobRunners.this.runnings.get(jobGrp).register(jobId);
-            JobRunner.doHandleTimeoutJob(job, stfCore);
+          case JOB_GROUP_TIMEOUT_DELAY_WAITING_RUN:
+          case JOB_GROUP_TIMEOUT_DELAY_IN_PROGRESS:
+            JobRunner.doHandleTimeoutJob(DELAY, job, stfCore);
             break;
 
           default:
             break;
         }
       } catch (Throwable e) {
-        LOG.error("The stf-job#{} handle error [grp={}]", jobId, jobGrp, e);
+        Exceptions.swallow(e, LOG, "An error occurred while handing stf-job#{} [grp={}]", jobId, jobGrp);
       } finally {
         JobRunners.this.runnings.get(jobGrp).deregister(jobId);
       }

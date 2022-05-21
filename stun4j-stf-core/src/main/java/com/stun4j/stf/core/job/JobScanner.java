@@ -30,29 +30,56 @@ public interface JobScanner {
    * @return the result Stream, containing stf objects, needing to be closed once fully processed (e.g. through a
    *         try-with-resources clause)
    */
-
-  Stream<Stf> scanTimeoutJobsWaitingRun(int limit, int pageNo);
-
-  /**
-   * @return the result Stream, containing stf objects, needing to be closed once fully processed (e.g. through a
-   *         try-with-resources clause)
-   */
-  Stream<Stf> scanTimeoutJobsInProgress(int limit, int pageNo);
+  Stream<Stf> scanTimeoutCoreJobsWaitingRun(int limit, int pageNo);
 
   /**
    * @return the result Stream, containing stf objects, needing to be closed once fully processed (e.g. through a
    *         try-with-resources clause)
    */
-  default Stream<Stf> scanTimeoutJobsWaitingRun(int limit) {
-    return scanTimeoutJobsWaitingRun(limit, 0);
+  Stream<Stf> scanTimeoutCoreJobsInProgress(int limit, int pageNo);
+
+  /**
+   * @return the result Stream, containing stf objects, needing to be closed once fully processed (e.g. through a
+   *         try-with-resources clause)
+   */
+  default Stream<Stf> scanTimeoutCoreJobsWaitingRun(int limit) {
+    return scanTimeoutCoreJobsWaitingRun(limit, 0);
   }
 
   /**
    * @return the result Stream, containing stf objects, needing to be closed once fully processed (e.g. through a
    *         try-with-resources clause)
    */
-  default Stream<Stf> scanTimeoutJobsInProgress(int limit) {
-    return scanTimeoutJobsInProgress(limit, 0);
+  default Stream<Stf> scanTimeoutCoreJobsInProgress(int limit) {
+    return scanTimeoutCoreJobsInProgress(limit, 0);
+  }
+
+  /**
+   * @return the result Stream, containing delay-stf objects, needing to be closed once fully processed (e.g. through a
+   *         try-with-resources clause)
+   */
+  Stream<Stf> scanTimeoutDelayJobsWaitingRun(int limit, int pageNo);
+
+  /**
+   * @return the result Stream, containing delay-stf objects, needing to be closed once fully processed (e.g. through a
+   *         try-with-resources clause)
+   */
+  Stream<Stf> scanTimeoutDelayJobsInProgress(int limit, int pageNo);
+
+  /**
+   * @return the result Stream, containing delay-stf objects, needing to be closed once fully processed (e.g. through a
+   *         try-with-resources clause)
+   */
+  default Stream<Stf> scanTimeoutDelayJobsWaitingRun(int limit) {
+    return scanTimeoutDelayJobsWaitingRun(limit, 0);
+  }
+
+  /**
+   * @return the result Stream, containing delay-stf objects, needing to be closed once fully processed (e.g. through a
+   *         try-with-resources clause)
+   */
+  default Stream<Stf> scanTimeoutDelayJobsInProgress(int limit) {
+    return scanTimeoutDelayJobsInProgress(limit, 0);
   }
 
 }

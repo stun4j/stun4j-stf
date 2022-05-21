@@ -72,6 +72,7 @@ import com.stun4j.stf.core.cluster.HeartbeatHandlerJdbc;
 import com.stun4j.stf.core.job.JobLoader;
 import com.stun4j.stf.core.job.JobManager;
 import com.stun4j.stf.core.job.JobRunners;
+import com.stun4j.stf.core.job.JobScanner;
 import com.stun4j.stf.core.job.JobScannerJdbc;
 import com.stun4j.stf.core.monitor.JvmCpu;
 import com.stun4j.stf.core.monitor.JvmMemory;
@@ -164,7 +165,7 @@ public class StfAutoConfigure implements BeanClassLoaderAware, ApplicationContex
     }
 
     // stf start
-    JobScannerJdbc scanner = JobScannerJdbc.of(jdbcOps);
+    JobScanner scanner = JobScannerJdbc.of(jdbcOps);
     JobLoader loader = new JobLoader(scanner);
     JobRunners runners = new JobRunners(stfCore);
     JobManager jobMngr = new JobManager(loader, runners).withHeartbeatHandler(HeartbeatHandlerJdbc.of(jdbcOps));

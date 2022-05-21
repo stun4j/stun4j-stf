@@ -26,6 +26,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import com.stun4j.stf.core.StfTxnOps;
+import com.stun4j.stf.sample.boot.application.AppService;
+import com.stun4j.stf.sample.boot.domain.BizServiceOrphanStep;
 
 /**
  * @author Jay Meng
@@ -38,9 +40,10 @@ public class HelpStartUp implements ApplicationContextAware {
 
   @Override
   public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-    // Clean business related datas,comment out the following code block if you don't need it//->
+    // Clean business related datas(include mock datas),comment out the following code block if you don't need it//->
     JdbcTemplate jdbc = applicationContext.getBean(JdbcTemplate.class);
-    Stream.of(new String[]{"stn_stf", "stn_stf_sample_req", "stn_stf_sample_tx", "stn_stf_sample_acct_op"})
+    Stream.of(
+        new String[]{"stn_stf", "stn_stf_delay", "stn_stf_sample_req", "stn_stf_sample_tx", "stn_stf_sample_acct_op"})
         .forEach((tbl) -> {
           jdbc.update("delete from " + tbl);
         });
@@ -48,7 +51,13 @@ public class HelpStartUp implements ApplicationContextAware {
     txnOps.rawExecuteWithoutResult(st -> {
       jdbc.update("delete from stn_stf_sample_mock");
       try {
-        jdbc.update("insert into stn_stf_sample_mock (id, value) values ('cnt', 3)");
+        jdbc.update(String.format("insert into stn_stf_sample_mock (id, value) values ('%s', 3)",
+            AppService.class.getSimpleName()));
+      } catch (DataAccessException e) {
+      }
+      try {
+        jdbc.update(String.format("insert into stn_stf_sample_mock (id, value) values ('%s', 1)",
+            BizServiceOrphanStep.class.getSimpleName()));
       } catch (DataAccessException e) {
       }
     });

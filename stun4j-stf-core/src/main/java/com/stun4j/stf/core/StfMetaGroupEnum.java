@@ -15,16 +15,9 @@
  */
 package com.stun4j.stf.core;
 
-import java.util.List;
-
 /**
- * The abstraction of Stf's batch capabilities.
  * @author Jay Meng
  */
-public interface StfBatchable {
-  boolean fallbackToSingleMarkDone(StfMetaGroupEnum metaGrp, Long stfId);
-
-  int[] batchMarkDone(StfMetaGroupEnum metaGrp, List<Object[]> stfIdsInfo);
-
-  List<Stf> batchLockStfs(String jobGrp, List<Object[]> preBatchArgs);
+public enum StfMetaGroupEnum {
+  CORE, DELAY
 }

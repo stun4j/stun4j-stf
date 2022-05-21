@@ -21,22 +21,27 @@ import static com.stun4j.stf.core.StateEnum.I;
 import static com.stun4j.stf.core.StateEnum.P;
 import static com.stun4j.stf.core.StateEnum.S;
 import static com.stun4j.stf.core.StfConsts.DFT_CORE_TBL_NAME;
+import static com.stun4j.stf.core.StfConsts.DFT_DELAY_TBL_NAME_SUFFIX;
+import static com.stun4j.stf.core.StfHelper.H;
+import static com.stun4j.stf.core.StfMetaGroupEnum.CORE;
+import static com.stun4j.stf.core.StfMetaGroupEnum.DELAY;
 import static com.stun4j.stf.core.YesNoEnum.N;
 import static com.stun4j.stf.core.YesNoEnum.Y;
-import static com.stun4j.stf.core.support.StfHelper.H;
+import static com.stun4j.stf.core.job.JobConsts.KEY_FEATURE_TIMEOUT_DELAY;
+import static org.apache.commons.lang3.tuple.Pair.of;
 
 import java.util.List;
-import java.util.function.Supplier;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.springframework.dao.DuplicateKeyException;
 
 import com.stun4j.stf.core.spi.StfJdbcOps;
 import com.stun4j.stf.core.support.JsonHelper;
-import com.stun4j.stf.core.support.StfDoneEvent;
-import com.stun4j.stf.core.support.StfEventBus;
-import com.stun4j.stf.core.support.StfHelper;
+import com.stun4j.stf.core.support.event.StfDelayTriggeredEvent;
+import com.stun4j.stf.core.support.event.StfDoneEvent;
+import com.stun4j.stf.core.support.event.StfEventBus;
+import com.stun4j.stf.core.utils.Exceptions;
 import com.stun4j.stf.core.utils.consumers.BaseConsumer;
-import com.stun4j.stf.core.utils.consumers.Consumer;
 import com.stun4j.stf.core.utils.consumers.PairConsumer;
 import com.stun4j.stf.core.utils.consumers.QuadruConsumer;
 import com.stun4j.stf.core.utils.consumers.SextuConsumer;
@@ -47,111 +52,97 @@ import com.stun4j.stf.core.utils.consumers.TriConsumer;
  * @author Jay Meng
  */
 public class StfCoreJdbc extends BaseStfCore {
+  private static final Pair<String, Object[]> EMPTY_CALLEE_PAIR = of(null, null);
   private final String INIT_SQL;
-  private final String FORWARD_SQL;
-  private final String RETRY_FORWARD_SQL;
+  private final String INIT_DELAY_SQL;
   private final String MARK_DEAD_SQL;
+  private final String MARK_DEAD_DELAY_SQL;
   private final String MARK_DONE_SQL;
+  private final String MARK_DONE_DELAY_SQL;
   private final String LOCK_SQL;
+  private final String LOCK_DELAY_SQL;
+
+  private final String DELAY_TRANSFER_SQL;
+  private String coreTblName;
 
   private final StfJdbcOps jdbcOps;
-  private final SextuConsumer<Long, Pair<String, Object[]>, Integer, Boolean, Boolean, BaseConsumer<Long>> coreFn = (
-      stfId, calleePair, lastRetryTimes, async, batch, bizFn) -> {
+  private final SextuConsumer<Pair<Long, StfMetaGroupEnum>, Pair<String, Object[]>, Integer, Boolean, Boolean, BaseConsumer<Long>> coreFn = (
+      stfMeta, calleePair, lastRetryTimes, async, batch, bizFn) -> {
+    Long stfId = stfMeta.getLeft();
     if (checkFail(stfId)) {
       return;
     }
     String calleeInfo = calleePair.getKey();
     Object[] calleeMethodArgs = calleePair.getValue();
     if (!async) {
-      invokeConsumer(stfId, calleeInfo, calleeMethodArgs, lastRetryTimes, batch, bizFn);
+      invokeConsumer(stfMeta, calleeInfo, calleeMethodArgs, lastRetryTimes, batch, bizFn);
       return;
     }
-    worker.execute(() -> invokeConsumer(stfId, calleeInfo, calleeMethodArgs, lastRetryTimes, batch, bizFn));
+    worker.execute(() -> invokeConsumer(stfMeta, calleeInfo, calleeMethodArgs, lastRetryTimes, batch, bizFn));
   };
-  private static final Pair<String, Object[]> EMPTY_CALLEE_PAIR = Pair.of(null, null);
 
-  @Deprecated
-  private final TriConsumer<Long, String, Object[]> forward = (stfId, calleeInfo, calleeMethodArgs) -> {
-    if (!doForward(stfId)) {
-      LOG.error("The stf#{} can't be triggered forward", stfId);
-      return;
+  private final QuadruConsumer<Long, StfMetaGroupEnum, String, Object[]> reForward = (stfId, metaGrp, calleeInfo,
+      calleeMethodArgs) -> {
+    if (metaGrp == CORE) {
+      invokeCall(stfId, calleeInfo, calleeMethodArgs);
+    } else {
+      try {
+        if (!doDelayTransfer(stfId)) {
+          return;
+        }
+      } catch (DuplicateKeyException e) {// Shouldn't happen
+        try {
+          H.tryCommitLaStfOnDup(LOG, stfId, coreTblName, (DuplicateKeyException)e,
+              laStfDelayId -> this.fallbackToSingleMarkDone(DELAY, laStfDelayId));
+        } catch (Throwable e1) {
+          Exceptions.swallow(e1, LOG, "Unexpected error occurred while auto committing stf-delay");
+        }
+        return;
+      }
+      this.markDone(DELAY, stfId, true);// Stf internally using Stf itself:)
+      invokeCall(stfId, calleeInfo, calleeMethodArgs);
     }
-    invokeCall(stfId, calleeInfo, calleeMethodArgs);
   };
 
-  private final QuadruConsumer<Long, String, Object[], Integer> reForward = (stfId, calleeInfo, calleeMethodArgs,
-      lastRetryTimes) -> {
-    // if (!doReForward(stfId, lastRetryTimes)) {
-    // LOG.warn("The stf#{} can't be re-forward", stfId);
-    // return;
-    // }
-    invokeCall(stfId, calleeInfo, calleeMethodArgs);
-  };
-
-  private final PairConsumer<Long, Boolean> markDone = (stfId, batch) -> {
-    if (!doMarkDone(stfId, batch)) {
+  private final TriConsumer<Long, StfMetaGroupEnum, Boolean> markDone = (metaGrp, stfId, batch) -> {
+    if (!doMarkDone(stfId, metaGrp, batch)) {
       LOG.error("The stf#{} can't be marked done", stfId);
     }
   };
 
-  private final Consumer<Long> markDead = stfId -> {
-    doMarkDead(stfId);
+  private final PairConsumer<Long, StfMetaGroupEnum> markDead = (metaGrp, stfId) -> {
+    doMarkDead(stfId, metaGrp);
   };
 
   @Override
-  public void forward(Long stfId, String calleeInfo, boolean async, Object... calleeMethodArgs) {
-    coreFn.accept(stfId, Pair.of(calleeInfo, calleeMethodArgs), null, async, false, forward);
-  }
-
-  @Override
-  public boolean lockStf(Long stfId, int timeoutSecs, int curRetryTimes) {
+  public boolean lockStf(String jobGrp, Long stfId, int timeoutSecs, int curRetryTimes) {
     if (checkFail(stfId)) {
       return false;
     }
-    return doLockStf(stfId, timeoutSecs, curRetryTimes);
+    StfMetaGroupEnum metaGrp = jobGrp.indexOf(KEY_FEATURE_TIMEOUT_DELAY) == -1 ? CORE : DELAY;
+    return doLockStf(metaGrp, stfId, timeoutSecs, curRetryTimes);
   }
 
   @Override
-  public void markDone(Long stfId, boolean async) {
-    coreFn.accept(stfId, EMPTY_CALLEE_PAIR, null, async, true, markDone);
+  public void markDone(StfMetaGroupEnum metaGrp, Long stfId, boolean async) {
+    coreFn.accept(of(stfId, metaGrp), EMPTY_CALLEE_PAIR, null, async, true, markDone);
   }
 
   @Override
-  public void markDead(Long stfId, boolean async) {
-    coreFn.accept(stfId, EMPTY_CALLEE_PAIR, null, async, false, markDead);
+  public void markDead(StfMetaGroupEnum metaGrp, Long stfId, boolean async) {
+    coreFn.accept(of(stfId, metaGrp), EMPTY_CALLEE_PAIR, null, async, false, markDead);
   }
 
   @Override
-  public void reForward(Long stfId, int lastRetryTimes, String calleeInfo, boolean async, Object... calleeMethodArgs) {
-    coreFn.accept(stfId, Pair.of(calleeInfo, calleeMethodArgs), lastRetryTimes, async, false, reForward);
+  public void reForward(StfMetaGroupEnum metaGrp, Long stfId, int lastRetryTimes, String calleeInfo, boolean async,
+      Object... calleeMethodArgs) {
+    coreFn.accept(of(stfId, metaGrp), of(calleeInfo, calleeMethodArgs), lastRetryTimes, async, false, reForward);
   }
 
   @Override
-  protected boolean doLockStf(Long stfId, int timeoutSecs, int curRetryTimes) {
+  protected void doNewStf(Long newStfId, StfCall callee, int timeoutSecs) {
     if (H.isDataSourceClose()) {
-      LOG.warn("[doLockStf] The dataSource has been closed and the operation on stf#{} is cancelled.", stfId);
-      return false;
-    }
-    long now;
-    int cnt = jdbcOps.update(LOCK_SQL, (now = System.currentTimeMillis()) + timeoutSecs * 1000, now, stfId,
-        curRetryTimes);
-    return cnt == 1;
-  }
-
-  @Override
-  public int[] doBatchLockStfs(List<Object[]> batchArgs) {
-    if (H.isDataSourceClose()) {
-      LOG.warn("[doBatchLockStfs] The dataSource has been closed and the operations on stfs is cancelled.");
-      return null;
-    }
-    int[] res = jdbcOps.batchUpdate(LOCK_SQL, batchArgs);
-    return res;
-  }
-
-  @Override
-  public void doNewStf(Long newStfId, StfCall callee, int timeoutSecs) {
-    if (H.isDataSourceClose()) {
-      LOG.warn("[doInit] The dataSource has been closed and the operation on stf#{} is cancelled.", newStfId);
+      H.logOnDataSourceClose(LOG, "doNewStf", of("stf", newStfId));
       return;
     }
     String calleeJson = JsonHelper.toJson(callee);
@@ -160,51 +151,75 @@ public class StfCoreJdbc extends BaseStfCore {
   }
 
   @Override
-  protected void doMarkDead(Long stfId) {
+  protected void doNewStfDelay(Long newStfDelayId, StfCall callee, int timeoutSecs, int delaySecs) {
     if (H.isDataSourceClose()) {
-      LOG.warn("[doMarkDead] The dataSource has been closed and the operation on stf#{} is cancelled.", stfId);
+      H.logOnDataSourceClose(LOG, "doNewStfDelay", of("stfd", newStfDelayId));
       return;
     }
-    jdbcOps.update(MARK_DEAD_SQL, System.currentTimeMillis(), stfId);
+    String calleeJson = JsonHelper.toJson(callee);
+    long now = System.currentTimeMillis();
+    jdbcOps.update(INIT_DELAY_SQL, newStfDelayId, calleeJson, timeoutSecs, (now + delaySecs * 1000), now, now);
   }
 
   @Override
-  public boolean doMarkDone(Long stfId, boolean batch) {
+  protected boolean doLockStf(StfMetaGroupEnum metaGrp, Long stfId, int timeoutSecs, int curRetryTimes) {
     if (H.isDataSourceClose()) {
-      LOG.warn("[doMarkDone] The dataSource has been closed and the operation on stf#{} is cancelled.", stfId);
+      H.logOnDataSourceClose(LOG, "doLockStf", of("stf", stfId));
       return false;
     }
-    if (batch) {
-      StfEventBus.post(new StfDoneEvent(stfId));
-      return true;
-    }
-    int cnt = jdbcOps.update(MARK_DONE_SQL, System.currentTimeMillis(), stfId);
+    long now;
+    int cnt = jdbcOps.update(metaGrp == CORE ? LOCK_SQL : LOCK_DELAY_SQL,
+        (now = System.currentTimeMillis()) + timeoutSecs * 1000, now, stfId, curRetryTimes);
     return cnt == 1;
   }
 
   @Override
-  public int[] batchMarkDone(List<Object[]> stfIdsInfo) {
+  protected int[] doBatchLockStfs(StfMetaGroupEnum metaGrp, List<Object[]> batchArgs) {
     if (H.isDataSourceClose()) {
-      LOG.warn("[batchMarkDone] The dataSource has been closed and the operations on stfs is cancelled.");
+      H.logOnDataSourceClose(LOG, "doBatchLockStfs");
       return null;
     }
-    int[] res = jdbcOps.batchUpdate(MARK_DONE_SQL, stfIdsInfo);
+    int[] res = jdbcOps.batchUpdate(metaGrp == CORE ? LOCK_SQL : LOCK_DELAY_SQL, batchArgs);
     return res;
   }
 
-  @Deprecated
   @Override
-  public boolean doForward(Long stfId) {
-    long now;
-    int cnt = jdbcOps.update(FORWARD_SQL, now = System.currentTimeMillis(), now, stfId);
+  protected boolean doMarkDone(StfMetaGroupEnum metaGrp, Long stfId, boolean batch) {
+    if (H.isDataSourceClose()) {
+      H.logOnDataSourceClose(LOG, "doMarkDone", of("stf", stfId));
+      return false;
+    }
+    if (batch) {
+      StfEventBus.post(metaGrp == CORE ? new StfDoneEvent(stfId) : new StfDelayTriggeredEvent(stfId));
+      return true;
+    }
+    int cnt = jdbcOps.update(metaGrp == CORE ? MARK_DONE_SQL : MARK_DONE_DELAY_SQL, System.currentTimeMillis(), stfId);
     return cnt == 1;
   }
 
-  @Deprecated
   @Override
-  protected boolean doReForward(Long stfId, int curRetryTimes) {
+  public int[] batchMarkDone(StfMetaGroupEnum metaGrp, List<Object[]> stfIdsInfo) {
+    if (H.isDataSourceClose()) {
+      H.logOnDataSourceClose(LOG, "batchMarkDone");
+      return null;
+    }
+    int[] res = jdbcOps.batchUpdate(metaGrp == CORE ? MARK_DONE_SQL : MARK_DONE_DELAY_SQL, stfIdsInfo);
+    return res;
+  }
+
+  @Override
+  protected void doMarkDead(StfMetaGroupEnum metaGrp, Long stfId) {
+    if (H.isDataSourceClose()) {
+      H.logOnDataSourceClose(LOG, "doMarkDead", of("stf", stfId));
+      return;
+    }
+    jdbcOps.update(metaGrp == CORE ? MARK_DEAD_SQL : MARK_DEAD_DELAY_SQL, System.currentTimeMillis(), stfId);
+  }
+
+  @Override
+  protected boolean doDelayTransfer(Long stfDelayId) {
     long now;
-    int cnt = jdbcOps.update(RETRY_FORWARD_SQL, now = System.currentTimeMillis(), now, stfId, curRetryTimes);
+    int cnt = jdbcOps.update(DELAY_TRANSFER_SQL, now = System.currentTimeMillis(), now, stfDelayId);
     return cnt == 1;
   }
 
@@ -212,56 +227,47 @@ public class StfCoreJdbc extends BaseStfCore {
     this(jdbcOps, DFT_CORE_TBL_NAME);
   }
 
-  public StfCoreJdbc(StfJdbcOps jdbcOps, String tblName) {
+  public StfCoreJdbc(StfJdbcOps jdbcOps, String coreTblName) {
     StfHelper.init(jdbcOps);
     this.jdbcOps = jdbcOps;
+    String delayTblName = (this.coreTblName = coreTblName) + DFT_DELAY_TBL_NAME_SUFFIX;
 
-    String initTemplateSql = lenientFormat(
-        "insert into %s (id, callee, st, is_dead, retry_times, timeout_secs, timeout_at, ct_at, up_at) values(?, ?, '%s', '%s', %s, ?, ?, ?, ?)",
-        tblName);
-    INIT_SQL = lenientFormat(initTemplateSql, I.name(), N.name(), 0);
-    // TODO mj:deprecated->
-    FORWARD_SQL = lenientFormat(
-        "update %s set st = '%s', timeout_at = ? + (timeout_at - up_at), up_at = ? where id = ? and st in ('%s', '%s')",
-        tblName, P.name(), I.name(), P.name());
+    String initSqlTpl = "insert into %s (id, callee, st, is_dead, retry_times, timeout_secs, timeout_at, ct_at, up_at) values(?, ?, '%s', '%s', %s, ?, ?, ?, ?)";
+    INIT_SQL = lenientFormat(initSqlTpl, coreTblName, I.name(), N.name(), 0);
+    INIT_DELAY_SQL = lenientFormat(initSqlTpl, delayTblName, I.name(), N.name(), 0);
 
-    RETRY_FORWARD_SQL = new Supplier<String>() {
-      @Override
-      public String get() {
-        String[] tmp = FORWARD_SQL.split(" where ");
-        String upPart = tmp[0];
-        String condPart = tmp[1];
-        upPart += ", retry_times = retry_times + 1 ";
-        condPart += " and retry_times = ?";
-        return upPart + " where " + condPart;
-      }
-    }.get();
-    // <-
-    MARK_DEAD_SQL = lenientFormat("update %s set is_dead = '%s', up_at = ? where id = ? and st != '%s'", tblName,
-        Y.name(), S.name());
-    MARK_DONE_SQL = lenientFormat("update %s set st = '%s', up_at = ? where id = ? and st != '%s'", tblName, S.name(),
-        F.name());
+    String lockSqlTpl = "update %s set st = '%s', retry_times = retry_times + 1, timeout_at = ?, up_at = ? where id = ? and retry_times = ? and st in ('%s', '%s')";
+    LOCK_SQL = lenientFormat(lockSqlTpl, coreTblName, P.name(), I.name(), P.name());
+    LOCK_DELAY_SQL = lenientFormat(lockSqlTpl, delayTblName, P.name(), I.name(), P.name());
 
-    LOCK_SQL = lenientFormat(
-        "update %s set st = '%s', retry_times = retry_times + 1, timeout_at = ?, up_at = ? where id = ? and retry_times = ? and st in ('%s', '%s')",
-        tblName, P.name(), I.name(), P.name());
+    String markDoneSqlTpl = "update %s set st = '%s', up_at = ? where id = ? and st != '%s'";
+    MARK_DONE_SQL = lenientFormat(markDoneSqlTpl, coreTblName, S.name(), F.name());
+    MARK_DONE_DELAY_SQL = lenientFormat(markDoneSqlTpl, delayTblName, S.name(), F.name());
+
+    String markDeadSqlTpl = "update %s set is_dead = '%s', up_at = ? where id = ? and st != '%s'";
+    MARK_DEAD_SQL = lenientFormat(markDeadSqlTpl, coreTblName, Y.name(), S.name());
+    MARK_DEAD_DELAY_SQL = lenientFormat(markDeadSqlTpl, delayTblName, Y.name(), S.name());
+
+    DELAY_TRANSFER_SQL = lenientFormat(
+        "insert into %s (id, callee, st, is_dead, retry_times, timeout_secs, timeout_at, ct_at, up_at) select id, callee, '%s', '%s', %s, timeout_secs, timeout_at, ?, ? from %s where id = ? and st = '%s'",
+        coreTblName, P.name(), N.name(), 0, delayTblName, P.name());
   }
 
   public StfJdbcOps getJdbcOps() {
     return jdbcOps;
   }
 
-  private void invokeConsumer(Long stfId, String calleeInfo, Object[] calleeMethodArgs, Integer curRetryTimes,
-      boolean batch, BaseConsumer<Long> bizFn) {
-    if (bizFn instanceof Consumer) {
-      ((Consumer<Long>)bizFn).accept(stfId);
-    } else if (bizFn instanceof PairConsumer) {
-      ((PairConsumer<Long, Boolean>)bizFn).accept(stfId, batch);
+  private void invokeConsumer(Pair<Long, StfMetaGroupEnum> stfMeta, String calleeInfo, Object[] calleeMethodArgs,
+      Integer curRetryTimes, boolean batch, BaseConsumer<Long> bizFn) {
+    Long stfId = stfMeta.getLeft();
+    StfMetaGroupEnum metaGrp = stfMeta.getRight();
+    if (bizFn instanceof PairConsumer) {
+      ((PairConsumer<Long, StfMetaGroupEnum>)bizFn).accept(stfId, metaGrp);
     } else if (bizFn instanceof TriConsumer) {
-      ((TriConsumer<Long, String, Object[]>)bizFn).accept(stfId, calleeInfo, calleeMethodArgs);
+      ((TriConsumer<Long, StfMetaGroupEnum, Boolean>)bizFn).accept(stfId, metaGrp, batch);
     } else if (bizFn instanceof QuadruConsumer) {
-      ((QuadruConsumer<Long, String, Object[], Integer>)bizFn).accept(stfId, calleeInfo, calleeMethodArgs,
-          curRetryTimes);
+      ((QuadruConsumer<Long, StfMetaGroupEnum, String, Object[]>)bizFn).accept(stfId, metaGrp, calleeInfo,
+          calleeMethodArgs);
     }
   }
 

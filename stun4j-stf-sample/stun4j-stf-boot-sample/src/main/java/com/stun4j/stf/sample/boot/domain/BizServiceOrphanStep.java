@@ -15,28 +15,46 @@
  */
 package com.stun4j.stf.sample.boot.domain;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.stun4j.stf.core.StfTxnOps;
 import com.stun4j.stf.sample.boot.persistence.ReqDao;
 import com.stun4j.stf.sample.boot.persistence.ReqPo;
+import com.stun4j.stf.sample.boot.utils.mock_data.MockHelper;
 
 /**
  * @author Jay Meng
  */
 @Service("bizOrphanStep")
 public class BizServiceOrphanStep {
+  private static final Logger LOG = LoggerFactory.getLogger(BizServiceOrphanStep.class);
   @Autowired
   private ReqDao reqDao;
   @Autowired
   private StfTxnOps txnOps;
 
+  @Autowired
+  MockHelper mock;
+
   public void handle(Req req) {
     String reqId = req.getId();
     String reqBody = req.toJson("insert");
+
+    boolean raiseAnyError;
+    if (mock.decrementAndGet(this.getClass()) >= 0) {
+      raiseAnyError = true;
+    } else {
+      raiseAnyError = false;
+    }
     txnOps.executeWithoutResult(st -> {
       reqDao.insert(new ReqPo(reqId, reqBody));
+      if (raiseAnyError) {/*- Here we simply simulated an error.You should clearly see the retry of this task after a while. */
+        throw new RuntimeException("Sorry, DB is temporarily inaccessible!");
+      }
     });
+    LOG.info("The bizOrphanStep is done [reqId={}]", reqId);
   }
 }

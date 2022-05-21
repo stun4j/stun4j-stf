@@ -123,8 +123,8 @@ public class Mailbox<T> {
   }
 
   @SuppressWarnings("unchecked")
-  Mailbox(int estimatedSize) {
-    msgs = (T[])Array.newInstance(pickGenericSuperTypeOf(getClass()), calculateNearestPowerOfTwo(estimatedSize));
+  Mailbox(int baseCapacity) {
+    msgs = (T[])Array.newInstance(pickGenericSuperTypeOf(getClass()), calculateNearestPowerOfTwo(baseCapacity));
     fixedLengthMinusOne = (fixedLength = msgs.length) - 1;
     ifFull = (lock = new ReentrantLock()).newCondition();
     ifEmpty = lock.newCondition();

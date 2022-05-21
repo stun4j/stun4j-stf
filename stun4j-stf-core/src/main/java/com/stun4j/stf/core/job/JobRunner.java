@@ -17,6 +17,8 @@ package com.stun4j.stf.core.job;
 
 import static com.stun4j.stf.core.StfConsts.DFT_DATE_FMT;
 import static com.stun4j.stf.core.StfConsts.DFT_JOB_TIMEOUT_SECONDS;
+import static com.stun4j.stf.core.StfHelper.H;
+import static com.stun4j.stf.core.StfMetaGroupEnum.CORE;
 import static com.stun4j.stf.core.job.JobConsts.generateRetryBehaviorByPattern;
 
 import java.util.Date;
@@ -34,12 +36,14 @@ import com.google.common.cache.LoadingCache;
 import com.stun4j.stf.core.Stf;
 import com.stun4j.stf.core.StfCall;
 import com.stun4j.stf.core.StfCore;
+import com.stun4j.stf.core.StfMetaGroupEnum;
 import com.stun4j.stf.core.support.JsonHelper;
+import com.stun4j.stf.core.utils.Exceptions;
 
 /**
  * @author Jay Meng
  */
-public class JobRunner {
+class JobRunner {
   private static final Logger LOG = LoggerFactory.getLogger(JobRunner.class);
   private static final Map<Integer, Integer> DFT_FIXED_JOB_RETRY_INTERVAL_SECONDS;
 
@@ -47,7 +51,7 @@ public class JobRunner {
   private final LoadingCache<Integer, Map<Integer, Integer>> cachedRetryBehavior;
   private static JobRunner _instance;
 
-  Pair<Boolean, Integer> checkWhetherTheJobCanRun(Stf job) {
+  Pair<Boolean, Integer> checkWhetherTheJobCanRun(String jobGrp, Stf job, StfCore stfCore) {
     // Determine job retry behavior
     Map<Integer, Integer> retryBehavior = _instance.determineJobRetryBehavior(job.getTimeoutSecs());
     int retryMaxTimes = retryBehavior.size();
@@ -56,7 +60,8 @@ public class JobRunner {
     int lastRetryTimes = job.getRetryTimes();
     Long jobId = job.getId();
     if (lastRetryTimes >= retryMaxTimes) {
-      // stfCore.markDead(....);//Delay this kinda mark for fast distribution
+      StfMetaGroupEnum metaGrp = H.determineMetaGroupBy(jobGrp);
+      stfCore.markDead(metaGrp, jobId, true);
       return Pair.of(false, null);
     }
     // Calculate trigger time,if the time does not arrive, no execution is performed
@@ -82,7 +87,7 @@ public class JobRunner {
     return Pair.of(true, expectedTimeoutIntervalSeconds);
   }
 
-  static void doHandleTimeoutJob(Stf job, StfCore stfCore) {
+  static void doHandleTimeoutJob(StfMetaGroupEnum metaGrp, Stf job, StfCore stfCore) {
     // Determine job retry behavior
     Map<Integer, Integer> retryBehavior = _instance.determineJobRetryBehavior(job.getTimeoutSecs());
     int retryMaxTimes = retryBehavior.size();
@@ -90,7 +95,7 @@ public class JobRunner {
     int lastRetryTimes = job.getRetryTimes();
     Long jobId = job.getId();
     if (lastRetryTimes >= retryMaxTimes) {
-      stfCore.markDead(jobId, false);
+      stfCore.markDead(metaGrp, jobId, false);
       return;
     }
     // Calculate trigger time,if the time does not arrive, no execution is performed
@@ -113,7 +118,8 @@ public class JobRunner {
     // return;
     // }
     // <-
-    logTriggerInformation(job, expectedRetryTimes, expectedTriggerTime, retryBehavior);
+    logTriggerInformation(metaGrp, job, expectedRetryTimes, expectedTriggerTime, retryBehavior);
+
     // Retry the job
     String calleeInfo = null;
     Object[] methodArgs = null;
@@ -121,26 +127,36 @@ public class JobRunner {
       StfCall callee = JsonHelper.fromJson(job.getBody(), StfCall.class);
       calleeInfo = toCallStringOf(callee);
       methodArgs = callee.getArgs();
-    } catch (Throwable e) {
+    } catch (Throwable t) {
       // This will definitely result in an invoke error,just to increase the retry times
-      LOG.error("Parsing calleeInfo of stf-job#{} error", jobId, e);
+      Exceptions.swallow(t, LOG, "An error occurred while parsing calleeInfo of stf-job#{}", jobId);
     }
-    stfCore.reForward(jobId, lastRetryTimes, calleeInfo, true, methodArgs);
+    stfCore.reForward(metaGrp, jobId, lastRetryTimes, calleeInfo, true, methodArgs);
   }
 
-  private static void logTriggerInformation(Stf job, int curRetryTimes, Date curTriggerTime,
-      Map<Integer, Integer> retryBehavior) {
+  private static void logTriggerInformation(StfMetaGroupEnum metaGrp, Stf job, int expectedRetryTimes,
+      Date expectedTriggerTime, Map<Integer, Integer> retryBehavior) {
     if (LOG.isInfoEnabled()) {
-      LOG.info("Retring stf-job#{}", job.getId());
+      if (metaGrp == CORE) {
+        LOG.info("Retring stf-job#{}", job.getId());
+      } else {
+        if (expectedRetryTimes == 1) {
+          LOG.info("Triggering stf-delay-job#{}", job.getId());
+        } else {
+          LOG.info("Retring to trigger stf-delay-job#{}", job.getId());
+        }
+      }
     } else if (LOG.isDebugEnabled()) {
       Date now = new Date();
-      Integer nextIntervalSecondsAllowReSend = retryBehavior.get(curRetryTimes + 1);
+      Integer nextIntervalSecondsAllowReSend = retryBehavior.get(expectedRetryTimes + 1);
       Date nextTriggerTime = nextIntervalSecondsAllowReSend != null
           ? DateUtils.addSeconds(now, nextIntervalSecondsAllowReSend)
           : null;
+      String title = metaGrp == CORE ? "Retring stf-job"
+          : (expectedRetryTimes == 1 ? "Triggering stf-delay-job" : "Retring to trigger stf-delay-job");
       LOG.debug(
-          "Retring stf-job#{} [curTime={}, expectedRetryTimes={}, expectedTriggerTime={}, lastTriggerTime={}, nextTriggerTime={}]",
-          job.getId(), DFT_DATE_FMT.format(now), curRetryTimes, DFT_DATE_FMT.format(curTriggerTime),
+          "{}#{} [curTime={}, expectedRetryTimes={}, expectedTriggerTime={}, lastTriggerTime={}, nextTriggerTime={}]",
+          title, job.getId(), DFT_DATE_FMT.format(now), expectedRetryTimes, DFT_DATE_FMT.format(expectedTriggerTime),
           DFT_DATE_FMT.format(new Date(job.getUpAt())),
           nextTriggerTime != null ? DFT_DATE_FMT.format(nextTriggerTime) : null);
     }

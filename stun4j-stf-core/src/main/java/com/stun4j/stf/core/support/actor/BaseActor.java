@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.stun4j.stf.core.support.BaseLifeCycle;
+import com.stun4j.stf.core.utils.Exceptions;
 import com.stun4j.stf.core.utils.Utils;
 import com.stun4j.stf.core.utils.executor.NamedThreadFactory;
 
@@ -59,7 +60,7 @@ public abstract class BaseActor<T> extends BaseLifeCycle implements Actor<T> {
   public void tell(T msg) {
     try {
       mailbox.deliver(msg);
-    } catch (InterruptedException e) {
+    } catch (InterruptedException e) {// TODO mj:log stuff
       Thread.currentThread().interrupt();
     }
   }
@@ -70,20 +71,18 @@ public abstract class BaseActor<T> extends BaseLifeCycle implements Actor<T> {
   public void run() {
     try {
       while (!Thread.currentThread().isInterrupted() && !shutdown) {
-        mailbox.await();// FIXME mj:处理这里的中断!!!
+        mailbox.await();
         List<T> msgs;
         int drained = mailbox.drainTo(msgs = new ArrayList<>(MSGS_SIZE_LADDER[msgSizeScaleStep]),
             1000);/*-TODO mj:to be configured*/
         try {
           onMsgs(msgs);
-        } catch (InterruptedException e) {
-          Thread.currentThread().interrupt();
         } catch (Throwable e) {
-          LOG.error("[onMsgs] Handle msgs error", e);
+          Exceptions.swallow(e, LOG, "[onMsgs] An error occurred while handling msgs");
         }
         adjustMsgSizeScaleStepBy(drained);
       }
-    } catch (InterruptedException e) {
+    } catch (InterruptedException e) {// TODO mj:log stuff
       Thread.currentThread().interrupt();
     }
   }
@@ -92,7 +91,7 @@ public abstract class BaseActor<T> extends BaseLifeCycle implements Actor<T> {
     int lastDrained;
     if (drained > (lastDrained = this.msgsLastDrained)) {
       if (drained > (lastDrained * 2)) {
-        if ((msgSizeScaleStep += 2) >= MSGS_SIZE_LADDER_LENGTH) {
+        if ((msgSizeScaleStep += 3) >= MSGS_SIZE_LADDER_LENGTH) {
           msgSizeScaleStep = MSGS_SIZE_LADDER_LENGTH_MINUS_ONE;
         }
       } else {

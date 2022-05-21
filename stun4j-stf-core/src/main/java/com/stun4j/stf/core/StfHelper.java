@@ -13,15 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.stun4j.stf.core.support;
+package com.stun4j.stf.core;
+
+import static com.google.common.base.Strings.lenientFormat;
+import static com.stun4j.stf.core.StfMetaGroupEnum.CORE;
+import static com.stun4j.stf.core.StfMetaGroupEnum.DELAY;
+import static com.stun4j.stf.core.job.JobConsts.KEY_FEATURE_TIMEOUT_DELAY;
 
 import java.lang.reflect.Method;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import javax.sql.DataSource;
 
 import org.apache.commons.lang3.reflect.MethodUtils;
+import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.springframework.dao.DuplicateKeyException;
 
 import com.stun4j.guid.core.LocalGuid;
 import com.stun4j.stf.core.spi.StfJdbcOps;
@@ -60,9 +70,45 @@ public class StfHelper {
     }
   }
 
+  void tryCommitLaStfOnDup(Logger logger, Long laStfId, String dupOccurredTblName, DuplicateKeyException e,
+      Consumer<Long> commitLastDoneFn) {
+    Throwable rootCause;
+    if ((rootCause = e.getRootCause()) != null && rootCause instanceof SQLIntegrityConstraintViolationException) {
+      String ex;
+      // TODO mj:be care of the accuracy of this feature recognition
+      if ((ex = e.getMessage()) != null && (ex.indexOf("Duplicate") != -1 && ex.indexOf("PRIMARY") != -1)
+          && (ex.indexOf("insert".toLowerCase()) != -1 || ex.indexOf("insert".toUpperCase()) != -1)
+          && (ex.indexOf(dupOccurredTblName.toLowerCase()) != -1 || ex.indexOf(dupOccurredTblName.toUpperCase()) != -1)) {
+        logger.warn(
+            "It seems that the stf#{} has been saved successfully, we are now trying to commit last stf or stf-delay...",
+            laStfId, e);
+        commitLastDoneFn.accept(laStfId);
+      }
+    }
+  }
+
   public LocalGuid cachedGuid() {
     // TODO mj:extract 'single null-value cache' utility?or upgrade LocalGuid by applying empty-object pattern?
     return CACHED_GUID.computeIfAbsent(null, k -> LocalGuid.instance());
+  }
+
+  public void logOnDataSourceClose(Logger logger, String title) {
+    logOnDataSourceClose(logger, title, null);
+  }
+
+  public void logOnDataSourceClose(Logger logger, String title, Pair<String, Object> opTarget) {
+    if (logger == null || !logger.isDebugEnabled()) {
+      return;
+    }
+    String msgTpl = opTarget == null ? " " : lenientFormat(" on %s:%s ", opTarget.getKey(), opTarget.getValue());
+    logger.debug("[{}] The dataSource has been closed and the operation{}is cancelled.", title, msgTpl);
+  }
+
+  public StfMetaGroupEnum determineMetaGroupBy(String jobGroup) {
+    if (jobGroup.indexOf(KEY_FEATURE_TIMEOUT_DELAY) == -1) {
+      return CORE;
+    }
+    return DELAY;
   }
 
   private Method tryGetDataSourceCloser() {

@@ -35,16 +35,14 @@ public interface StfCore extends StfBatchable {
     return newStf(bizObjId, bizMethodName, null, typedArgs);
   }
 
-  boolean lockStf(Long stfId, int timeoutSecs, int curRetryTimes);
+  boolean lockStf(String jobGrp, Long stfId, int timeoutSecs, int curRetryTimes);
 
-  void markDone(Long stfId, boolean async);
+  void markDone(StfMetaGroupEnum metaGrp, Long stfId, boolean async);
 
-  void markDead(Long stfId, boolean async);
+  void markDead(StfMetaGroupEnum metaGrp, Long stfId, boolean async);
 
-  @Deprecated
-  void forward(Long stfId, String calleeInfo, boolean async, Object... calleeMethodArgs);
-
-  void reForward(Long stfId, int lastRetryTimes, String calleeInfo, boolean async, Object... calleeMethodArgs);
+  void reForward(StfMetaGroupEnum metaGrp, Long stfId, int lastRetryTimes, String calleeInfo, boolean async,
+      Object... calleeMethodArgs);
 
   static StfCore empty() {
     return new StfCore() {
@@ -59,48 +57,43 @@ public interface StfCore extends StfBatchable {
       }
 
       @Override
-      public boolean lockStf(Long stfId, int timeoutSecs, int curRetryTimes) {
+      public boolean lockStf(String jobGrp, Long stfId, int timeoutSecs, int curRetryTimes) {
         NOT_INITIALIZED_THROW.accept(MODULE_ID);
         return false;
       }
 
       @Override
-      public List<Stf> batchLockStfs(List<Object[]> preBatchArgs) {
+      public List<Stf> batchLockStfs(String jobGrp, List<Object[]> preBatchArgs) {
         NOT_INITIALIZED_THROW.accept(MODULE_ID);
         return null;
       }
 
       @Override
-      public void markDone(Long stfId, boolean async) {
-        NOT_INITIALIZED_THROW.accept(MODULE_ID);
-      }
-
-      @Override
-      public int[] batchMarkDone(List<Object[]> stfIdsInfo) {
+      public int[] batchMarkDone(StfMetaGroupEnum metaGrp, List<Object[]> stfIdsInfo) {
         NOT_INITIALIZED_THROW.accept(MODULE_ID);
         return null;
       }
 
       @Override
-      public void markDead(Long stfId, boolean async) {
+      public void markDead(StfMetaGroupEnum metaGrp, Long stfId, boolean async) {
         NOT_INITIALIZED_THROW.accept(MODULE_ID);
       }
 
       @Override
-      public void forward(Long stfId, String calleeInfo, boolean async, Object... calleeMethodArgs) {
-        NOT_INITIALIZED_THROW.accept(MODULE_ID);
-      }
-
-      @Override
-      public void reForward(Long stfId, int curRetryTimes, String calleeInfo, boolean async,
+      public void reForward(StfMetaGroupEnum metaGrp, Long stfId, int curRetryTimes, String calleeInfo, boolean async,
           Object... calleeMethodArgs) {
         NOT_INITIALIZED_THROW.accept(MODULE_ID);
       }
 
       @Override
-      public boolean fallbackToSingleMarkDone(Long stfId) {
+      public boolean fallbackToSingleMarkDone(StfMetaGroupEnum metaGrp, Long stfId) {
         NOT_INITIALIZED_THROW.accept(MODULE_ID);
         return false;
+      }
+
+      @Override
+      public void markDone(StfMetaGroupEnum metaGrp, Long stfId, boolean async) {
+        NOT_INITIALIZED_THROW.accept(MODULE_ID);
       }
 
     };

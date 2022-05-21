@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.common.eventbus.Subscribe;
 import com.stun4j.stf.core.support.BaseLifeCycle;
+import com.stun4j.stf.core.utils.Exceptions;
 
 /**
  * @author JayMeng
@@ -60,28 +61,28 @@ public abstract class HeartbeatHandler extends BaseLifeCycle {
   @Override
   public void doShutdown() {
     try {
-      watcher.shutdownNow();
       if (sf != null) {
         sf.cancel(true);
       }
+      watcher.shutdownNow();
       LOG.debug("Watcher is successfully shut down");
     } catch (Throwable e) {
-      LOG.error("Unexpected watcher shutdown error", e);
+      Exceptions.swallow(e, LOG, "Unexpected error occurred while shutting down watcher");
     }
 
     try {
       worker.shutdownNow();
       LOG.debug("Worker is successfully shut down");
     } catch (Throwable e) {
-      LOG.error("Unexpected worker shut down error", e);
+      Exceptions.swallow(e, LOG, "Unexpected error occurred while shutting down worker");
     }
     String memberId = null;
     try {
       onShutdown(memberId = StfClusterMember
           .calculateId());/*- Recalculate the latest local-member-id for more robust deregister */
     } catch (Throwable e) {
-      LOG.error("The local-member#{} deregister error with local-member-tracing-memo:{} ", memberId,
-          localMemberTracingMemo, e);
+      Exceptions.swallow(e, LOG, "The local-member#{} deregister error with local-member-tracing-memo:{} ", memberId,
+          localMemberTracingMemo);
     }
 
     LOG.debug("The heartbeat-handler is successfully shut down");
@@ -101,7 +102,7 @@ public abstract class HeartbeatHandler extends BaseLifeCycle {
       try {
         doSendHeartbeat();
       } catch (Throwable e) {
-        LOG.error("Send heartbeat error", e);
+        Exceptions.swallow(e, LOG, "An error occurred while sending heartbeat");
       }
     });
   }

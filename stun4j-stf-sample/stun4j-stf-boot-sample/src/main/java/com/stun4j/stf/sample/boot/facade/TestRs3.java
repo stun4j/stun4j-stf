@@ -16,7 +16,15 @@ public class TestRs3 {
 
   @RequestMapping
   public Long index() {
-    Long taskNo = queue.offer("bizOrphanStep", "handle", 30, Data.generateReq());
+    /*-
+     * 1.If you just need a simple DelayQueue interface that doesn't require any configuration and doesn't have any
+     * upstream and downstream implications.Check this sample.
+     * 
+     * 2.Stf's DelayQueue is highly-reliable and can support theoretically arbitrary precision delay time.
+     * 
+     * 3.Stf's DelayQueue has high-performance, high-throughput,high-availability and good horizontal-scaling-capability
+     */
+    Long taskNo = queue.offer("bizOrphanStep", "handle", 10, 30, Data.generateReq());
     return taskNo;
   }
 }

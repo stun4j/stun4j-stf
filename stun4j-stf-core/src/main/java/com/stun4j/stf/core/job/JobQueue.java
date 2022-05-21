@@ -30,7 +30,7 @@ import com.stun4j.stf.core.Stf;
 /**
  * @author Jay Meng
  */
-public class JobQueue {
+class JobQueue {
   private final int capacity;
   private final Map<Long/* jobId */, Long/* jobLastUpAt */> jobsLastUpAts;
   private final LinkedList<Stf> list;
@@ -43,9 +43,6 @@ public class JobQueue {
     }
     Lock lock;
     (lock = rwl.writeLock()).lock();
-    if (list.size() >= capacity) {
-      return false;
-    }
     try {
       Long jobId = job.getId();
       Long jobLastUpAt = job.getUpAt();

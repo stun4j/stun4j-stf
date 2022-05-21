@@ -1,4 +1,4 @@
-package com.stun4j.stf.core.support;
+package com.stun4j.stf.core.support.event;
 
 import com.google.common.eventbus.EventBus;
 

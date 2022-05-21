@@ -48,19 +48,14 @@ public class TestRs2 {
     });
 
     /*-
-     * 3.One interesting thing is that you can think of Stf as a delay queue that can support arbitrary precision delay
-     * time.
-     * 
-     * 4.Another interesting thing is that you can think of Stf as a compensation workflow that runs behind the
+     * 3.Another thing is that you can think of Stf as a compensation workflow that runs behind the
      * scene.
      */
-    // To achieve 3 and 4, all you need to do is comment out the following code block, Stf will take the control->
+    //You can comment out the following code block and take a glance, Stf will take all the control->
     new Thread(StfRunnable.of(() -> {
       svc.handle(req);
     })).start();
     // <-
-    // Or you just need a simple DelayQueue interface that doesn't require any configuration and doesn't have any
-    // upstream and downstream implications. If so, take a look at TestRs3
 
     return req.getId();
   }

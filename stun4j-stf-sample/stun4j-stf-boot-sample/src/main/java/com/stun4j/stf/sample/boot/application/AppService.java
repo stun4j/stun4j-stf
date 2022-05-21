@@ -75,8 +75,8 @@ public class AppService {
   }
 
   public void sendNotification(String reqId) {
-    if (mock
-        .decrementAndGet() >= 0) {/*- Here we simply simulated 3 timeouts.You can clearly see the ladder of retry intervals. */
+    if (mock.decrementAndGet(this
+        .getClass()) >= 0) {/*- Here we simply simulated 3 timeouts.You can clearly see the ladder of retry intervals. */
       LOG.error("Notification of request#{} has timed out...", reqId);
       return;
     }
@@ -88,7 +88,7 @@ public class AppService {
      * (More transparent, but the code above is better in performance)
      */
     // You can comment out the above block and uncomment the following block->
-    // if (mock.decrementAndGet() >= 0) {
+    // if (mock.decrementAndGet(this.getClass()) >= 0) {
     // LOG.error("Notification of request#{} has timed out...", reqId);
     // return;
     // }

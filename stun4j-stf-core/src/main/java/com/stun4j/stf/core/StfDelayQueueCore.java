@@ -18,12 +18,13 @@ package com.stun4j.stf.core;
 import org.apache.commons.lang3.tuple.Pair;
 
 /**
- * Stf DelayQueue interface for internal use only.
+ * Stf DelayQueue interface for internal use.
  * @author Jay Meng
  */
-interface StfDelayQueueCore {
-  StfCall newCallee(String bizObjId, String bizMethodName, Integer timeoutSeconds,
+public interface StfDelayQueueCore {
+
+  StfCall newCallee(String bizObjId, String bizMethodName,
       @SuppressWarnings("unchecked") Pair<?, Class<?>>... typedArgs);
 
-  void doNewStf(Long newStfId, StfCall callee, int timeoutSecs);
+  Long newStfDelay(StfCall callee, int timeoutSeconds, int delaySeconds);
 }

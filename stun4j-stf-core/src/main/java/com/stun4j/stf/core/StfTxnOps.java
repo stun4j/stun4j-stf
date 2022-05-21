@@ -15,7 +15,8 @@
  */
 package com.stun4j.stf.core;
 
-import java.sql.SQLIntegrityConstraintViolationException;
+import static com.stun4j.stf.core.StfHelper.H;
+
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -28,6 +29,8 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionOperations;
+
+import com.stun4j.stf.core.utils.Exceptions;
 
 /**
  * Stf's core transaction operation, which delegates to Spring's transaction operation
@@ -50,7 +53,7 @@ public class StfTxnOps {
   private static final Logger LOG = LoggerFactory.getLogger(StfTxnOps.class);
 
   private final TransactionOperations rawTxnOps;
-  private final String stfTblName;
+  private final String coreTblName;
 
   // Low side-effect apis - - - - - - - - - - - - - - - - -->
   public <OUT> OUT executeWithFinalResult(Supplier<OUT> outInitSupplier,
@@ -176,9 +179,10 @@ public class StfTxnOps {
       } catch (Throwable e) {
         if (e instanceof DuplicateKeyException) {
           try {
-            tryCommitLaStfOnDup(laStfId, (DuplicateKeyException)e);
+            H.tryCommitLaStfOnDup(LOG, laStfId, coreTblName, (DuplicateKeyException)e,
+                stfId -> StfContext.commitLastDone(stfId));// StfContext.commitLastDone
           } catch (Throwable e1) {
-            LOG.error("Unexpected stf commit error", e1);
+            Exceptions.swallow(e1, LOG, "Unexpected error occurred while auto committing stf");
             // Silently move forward current transaction by swallowing any exception
           }
         }
@@ -211,9 +215,10 @@ public class StfTxnOps {
       } catch (Throwable e) {
         if (e instanceof DuplicateKeyException) {
           try {
-            tryCommitLaStfOnDup(laStfId, (DuplicateKeyException)e);
+            H.tryCommitLaStfOnDup(LOG, laStfId, coreTblName, (DuplicateKeyException)e,
+                stfId -> StfContext.commitLastDone(stfId));
           } catch (Throwable e1) {
-            LOG.error("Unexpected stf commit error", e1);
+            Exceptions.swallow(e1, LOG, "Unexpected error occurred while auto committing stf");
             // Silently move forward current transaction by swallowing any exception
           }
         }
@@ -228,23 +233,7 @@ public class StfTxnOps {
       return null;
     }, callerClassName, callerMethodName, out));
   }
-
   // <-- - - - - - - - - - - - - - -
-
-  private void tryCommitLaStfOnDup(Long laStfId, DuplicateKeyException e) {
-    Throwable rootCause;
-    if ((rootCause = e.getRootCause()) != null && rootCause instanceof SQLIntegrityConstraintViolationException) {
-      String ex;
-      // TODO mj:be care of the accuracy of this feature recognition
-      if ((ex = e.getMessage()) != null && (ex.indexOf("Duplicate") != -1 && ex.indexOf("PRIMARY") != -1)
-          && (ex.indexOf("insert".toLowerCase()) != -1 || ex.indexOf("insert".toUpperCase()) != -1)
-          && (ex.indexOf(stfTblName.toLowerCase()) != -1 || ex.indexOf(stfTblName.toUpperCase()) != -1)) {
-        LOG.warn("It seems that the stf#{} has been saved successfully, we are now trying to commit last stf...",
-            laStfId, e);
-        StfContext.commitLastDone(laStfId);
-      }
-    }
-  }
 
   private Pair<String, String> determineCallerInfo(StackTraceElement[] callStacks) {
     Pair<String, String> callerInfo = null;
@@ -301,12 +290,12 @@ public class StfTxnOps {
     this(rawTxnOps, StfConsts.DFT_CORE_TBL_NAME);
   }
 
-  public StfTxnOps(TransactionOperations rawTxnOps, String stfTblName) {
+  public StfTxnOps(TransactionOperations rawTxnOps, String coreTblName) {
     this.rawTxnOps = rawTxnOps;
-    this.stfTblName = stfTblName;
+    this.coreTblName = coreTblName;
   }
 
-  public String getStfTblName() {
-    return stfTblName;
+  public String getCoreTblName() {
+    return coreTblName;
   }
 }

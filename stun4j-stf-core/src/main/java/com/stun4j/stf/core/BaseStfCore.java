@@ -15,6 +15,7 @@
  */
 package com.stun4j.stf.core;
 
+import static com.stun4j.stf.core.StfHelper.H;
 import static com.stun4j.stf.core.support.executor.StfInternalExecutors.newWorkerOfStfCore;
 
 import java.util.ArrayList;
@@ -37,7 +38,7 @@ import com.stun4j.stf.core.utils.shaded.guava.common.primitives.Primitives;
  * Base class for the core operations of Stf.
  * @author JayMeng
  */
-abstract class BaseStfCore implements StfCore, StfBatchable, StfDelayQueueCore {
+abstract class BaseStfCore implements StfCore, StfDelayQueueCore {
   protected final Logger LOG = LoggerFactory.getLogger(this.getClass());
   protected final ExecutorService worker;
 
@@ -45,7 +46,7 @@ abstract class BaseStfCore implements StfCore, StfBatchable, StfDelayQueueCore {
   public Long newStf(String bizObjId, String bizMethodName, Integer timeoutSeconds,
       @SuppressWarnings("unchecked") Pair<?, Class<?>>... typedArgs) {
     int timeoutSecs = Optional.ofNullable(timeoutSeconds).orElse(StfConfigs.getActionTimeout(bizObjId, bizMethodName));
-    StfCall callee = newCallee(bizObjId, bizMethodName, timeoutSecs, typedArgs);
+    StfCall callee = newCallee(bizObjId, bizMethodName, typedArgs);
     StfId newStfId = StfContext.newStfId(bizObjId, bizMethodName);
     Long idVal;
     doNewStf(idVal = newStfId.getValue(), callee, timeoutSecs);
@@ -53,7 +54,14 @@ abstract class BaseStfCore implements StfCore, StfBatchable, StfDelayQueueCore {
   }
 
   @Override
-  public StfCall newCallee(String bizObjId, String bizMethodName, Integer timeoutSeconds,
+  public Long newStfDelay(StfCall callee, int timeoutSeconds, int delaySeconds) {
+    Long stfDelayId;
+    doNewStfDelay(stfDelayId = H.cachedGuid().next(), callee, timeoutSeconds, delaySeconds);
+    return stfDelayId;
+  }
+
+  @Override
+  public StfCall newCallee(String bizObjId, String bizMethodName,
       @SuppressWarnings("unchecked") Pair<?, Class<?>>... typedArgs) {
     if (ArrayUtils.isNotEmpty(typedArgs)) {
       StfCall callee = StfCall.ofInJvm(bizObjId, bizMethodName, typedArgs.length);
@@ -73,7 +81,7 @@ abstract class BaseStfCore implements StfCore, StfBatchable, StfDelayQueueCore {
   }
 
   @Override
-  public List<Stf> batchLockStfs(List<Object[]> preBatchArgs) {
+  public List<Stf> batchLockStfs(String jobGrp, List<Object[]> preBatchArgs) {
     long now = System.currentTimeMillis();
     List<Stf> jobs = new ArrayList<>();
     List<Object[]> batchArgs = preBatchArgs.stream().map(arg -> {
@@ -85,7 +93,8 @@ abstract class BaseStfCore implements StfCore, StfBatchable, StfDelayQueueCore {
       return arg;
     }).collect(Collectors.toList());
     int finalBatchSize = batchArgs.size();
-    int[] res = doBatchLockStfs(batchArgs);
+    StfMetaGroupEnum metaGrp = H.determineMetaGroupBy(jobGrp);
+    int[] res = doBatchLockStfs(metaGrp, batchArgs);
     if (LOG.isDebugEnabled()) {
       LOG.debug("The batch-lock image of stfs: {}", res);
     }
@@ -115,31 +124,28 @@ abstract class BaseStfCore implements StfCore, StfBatchable, StfDelayQueueCore {
     try {
       StfInvoker.invoke(stfId, callInfo, callMethodArgs);
     } catch (Throwable e) {
-      Exceptions.sneakyThrow(e, LOG, "The invoke of stf#{} error", stfId);
+      Exceptions.sneakyThrow(e, LOG, "An error occurred while invoking stf#{}", stfId);
     }
   }
 
-  @Override
-  public abstract void doNewStf(Long newStfId, StfCall callee, int timeoutSecs);
+  protected abstract void doNewStf(Long newStfId, StfCall callee, int timeoutSeconds);
 
-  @Deprecated
-  protected abstract boolean doForward(Long stfId);
+  protected abstract void doNewStfDelay(Long delayStfId, StfCall callee, int timeoutSeconds, int delaySeconds);
 
-  @Deprecated
-  protected abstract boolean doReForward(Long stfId, int curRetryTimes);
+  protected abstract boolean doLockStf(StfMetaGroupEnum metaGrp, Long stfId, int timeoutSecs, int curRetryTimes);
 
-  protected abstract boolean doLockStf(Long stfId, int timeoutSecs, int curRetryTimes);
-
-  protected abstract int[] doBatchLockStfs(List<Object[]> batchArgs);
+  protected abstract int[] doBatchLockStfs(StfMetaGroupEnum metaGrp, List<Object[]> batchArgs);
 
   @Override
-  public boolean fallbackToSingleMarkDone(Long stfId) {
-    return doMarkDone(stfId, false);
+  public boolean fallbackToSingleMarkDone(StfMetaGroupEnum metaGrp, Long stfId) {
+    return doMarkDone(metaGrp, stfId, false);
   }
 
-  protected abstract boolean doMarkDone(Long stfId, boolean batch);
+  protected abstract boolean doMarkDone(StfMetaGroupEnum metaGrp, Long stfId, boolean batch);
 
-  protected abstract void doMarkDead(Long stfId);
+  protected abstract void doMarkDead(StfMetaGroupEnum metaGrp, Long stfId);
+
+  protected abstract boolean doDelayTransfer(Long delayStfId);
 
   {
     worker = newWorkerOfStfCore();

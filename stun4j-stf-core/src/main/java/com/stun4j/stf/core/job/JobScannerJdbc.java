@@ -18,8 +18,11 @@ package com.stun4j.stf.core.job;
 import static com.google.common.base.Strings.lenientFormat;
 import static com.stun4j.stf.core.StateEnum.I;
 import static com.stun4j.stf.core.StateEnum.P;
+import static com.stun4j.stf.core.StfConsts.DFT_DELAY_TBL_NAME_SUFFIX;
+import static com.stun4j.stf.core.StfHelper.H;
+import static com.stun4j.stf.core.StfMetaGroupEnum.CORE;
+import static com.stun4j.stf.core.StfMetaGroupEnum.DELAY;
 import static com.stun4j.stf.core.YesNoEnum.N;
-import static com.stun4j.stf.core.support.StfHelper.H;
 import static com.stun4j.stf.core.utils.DataSourceUtils.DB_VENDOR_MY_SQL;
 import static com.stun4j.stf.core.utils.DataSourceUtils.DB_VENDOR_ORACLE;
 import static com.stun4j.stf.core.utils.DataSourceUtils.DB_VENDOR_POSTGRE_SQL;
@@ -38,6 +41,7 @@ import com.stun4j.guid.core.LocalGuid;
 import com.stun4j.stf.core.StateEnum;
 import com.stun4j.stf.core.Stf;
 import com.stun4j.stf.core.StfConsts;
+import com.stun4j.stf.core.StfMetaGroupEnum;
 import com.stun4j.stf.core.spi.StfJdbcOps;
 import com.stun4j.stf.core.support.JdbcAware;
 
@@ -53,26 +57,40 @@ public class JobScannerJdbc implements JobScanner, JdbcAware {
   private static final Logger LOG = LoggerFactory.getLogger(JobScannerJdbc.class);
   private final StfJdbcOps jdbcOps;
 
-  final String SQL_WITH_SINGLE_ST_MYSQL;
-  final String SQL_WITH_SINGLE_ST_POSTGRES;
-  final String SQL_WITH_SINGLE_ST_ORACLE;
+  final String SQL_CORE_MYSQL;
+  final String SQL_CORE_POSTGRES;
+  final String SQL_CORE_ORACLE;
+
+  final String SQL_DELAY_MYSQL;
+  final String SQL_DELAY_POSTGRES;
+  final String SQL_DELAY_ORACLE;
 
   private int includeHowManyDaysAgo;
 
   @Override
-  public Stream<Stf> scanTimeoutJobsWaitingRun(int limit, int pageNo) {
-    return doScanStillAlive(I, limit, pageNo);
+  public Stream<Stf> scanTimeoutCoreJobsWaitingRun(int limit, int pageNo) {
+    return doScanStillAlive(CORE, I, limit, pageNo);
   }
 
   @Override
-  public Stream<Stf> scanTimeoutJobsInProgress(int limit, int pageNo) {
-    return doScanStillAlive(P, limit, pageNo);
+  public Stream<Stf> scanTimeoutCoreJobsInProgress(int limit, int pageNo) {
+    return doScanStillAlive(CORE, P, limit, pageNo);
   }
 
-  public Stream<Stf> doScanStillAlive(StateEnum st, int limit, int pageNo,
+  @Override
+  public Stream<Stf> scanTimeoutDelayJobsWaitingRun(int limit, int pageNo) {
+    return doScanStillAlive(DELAY, I, limit, pageNo);
+  }
+
+  @Override
+  public Stream<Stf> scanTimeoutDelayJobsInProgress(int limit, int pageNo) {
+    return doScanStillAlive(DELAY, P, limit, pageNo);
+  }
+
+  public Stream<Stf> doScanStillAlive(StfMetaGroupEnum metaGrp, StateEnum st, int limit, int pageNo,
       String... includeFields) {/*-pageNo start with 0*/
     if (H.isDataSourceClose()) {
-      LOG.warn("[doScanStillAlive] The dataSource has been closed and the operation is cancelled.");
+      H.logOnDataSourceClose(LOG, "doScanStillAlive");
       return Stream.empty();
     }
     long now = System.currentTimeMillis();
@@ -82,12 +100,22 @@ public class JobScannerJdbc implements JobScanner, JdbcAware {
 
     String sql;
     String dbVendor;
-    if (DB_VENDOR_MY_SQL.equals(dbVendor = H.getDbVendor())) {
-      sql = SQL_WITH_SINGLE_ST_MYSQL;
-    } else if (DB_VENDOR_POSTGRE_SQL.equals(dbVendor)) {
-      sql = SQL_WITH_SINGLE_ST_POSTGRES;
+    if (metaGrp == CORE) {
+      if (DB_VENDOR_MY_SQL.equals(dbVendor = H.getDbVendor())) {
+        sql = SQL_CORE_MYSQL;
+      } else if (DB_VENDOR_POSTGRE_SQL.equals(dbVendor)) {
+        sql = SQL_CORE_POSTGRES;
+      } else {
+        sql = SQL_CORE_ORACLE;
+      }
     } else {
-      sql = SQL_WITH_SINGLE_ST_ORACLE;
+      if (DB_VENDOR_MY_SQL.equals(dbVendor = H.getDbVendor())) {
+        sql = SQL_DELAY_MYSQL;
+      } else if (DB_VENDOR_POSTGRE_SQL.equals(dbVendor)) {
+        sql = SQL_DELAY_POSTGRES;
+      } else {
+        sql = SQL_DELAY_ORACLE;
+      }
     }
     Object[] args;
     if (pageNo <= 0) {
@@ -159,7 +187,7 @@ public class JobScannerJdbc implements JobScanner, JdbcAware {
     return stfs.sorted(Comparator.comparingLong(stf -> stf.getId()));
   }
 
-  public static JobScannerJdbc of(StfJdbcOps jdbcOps) {
+  public static JobScanner of(StfJdbcOps jdbcOps) {
     return new JobScannerJdbc(jdbcOps, StfConsts.DFT_CORE_TBL_NAME);
   }
 
@@ -167,14 +195,22 @@ public class JobScannerJdbc implements JobScanner, JdbcAware {
     this.jdbcOps = jdbcOps;
     this.includeHowManyDaysAgo = DFT_INCLUDE_HOW_MANY_DAYS_AGO;
 
-    String coreSql = lenientFormat(
-        "select * from %s where id in (select id from %s where id between ? and ? and timeout_at <= ? and is_dead = ? and st = ?",
-        tblName, tblName);
-    SQL_WITH_SINGLE_ST_MYSQL = lenientFormat("%s%s limit ?", coreSql, " order by timeout_at)");
-    SQL_WITH_SINGLE_ST_POSTGRES = lenientFormat("%s%s limit ?", coreSql,
+    String mainSqlTpl = "select * from %s where id in (select id from %s where id between ? and ? and timeout_at <= ? and is_dead = ? and st = ?";
+    String coreSql = lenientFormat(mainSqlTpl, tblName, tblName);
+    SQL_CORE_MYSQL = lenientFormat("%s%s limit ?", coreSql, " order by timeout_at)");
+    SQL_CORE_POSTGRES = lenientFormat("%s%s limit ?", coreSql,
         ") order by timeout_at");/*-Get certain order when using postgres*/
     String oracleSqlInner = lenientFormat("%s%s", coreSql, ") order by timeout_at");
-    SQL_WITH_SINGLE_ST_ORACLE = lenientFormat(
+    SQL_CORE_ORACLE = lenientFormat(
+        "select * from (select t_temp.*, rownum rn from (%s) t_temp where rownum <= ?) where rn > ?", oracleSqlInner);
+
+    String delayCoreSql = lenientFormat(mainSqlTpl, tblName + DFT_DELAY_TBL_NAME_SUFFIX,
+        tblName + DFT_DELAY_TBL_NAME_SUFFIX);
+    SQL_DELAY_MYSQL = lenientFormat("%s%s limit ?", delayCoreSql, " order by timeout_at)");
+    SQL_DELAY_POSTGRES = lenientFormat("%s%s limit ?", delayCoreSql,
+        ") order by timeout_at");/*-Get certain order when using postgres*/
+    oracleSqlInner = lenientFormat("%s%s", delayCoreSql, ") order by timeout_at");
+    SQL_DELAY_ORACLE = lenientFormat(
         "select * from (select t_temp.*, rownum rn from (%s) t_temp where rownum <= ?) where rn > ?", oracleSqlInner);
   }
 

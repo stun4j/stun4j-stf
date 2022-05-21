@@ -37,7 +37,8 @@ import com.stun4j.stf.core.cluster.HeartbeatHandler;
 import com.stun4j.stf.core.cluster.StfClusterMember;
 import com.stun4j.stf.core.monitor.StfMonitor;
 import com.stun4j.stf.core.support.BaseLifeCycle;
-import com.stun4j.stf.core.support.StfEventBus;
+import com.stun4j.stf.core.support.event.StfEventBus;
+import com.stun4j.stf.core.utils.Exceptions;
 
 import sun.misc.Signal;
 
@@ -69,11 +70,12 @@ public class JobManager extends BaseLifeCycle {
   private final JobRunners runners;
   private final JobRunner runner;
   private final JobMarkActor marker;
-
-  private HeartbeatHandler heartbeatHandler;
+  private final JobDelayMarkActor delayMarker;
 
   private final ScheduledExecutorService watcher;
   private final Map<String, ThreadPoolExecutor> workers;
+
+  private HeartbeatHandler heartbeatHandler;
 
   private ScheduledFuture<?> sf;
 
@@ -88,6 +90,7 @@ public class JobManager extends BaseLifeCycle {
   protected void doStart() {
     heartbeatHandler.doStart();
     marker.doStart();
+    delayMarker.doStart();
     loader.doStart();
 
     if (vmResCheckEnabled) {
@@ -106,7 +109,7 @@ public class JobManager extends BaseLifeCycle {
         }
         onSchedule();
       } catch (Throwable e) {
-        LOG.error("[onSchedule] Handle stf-jobs error", e);
+        Exceptions.swallow(e, LOG, "[onSchedule] An error occurred while handling stf-jobs");
       }
     }, scanFreqSeconds = this.scanFreqSeconds, scanFreqSeconds, TimeUnit.SECONDS);
 
@@ -118,18 +121,15 @@ public class JobManager extends BaseLifeCycle {
     shutdown = true;
     // TODO mj:extract close utility...
     try {
+      if (sf != null) {
+        sf.cancel(true);
+      }
+
       watcher.shutdown();
       watcher.awaitTermination(15, TimeUnit.SECONDS);
-
-      if (sf != null) {
-        sf.cancel(false);
-      }
       LOG.debug("Watcher is successfully shut down");
     } catch (Throwable e) {
-      LOG.error("Unexpected watcher shutdown error", e);
-      if (e instanceof InterruptedException) {
-        Thread.currentThread().interrupt();
-      }
+      Exceptions.swallow(e, LOG, "Unexpected error occurred while shutting down watcher");
     }
     workers.forEach((grp, worker) -> {
       try {
@@ -137,10 +137,7 @@ public class JobManager extends BaseLifeCycle {
         worker.awaitTermination(15, TimeUnit.SECONDS);
         LOG.debug("Worker is successfully shut down [grp={}]", grp);
       } catch (Throwable e) {
-        LOG.error("Unexpected worker shutdown error [grp={}]", grp, e);
-        if (e instanceof InterruptedException) {
-          Thread.currentThread().interrupt();
-        }
+        Exceptions.swallow(e, LOG, "Unexpected error occurred while shutting down worker [grp={}]", grp);
       }
     });
     runners.shutdown();
@@ -157,8 +154,8 @@ public class JobManager extends BaseLifeCycle {
   }
 
   protected boolean lockJob(String jobGrp, Long jobId, int timeoutSecs, int curRetryTimes) {
-    if (!stfCore.lockStf(jobId, timeoutSecs, curRetryTimes)) {
-      LOG.warn("Lock job#{} fail,it may be running [jobGrp={}]", jobId, jobGrp);
+    if (!stfCore.lockStf(jobGrp, jobId, timeoutSecs, curRetryTimes)) {
+      LOG.warn("Lock job#{} failed.It may be running [jobGrp={}]", jobId, jobGrp);
       return false;
     }
     return true;
@@ -209,7 +206,7 @@ public class JobManager extends BaseLifeCycle {
         if (job == null) return null;
 
         Pair<Boolean, Integer> pair;
-        if (!(pair = runner.checkWhetherTheJobCanRun(job))
+        if (!(pair = runner.checkWhetherTheJobCanRun(jobGrp, job, stfCore))
             .getKey()) {/*-A double check here,meanwhile,pick up the dynamic timeout because we are using a custom gradient retry mechanism*/
           continue;
         }
@@ -219,7 +216,7 @@ public class JobManager extends BaseLifeCycle {
           return job;
         }
       } catch (Throwable e) {
-        LOG.error("Try lock job#{} error", job != null ? job.getId() : "null", e);
+        Exceptions.swallow(e, LOG, "An error occurred while locking job#{}", job != null ? job.getId() : "null");
       } finally {
         loader.signalToLoadJobs(jobGrp);
       }
@@ -253,7 +250,7 @@ public class JobManager extends BaseLifeCycle {
           }
         }
         if (!preBatchArgs.isEmpty()) {
-          lockedJobs = stfCore.batchLockStfs(preBatchArgs);
+          lockedJobs = stfCore.batchLockStfs(jobGrp, preBatchArgs);
         }
         if (lockedJobs != null) {
           for (Stf lockedJob : lockedJobs) {
@@ -275,7 +272,7 @@ public class JobManager extends BaseLifeCycle {
       if (job == null) return true;
 
       Pair<Boolean, Integer> pair;
-      if (!(pair = runner.checkWhetherTheJobCanRun(job)).getKey()) {
+      if (!(pair = runner.checkWhetherTheJobCanRun(jobGrp, job, stfCore)).getKey()) {
         continue;
       }
       preBatchArgs.add(new Object[]{job, pair.getValue(), job.getId(), job.getRetryTimes()});
@@ -290,7 +287,7 @@ public class JobManager extends BaseLifeCycle {
         shutdownGracefully();
       });
     } catch (Throwable e) {
-      LOG.error(e.getMessage(), e);
+      Exceptions.swallow(e, LOG, e.getMessage());
     }
     Runtime.getRuntime().addShutdownHook(new Thread(() -> {
       shutdownGracefully();
@@ -302,7 +299,7 @@ public class JobManager extends BaseLifeCycle {
     try {
       shutdown();
     } catch (Throwable e) {
-      LOG.error("[on jvm-shutdown] The stf-job-manager shutdown error", e);
+      Exceptions.swallow(e, LOG, "[on jvm-shutdown] An error occurred while shutting down stf-job-manager");
     }
   }
 
@@ -319,8 +316,8 @@ public class JobManager extends BaseLifeCycle {
     this.loader = loader;
     this.runners = runners;
     this.runner = runners.getRunner();
-    this.marker = new JobMarkActor(this.stfCore, 16384);// TODO mj:to be configured
-    StfEventBus.registerHandler(this.marker);
+    StfEventBus.registerHandler(this.marker = new JobMarkActor(this.stfCore, 16384));// TODO mj:to be configured
+    StfEventBus.registerHandler(this.delayMarker = new JobDelayMarkActor(stfCore, 16384));
     this.workers = Stream.of(ALL_JOB_GROUPS).reduce(new HashMap<String, ThreadPoolExecutor>(), (map, grp) -> {
       map.put(grp, newWorkerOfJobManager(grp));
       return map;

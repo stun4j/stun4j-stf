@@ -16,10 +16,10 @@
 package com.stun4j.stf.core.cluster;
 
 import static com.google.common.base.Strings.lenientFormat;
-import static com.stun4j.stf.core.support.StfHelper.H;
+import static com.stun4j.stf.core.StfHelper.H;
 import static com.stun4j.stf.core.utils.DataSourceUtils.DB_VENDOR_MY_SQL;
-import static com.stun4j.stf.core.utils.DataSourceUtils.DB_VENDOR_POSTGRE_SQL;
 import static com.stun4j.stf.core.utils.DataSourceUtils.DB_VENDOR_ORACLE;
+import static com.stun4j.stf.core.utils.DataSourceUtils.DB_VENDOR_POSTGRE_SQL;
 
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -52,7 +52,7 @@ public class HeartbeatHandlerJdbc extends HeartbeatHandler {
   @Override
   protected void doSendHeartbeat() {
     if (H.isDataSourceClose()) {
-      LOG.warn("[doSendHeartbeat] The dataSource has been closed and the operation is cancelled.");
+      H.logOnDataSourceClose(LOG, "doSendHeartbeat");
       return;
     }
     String memberId;
@@ -92,7 +92,7 @@ public class HeartbeatHandlerJdbc extends HeartbeatHandler {
 
   private void deregisterSelf(String memberId) {
     if (H.isDataSourceClose()) {
-      LOG.warn("[deregisterSelf] The dataSource has been closed and the operation is cancelled.");
+      H.logOnDataSourceClose(LOG, "deregisterSelf");
       return;
     }
     localMemberTracingMemo.forEach((everGeneratedMemberIdOfCurrentProcess, lastUpAt) -> {

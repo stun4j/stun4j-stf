@@ -15,11 +15,11 @@
  */
 package com.stun4j.stf.core.cluster;
 
-import static com.stun4j.stf.core.support.StfHelper.H;
+import static com.stun4j.stf.core.StfHelper.H;
 
 import com.stun4j.guid.core.LocalGuid;
 import com.stun4j.stf.core.support.BaseEntity;
-import com.stun4j.stf.core.support.StfEventBus;
+import com.stun4j.stf.core.support.event.StfEventBus;
 
 /**
  * @author JayMeng
