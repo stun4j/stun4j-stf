@@ -80,7 +80,7 @@ public class AppService {
       LOG.error("Notification of request#{} has timed out...", reqId);
       return;
     }
-    LOG.info("Notification of request#{} was sent successfully", reqId);
+    LOG.info("Notification of request#{} is sent successfully.", reqId);
     commitLastDone();
 
     /*
@@ -93,7 +93,7 @@ public class AppService {
     // return;
     // }
     // txnOps.executeWithoutResult(st -> {
-    // LOG.info("Notification of request#{} was sent successfully", reqId);
+    // LOG.info("Notification of request#{} is sent successfully.", reqId);
     // });
     // <-
   }

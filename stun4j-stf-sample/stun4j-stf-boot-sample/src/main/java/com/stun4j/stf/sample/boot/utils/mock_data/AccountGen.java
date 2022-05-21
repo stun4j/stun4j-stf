@@ -31,9 +31,9 @@ import com.zaxxer.hikari.HikariDataSource;
 public class AccountGen {
   public static void main(String[] args) throws Exception {
     HikariDataSource ds = new HikariDataSource();
-    ds.setJdbcUrl("jdbc:mysql://localhost/test");
-    //ds.setJdbcUrl("jdbc:postgresql://localhost/test");
-    // ds.setJdbcUrl("jdbc:oracle:thin:@localhost:1521:xe");
+    ds.setJdbcUrl("jdbc:mysql://localhost/test");//username: root
+//    ds.setJdbcUrl("jdbc:postgresql://localhost/test");
+//    ds.setJdbcUrl("jdbc:oracle:thin:@localhost:1521:xe");//username: SYSTEM
     ds.setUsername("root");
     ds.setPassword("1111");
     ds.setMaximumPoolSize(20);

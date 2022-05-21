@@ -2,7 +2,7 @@ server:
   shutdown: graceful
 spring:
   datasource:
-    url: jdbc:mysql://localhost/test
+    url: jdbc:mysql://localhost/test #username: root
     #url: jdbc:postgresql://localhost/test
     #url: jdbc:oracle:thin:@localhost:1521:xe #username: SYSTEM
     username: root
