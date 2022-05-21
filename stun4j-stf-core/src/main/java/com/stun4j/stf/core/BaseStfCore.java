@@ -61,26 +61,6 @@ abstract class BaseStfCore implements StfCore, StfDelayQueueCore {
   }
 
   @Override
-  public StfCall newCallee(String bizObjId, String bizMethodName,
-      @SuppressWarnings("unchecked") Pair<?, Class<?>>... typedArgs) {
-    if (ArrayUtils.isNotEmpty(typedArgs)) {
-      StfCall callee = StfCall.ofInJvm(bizObjId, bizMethodName, typedArgs.length);
-      int argIdx = 0;
-      for (Pair<?, Class<?>> arg : typedArgs) {
-        Class<?> argType = arg.getRight();
-        Object argVal = arg.getLeft();
-        if (Primitives.isPrimitive(argType)) {
-          callee.withPrimitiveArg(argIdx++, argVal, argType);
-        } else {
-          callee.withArg(argIdx++, argVal);
-        }
-      }
-      return callee;
-    }
-    return StfCall.ofInJvm(bizObjId, bizMethodName);
-  }
-
-  @Override
   public List<Stf> batchLockStfs(String jobGrp, List<Object[]> preBatchArgs) {
     long now = System.currentTimeMillis();
     List<Stf> jobs = new ArrayList<>();
@@ -110,6 +90,25 @@ abstract class BaseStfCore implements StfCore, StfDelayQueueCore {
       }
     }
     return jobs;
+  }
+
+  StfCall newCallee(String bizObjId, String bizMethodName,
+      @SuppressWarnings("unchecked") Pair<?, Class<?>>... typedArgs) {
+    if (ArrayUtils.isNotEmpty(typedArgs)) {
+      StfCall callee = StfCall.ofInJvm(bizObjId, bizMethodName, typedArgs.length);
+      int argIdx = 0;
+      for (Pair<?, Class<?>> arg : typedArgs) {
+        Class<?> argType = arg.getRight();
+        Object argVal = arg.getLeft();
+        if (Primitives.isPrimitive(argType)) {
+          callee.withPrimitiveArg(argIdx++, argVal, argType);
+        } else {
+          callee.withArg(argIdx++, argVal);
+        }
+      }
+      return callee;
+    }
+    return StfCall.ofInJvm(bizObjId, bizMethodName);
   }
 
   protected boolean checkFail(Long stfId) {

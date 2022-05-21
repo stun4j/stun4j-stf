@@ -63,15 +63,8 @@ public interface StfCore extends StfBatchable {
       }
 
       @Override
-      public List<Stf> batchLockStfs(String jobGrp, List<Object[]> preBatchArgs) {
+      public void markDone(StfMetaGroupEnum metaGrp, Long stfId, boolean async) {
         NOT_INITIALIZED_THROW.accept(MODULE_ID);
-        return null;
-      }
-
-      @Override
-      public int[] batchMarkDone(StfMetaGroupEnum metaGrp, List<Object[]> stfIdsInfo) {
-        NOT_INITIALIZED_THROW.accept(MODULE_ID);
-        return null;
       }
 
       @Override
@@ -86,14 +79,21 @@ public interface StfCore extends StfBatchable {
       }
 
       @Override
-      public boolean fallbackToSingleMarkDone(StfMetaGroupEnum metaGrp, Long stfId) {
+      public List<Stf> batchLockStfs(String jobGrp, List<Object[]> preBatchArgs) {
         NOT_INITIALIZED_THROW.accept(MODULE_ID);
-        return false;
+        return null;
       }
 
       @Override
-      public void markDone(StfMetaGroupEnum metaGrp, Long stfId, boolean async) {
+      public int[] batchMarkDone(StfMetaGroupEnum metaGrp, List<Object[]> stfIdsInfo) {
         NOT_INITIALIZED_THROW.accept(MODULE_ID);
+        return null;
+      }
+
+      @Override
+      public boolean fallbackToSingleMarkDone(StfMetaGroupEnum metaGrp, Long stfId) {
+        NOT_INITIALIZED_THROW.accept(MODULE_ID);
+        return false;
       }
 
     };

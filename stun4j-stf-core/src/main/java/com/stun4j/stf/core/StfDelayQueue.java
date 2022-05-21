@@ -78,7 +78,7 @@ public final class StfDelayQueue {
     });
     // <-
 
-    StfCall callee = core.newCallee(taskObjId, taskMethodName, taskParamsPair);
+    StfCall callee = ((BaseStfCore)core).newCallee(taskObjId, taskMethodName, taskParamsPair);
     Long stfDelayId = core.newStfDelay(callee, timeoutSeconds, delaySeconds);
     if (LOG.isInfoEnabled()) {
       LOG.info("The stf-delay-job#{} is successfully scheduled.", stfDelayId);
