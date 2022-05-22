@@ -17,43 +17,28 @@ package com.stun4j.stf.core.job;
 
 import static com.stun4j.stf.core.StfMetaGroupEnum.CORE;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 import com.google.common.eventbus.Subscribe;
 import com.stun4j.stf.core.StfBatchable;
-import com.stun4j.stf.core.support.actor.BaseActor;
+import com.stun4j.stf.core.StfMetaGroupEnum;
 import com.stun4j.stf.core.support.event.StfDoneEvent;
 
 /**
  * An ad-hoc actor used to batch commit the results of stf-jobs.
  * @author Jay Meng
  */
-public class JobMarkActor extends BaseActor<Long> {
-  private final StfBatchable stfCore;
+class JobMarkActor extends BaseJobBatchMarkActor {
 
   @Subscribe
-  public void on(StfDoneEvent eve) {
-    super.tell(eve.getStfId());
+  void on(StfDoneEvent evt) {
+    super.tell(evt.getStfId());
+  }
+
+  JobMarkActor(StfBatchable stfCore, int baseCapacity) {
+    super("stf-job-mark-actor", baseCapacity, stfCore);
   }
 
   @Override
-  public void onMsgs(List<Long> stfIds) throws InterruptedException {
-    if (stfIds.size() == 1) {
-      Long stfId = stfIds.get(0);
-      stfCore.fallbackToSingleMarkDone(CORE, stfId);
-      return;
-    }
-    long now = System.currentTimeMillis();
-    List<Object[]> stfIdsInfo = stfIds.stream().map(stfId -> {
-      return new Object[]{now, stfId};
-    }).collect(Collectors.toList());
-    stfCore.batchMarkDone(CORE, stfIdsInfo);
-    // TODO mj:log stuff
-  }
-
-  public JobMarkActor(StfBatchable stfCore, int baseCapacity) {
-    super("stf-job-mark-actor", baseCapacity);
-    this.stfCore = stfCore;
+  protected StfMetaGroupEnum metaGroup() {
+    return CORE;
   }
 }
