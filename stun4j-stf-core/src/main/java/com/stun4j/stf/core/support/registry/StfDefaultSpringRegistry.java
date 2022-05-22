@@ -69,6 +69,13 @@ public class StfDefaultSpringRegistry extends ConcurrentHashMap<Serializable, Ob
 
   @Override
   public Class<?> getObjClass(String bizObjId) {
-    return map2.get(bizObjId);
+    // This is relatively loose bizObj acquisition strategy,it is friendly for using DelayQueue->
+    Class<?> clz;
+    if ((clz = map2.get(bizObjId)) != null) {
+      return clz;
+    }
+    return applicationContext.getType(bizObjId);
+    // <-
+    // return map2.get(bizObjId);
   }
 }

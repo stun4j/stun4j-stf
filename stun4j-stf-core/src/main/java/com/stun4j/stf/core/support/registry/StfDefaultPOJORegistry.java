@@ -98,6 +98,7 @@ public class StfDefaultPOJORegistry extends ConcurrentHashMap<Serializable, Obje
 
   @Override
   public Class<?> getObjClass(String bizObjId) {
+    // FIXME mj:Add loose bizObj acquisition strategy for DQ(check 'StfDefaultSpringRegistry')
     return map2.get(bizObjId);
   }
 }

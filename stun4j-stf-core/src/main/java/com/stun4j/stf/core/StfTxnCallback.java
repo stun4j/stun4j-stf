@@ -118,7 +118,7 @@ public class StfTxnCallback<T> implements InvocationHandler {
               }
             }
           } catch (Throwable e) {
-            Exceptions.sneakyThrow(e, LOG, "[{}#{}]Commit last stf |error: '{}'", callerObjId, callerMethodName,
+            Exceptions.sneakyThrow(e, LOG, "[{}#{}] Commit last stf |error: '{}'", callerObjId, callerMethodName,
                 e.getMessage());
           }
         }
@@ -131,7 +131,7 @@ public class StfTxnCallback<T> implements InvocationHandler {
 
           if (StfContext.isLastCommitted()) {
             LOG.warn(
-                "[{}]The last step is already committed,any pre-commit next-step is canceled > It seems that StfContext#commitLastXxx has been invoked before",
+                "[{}] The last step is already committed,any pre-commit next-step is canceled > It seems that StfContext#commitLastXxx has been invoked before",
                 callerMethodName);
             return;
           }
@@ -150,11 +150,13 @@ public class StfTxnCallback<T> implements InvocationHandler {
             callerObjId = StfContext.getBizObjId(callerClass);
             Pair<String, String> calleeInfo = StfConfigs.determineForwardToOf(callerObjId, callerMethodName);
             if (calleeInfo == null) {
-              if (!StfConfigs.existForwardsFromOf(callerObjId, callerMethodName)) {// TODO mj:using orphan do the
-                                                                                   // judgment?
-                LOG.warn(
-                    "[{}]No matched callee > Using raw transaction-ops is recommended, e.g. Spring's TransactionTemplate, StfTxnOps#rawExecuteXxx",
-                    callerMethodName);
+              if (!StfConfigs.existForwardsFromOf(callerObjId,
+                  callerMethodName)) {/*- TODO mj:using orphan do the judgment?*/
+                if (LOG.isDebugEnabled()) {// The debug level is friendly for using DelayQueue
+                  LOG.debug(
+                      "[{}] No matched callee > Using raw transaction-ops is recommended, e.g. Spring's TransactionTemplate, StfTxnOps#rawExecuteXxx",
+                      callerMethodName);
+                }
               }
               return;
             }
@@ -168,7 +170,7 @@ public class StfTxnCallback<T> implements InvocationHandler {
             TransactionResourceManager.bindResource(calleeKey, MutablePair.of(false, newStfId));
             // <-
           } catch (Throwable e) {
-            Exceptions.sneakyThrow(e, LOG, "[{}#{}]Pre commit next-step |error: '{}'", callerObjId, callerMethodName,
+            Exceptions.sneakyThrow(e, LOG, "[{}#{}] Pre commit next-step |error: '{}'", callerObjId, callerMethodName,
                 e.getMessage());
           }
         }

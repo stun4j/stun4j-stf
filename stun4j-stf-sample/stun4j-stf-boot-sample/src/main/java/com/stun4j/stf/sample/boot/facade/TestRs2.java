@@ -48,7 +48,7 @@ public class TestRs2 {
     });
 
     /*-
-     * 3.Another thing is that you can think of Stf as a compensation workflow that runs behind the
+     * 3.Another thing is that you can think of Stf as a compensatory workflow that runs behind the
      * scene.
      */
     //You can comment out the following code block and take a glance, Stf will take all the control->

@@ -20,9 +20,9 @@ public class TestRs3 {
      * 1.If you just need a simple DelayQueue interface that doesn't require any configuration and doesn't have any
      * upstream and downstream implications.Check this sample.
      * 
-     * 2.Stf's DelayQueue is highly-reliable and can support theoretically arbitrary precision delay time.
+     * 2.Stf DelayQueue is distributed, highly-reliable and can support theoretically arbitrary precision delay time.
      * 
-     * 3.Stf's DelayQueue has high-performance, high-throughput,high-availability and good horizontal-scaling-capability
+     * 3.Stf DelayQueue has high-throughput, high-availability and good horizontal-scaling-capability
      */
     Long taskNo = queue.offer("bizOrphanStep", "handle", 10, 30, Data.generateReq());
     return taskNo;
