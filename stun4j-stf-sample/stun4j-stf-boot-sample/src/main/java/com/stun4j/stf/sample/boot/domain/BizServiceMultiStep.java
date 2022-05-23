@@ -90,12 +90,13 @@ public class BizServiceMultiStep {
          * StfContext#commitLastDone method is used to do this.
          * 
          * 2.Here are a few of these scenarios, e.g. insufficient balance for debits, non-existent accounts.
-         * And when these occur, we also need to mark the business-transfer-transaction as a failure in a JDBC
+         * And when these occur, we also need to mark the business-transfer-transaction as a failure in the same JDBC
          * transaction.
          */
         txDao.markTxFail(txId);
         commitLastDone();
         res.withErrorCode(1);
+        return out;
       }
       acctOpDao.insertAcctOpOfDecrement(acctOpSeqNo, acctNoFrom, amtDt, txId);
       out.setRemark("This is the right place modifing the 'out' if necessary");// Pay attention to this
