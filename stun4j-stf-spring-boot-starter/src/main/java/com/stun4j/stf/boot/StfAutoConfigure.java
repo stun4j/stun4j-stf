@@ -18,6 +18,7 @@ package com.stun4j.stf.boot;
 import static com.stun4j.stf.boot.DefaultExecutor.RejectPolicy.DROP_WITH_EX_THROW;
 import static com.stun4j.stf.boot.DefaultExecutor.RejectPolicy.SILENT_DROP;
 import static com.stun4j.stf.boot.DefaultExecutor.RejectPolicy.SILENT_DROP_OLDEST;
+import static com.stun4j.stf.core.StfConsts.DFT_CONF_SUFFIX;
 import static com.stun4j.stf.core.utils.executor.PoolExecutors.BACK_PRESSURE_POLICY;
 import static com.stun4j.stf.core.utils.executor.PoolExecutors.DROP_WITH_EX_THROW_POLICY;
 import static com.stun4j.stf.core.utils.executor.PoolExecutors.SILENT_DROP_OLDEST_POLICY;
@@ -215,6 +216,13 @@ public class StfAutoConfigure implements BeanClassLoaderAware, ApplicationContex
     if (LOG.isDebugEnabled()) {
       LOG.debug("Loading stf-flow configurations via files: {}", Arrays.toString(files));
     }
+
+    if (ArrayUtils.isEmpty(files)) {
+      LOG.warn(
+          "No stf-flow configuration was found under path '{}' > You can't benefit from Stf, even though you have Stf enabled",
+          dir);
+      return;
+    }
     // add to stf-configs and perform final validation
     cfgs.addConfigs(classLoader, files).autoRegisterBizObjClasses((oid) -> applicationContext.getType(oid)).check();
   }
@@ -261,6 +269,13 @@ public class StfAutoConfigure implements BeanClassLoaderAware, ApplicationContex
       if (LOG.isDebugEnabled()) {
         LOG.debug("Loading stf-flow configurations via urls: {}", Arrays.toString(flowConfUrls));
       }
+
+      if (ArrayUtils.isEmpty(flowConfUrls)) {
+        LOG.warn(
+            "No stf-flow configuration was found under path '{}' > You can't benefit from Stf, even though you have Stf enabled",
+            confDirPath);
+        return;
+      }
       // add to stf-configs and perform final validation
       cfgs.addConfigs(classLoader, flowConfUrls).autoRegisterBizObjClasses((oid) -> applicationContext.getType(oid))
           .check();
@@ -271,6 +286,15 @@ public class StfAutoConfigure implements BeanClassLoaderAware, ApplicationContex
 
   StfAutoConfigure(StfProperties props) {
     this.props = props;
+    // remove the useless suffix
+    String[] fullLoadOrder = props.getConfFullLoadOrder();
+    if (fullLoadOrder != null) {// has side effect,but doesn't matter
+      for (int i = 0; i < fullLoadOrder.length; i++) {
+        if (fullLoadOrder[i].endsWith(DFT_CONF_SUFFIX)) {
+          fullLoadOrder[i] = fullLoadOrder[i].substring(0, fullLoadOrder[i].indexOf(DFT_CONF_SUFFIX));
+        }
+      }
+    }
 
     // core function definition for configuring filtering and sorting for stf-flow
     this.flowConfFilterAndSortFn = (res, filesOfSpecifizedLoadOrder) -> {
@@ -280,7 +304,7 @@ public class StfAutoConfigure implements BeanClassLoaderAware, ApplicationContex
       } else if (res instanceof URL) {
         name = StfConfig.determineFilename(((URL)res).getFile());
       }
-      if (!name.endsWith(".conf")) {
+      if (!name.endsWith(DFT_CONF_SUFFIX)) {
         return false;
       }
       String[] excludes;
@@ -291,9 +315,8 @@ public class StfAutoConfigure implements BeanClassLoaderAware, ApplicationContex
           }
         }
       }
-      String[] fullLoadOrder = props.getConfFullLoadOrder();
       if (fullLoadOrder != null) {
-        int sortOrder = ArrayUtils.indexOf(fullLoadOrder, name.substring(0, name.indexOf(".conf")));
+        int sortOrder = ArrayUtils.indexOf(fullLoadOrder, name.substring(0, name.indexOf(DFT_CONF_SUFFIX)));
         if (sortOrder == -1) {
           return false;
         }

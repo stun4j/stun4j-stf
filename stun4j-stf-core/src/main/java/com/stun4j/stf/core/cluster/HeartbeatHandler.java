@@ -24,7 +24,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.common.eventbus.Subscribe;
 import com.stun4j.stf.core.support.BaseLifeCycle;
@@ -38,14 +37,14 @@ public abstract class HeartbeatHandler extends BaseLifeCycle {
   private static final int DFT_MAX_HB_TIMEOUT_SECONDS = 60;
   private static final int DFT_HB_TIMEOUT_SECONDS = 10;
   private final ExecutorService worker;
-
-  private final AtomicInteger cnt;
   private final ScheduledExecutorService watcher;
+
+  protected final Map<String, Long> localMemberTracingMemo;
 
   private ScheduledFuture<?> sf;
   private int timeoutMs;
 
-  protected final Map<String, Long> localMemberTracingMemo;
+  private int accumulatedCnt;
 
   @Override
   public void doStart() {
@@ -94,10 +93,12 @@ public abstract class HeartbeatHandler extends BaseLifeCycle {
 
   @Subscribe
   public void onHeartbeat(Heartbeat hb) {
-    if (cnt.incrementAndGet() < 3) {
-      return;
+    synchronized (this) {
+      if (++accumulatedCnt < 3) {
+        return;
+      }
+      accumulatedCnt = 0;
     }
-    cnt.set(0);
     worker.execute(() -> {
       try {
         doSendHeartbeat();
@@ -116,7 +117,6 @@ public abstract class HeartbeatHandler extends BaseLifeCycle {
   {
     worker = newWorkerOfMemberHeartbeat();
     watcher = newWatcherOfMemberHeartbeat();
-    cnt = new AtomicInteger();
     timeoutMs = DFT_HB_TIMEOUT_SECONDS * 1000;
     localMemberTracingMemo = new ConcurrentHashMap<>();
   }

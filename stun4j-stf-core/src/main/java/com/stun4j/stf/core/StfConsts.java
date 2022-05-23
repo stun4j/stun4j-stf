@@ -21,6 +21,7 @@ import org.apache.commons.lang3.time.FastDateFormat;
 
 /** @author Jay Meng */
 public interface StfConsts {
+  String DFT_CONF_SUFFIX = ".conf";
   String DFT_CORE_TBL_NAME = "stn_stf";
   String DFT_DELAY_TBL_NAME_SUFFIX = "_delay";
   String DFT_CLUSTER_MEMBER_TBL_NAME = "stn_stf_cluster_member";
