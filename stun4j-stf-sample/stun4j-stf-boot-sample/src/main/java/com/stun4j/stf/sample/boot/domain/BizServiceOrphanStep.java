@@ -36,25 +36,20 @@ public class BizServiceOrphanStep {
   @Autowired
   private StfTxnOps txnOps;
 
-  @Autowired
-  MockHelper mock;
-
   public void handle(Req req) {
     String reqId = req.getId();
     String reqBody = req.toJson("insert");
 
-    boolean raiseAnyError;
-    if (mock.decrementAndGet(this.getClass()) >= 0) {
-      raiseAnyError = true;
-    } else {
-      raiseAnyError = false;
-    }
+    boolean error = mock.anError(getClass());
     txnOps.executeWithoutResult(st -> {
       reqDao.insert(new ReqPo(reqId, reqBody));
-      if (raiseAnyError) {/*- Here we simply simulated an error.You should clearly see the retry of this task after a while. */
-        throw new RuntimeException("Sorry, DB is temporarily inaccessible!");
+      if (error) {/*- Here we simply simulated an error.You should clearly see the retry of this task after a while. */
+        throw new RuntimeException("Sorry, DB is temporarily down!");
       }
     });
-    LOG.info("The bizOrphanStep is done [reqId={}]", reqId);
+    LOG.info("The bizOrphanStep#handle is done [reqId={}]", reqId);
   }
+
+  @Autowired
+  MockHelper mock;
 }

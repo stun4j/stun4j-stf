@@ -28,12 +28,20 @@ public class MockHelper {
   @Autowired
   JdbcTemplate jdbc;
 
-  public Integer decrementAndGet(Class<?> sampleClz) {
+  Integer decrementAndGet(Class<?> sampleClz) {
     String sampleId = sampleClz.getSimpleName();
     Integer cur = jdbc.queryForObject(String.format("select value from stn_stf_sample_mock where id = '%s'", sampleId),
         Integer.class);
     int res = jdbc.update(
         String.format("update stn_stf_sample_mock set value = value - 1 where id = '%s' and value = ?", sampleId), cur);
     return res == 1 ? cur - 1 : decrementAndGet(sampleClz);
+  }
+
+  public boolean anError(Class<?> sampleClz) {
+    boolean error = false;
+    if (decrementAndGet(sampleClz) >= 0) {
+      error = true;
+    }
+    return error;
   }
 }

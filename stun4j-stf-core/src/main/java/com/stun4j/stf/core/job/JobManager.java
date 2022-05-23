@@ -177,19 +177,19 @@ public class JobManager extends BaseLifeCycle {
 
   private void takeJobsAndRun(String jobGrp) {
     int batchSize = handleBatchSize;
-    int availableThread = runners.getAvailablePoolSize(jobGrp);
-    availableThread *= batchMultiplyingFactor;
-    int loop = availableThread % batchSize == 0 ? availableThread / batchSize : availableThread / batchSize + 1;
+    int availableThreadNum = runners.getAvailablePoolSize(jobGrp);
+    int enlargedThreadNum = availableThreadNum * batchMultiplyingFactor;
+    int loop = enlargedThreadNum % batchSize == 0 ? enlargedThreadNum / batchSize : enlargedThreadNum / batchSize + 1;
     if (LOG.isDebugEnabled()) {
-      LOG.debug("[takeJobsAndRun] Loop:{} [availableThread={}, normalBatchSize={}, jobGrp={}]", loop, availableThread,
-          batchSize, jobGrp);
+      LOG.debug("[takeJobsAndRun] Loop:{} [availableThread={}, normalBatchSize={}, jobGrp={}]", loop,
+          availableThreadNum, batchSize, jobGrp);
     }
     start: for (int i = 1; i <= loop; i++) {
       if (i == loop) {
-        batchSize = availableThread - batchSize * (loop - 1);
+        batchSize = enlargedThreadNum - batchSize * (loop - 1);
       }
       for (int j = 0; j < batchSize; j++) {
-        Stf job = takeUniqueJob(jobGrp);
+        Stf job = takeJob(jobGrp);
         if (job == null) {
           break start;
         }
@@ -198,7 +198,7 @@ public class JobManager extends BaseLifeCycle {
     }
   }
 
-  private Stf takeUniqueJob(String jobGrp) {
+  private Stf takeJob(String jobGrp) {
     while (!Thread.currentThread().isInterrupted() && !shutdown) {
       Stf job = null;
       try {

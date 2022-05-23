@@ -62,6 +62,7 @@ public abstract class BaseActor<T> extends BaseLifeCycle implements Actor<T> {
       mailbox.deliver(msg);
     } catch (InterruptedException e) {// TODO mj:log stuff
       Thread.currentThread().interrupt();
+      LOG.info("[tell] The {} seems shut down", name);
     }
   }
 
@@ -85,6 +86,7 @@ public abstract class BaseActor<T> extends BaseLifeCycle implements Actor<T> {
     } catch (InterruptedException e) {// TODO mj:log stuff
       Thread.currentThread().interrupt();
     }
+    LOG.info("[run] The {} seems shut down", name);
   }
 
   private void adjustMsgSizeScaleStepBy(int drained) {// Just do a crude guess
