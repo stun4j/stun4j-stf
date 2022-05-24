@@ -30,6 +30,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.stun4j.guid.core.LocalGuid;
 import com.stun4j.stf.core.build.StfConfigs;
 import com.stun4j.stf.core.utils.Exceptions;
 import com.stun4j.stf.core.utils.shaded.guava.common.primitives.Primitives;
@@ -56,7 +57,7 @@ abstract class BaseStfCore implements StfCore, StfDelayQueueCore {
   @Override
   public Long newStfDelay(StfCall callee, int timeoutSeconds, int delaySeconds) {
     Long stfDelayId;
-    doNewStfDelay(stfDelayId = H.cachedGuid().next(), callee, timeoutSeconds, delaySeconds);
+    doNewStfDelay(stfDelayId = LocalGuid.instance().next(), callee, timeoutSeconds, delaySeconds);
     return stfDelayId;
   }
 

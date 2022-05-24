@@ -22,8 +22,6 @@ import static com.stun4j.stf.core.job.JobConsts.KEY_FEATURE_TIMEOUT_DELAY;
 
 import java.lang.reflect.Method;
 import java.sql.SQLIntegrityConstraintViolationException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.function.Consumer;
 
 import javax.sql.DataSource;
@@ -33,13 +31,11 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.springframework.dao.DuplicateKeyException;
 
-import com.stun4j.guid.core.LocalGuid;
 import com.stun4j.stf.core.spi.StfJdbcOps;
 import com.stun4j.stf.core.utils.DataSourceUtils;
 
 /** @author Jay Meng */
 public class StfHelper {
-  private static final Map<?, LocalGuid> CACHED_GUID;
   private final DataSource ds;
   private final String dbVendor;
   private final Method dsCloser;
@@ -78,18 +74,14 @@ public class StfHelper {
       // TODO mj:be care of the accuracy of this feature recognition
       if ((ex = e.getMessage()) != null && (ex.indexOf("Duplicate") != -1 && ex.indexOf("PRIMARY") != -1)
           && (ex.indexOf("insert".toLowerCase()) != -1 || ex.indexOf("insert".toUpperCase()) != -1)
-          && (ex.indexOf(dupOccurredTblName.toLowerCase()) != -1 || ex.indexOf(dupOccurredTblName.toUpperCase()) != -1)) {
+          && (ex.indexOf(dupOccurredTblName.toLowerCase()) != -1
+              || ex.indexOf(dupOccurredTblName.toUpperCase()) != -1)) {
         logger.warn(
             "It seems that the stf#{} has been saved successfully, we are now trying to commit last stf or stf-delay...",
             laStfId, e);
         commitLastDoneFn.accept(laStfId);
       }
     }
-  }
-
-  public LocalGuid cachedGuid() {
-    // TODO mj:extract 'single null-value cache' utility?or upgrade LocalGuid by applying empty-object pattern?
-    return CACHED_GUID.computeIfAbsent(null, k -> LocalGuid.instance());
   }
 
   public void logOnDataSourceClose(Logger logger, String title) {
@@ -127,9 +119,4 @@ public class StfHelper {
     this.dbVendor = DataSourceUtils.getDatabaseProductName(this.ds = jdbcOps.getDataSource());
     this.dsCloser = tryGetDataSourceCloser();
   }
-
-  static {
-    CACHED_GUID = new HashMap<>(1);// not very strict in high concurrency scenarios,dosen't matter
-  }
-
 }

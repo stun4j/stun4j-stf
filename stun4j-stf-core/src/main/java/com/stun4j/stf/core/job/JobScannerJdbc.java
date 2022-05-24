@@ -95,7 +95,7 @@ public class JobScannerJdbc implements JobScanner, JdbcAware {
     }
     long now = System.currentTimeMillis();
     LocalGuid guid;
-    long idEnd = (guid = H.cachedGuid()).from(now);
+    long idEnd = (guid = LocalGuid.instance()).from(now);
     long idStart = guid.from(now - TimeUnit.DAYS.toMillis(includeHowManyDaysAgo));
 
     String sql;

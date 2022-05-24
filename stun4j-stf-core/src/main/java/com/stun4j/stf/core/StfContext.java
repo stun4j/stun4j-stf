@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.alibaba.ttl.TransmittableThreadLocal;
+import com.stun4j.guid.core.LocalGuid;
 import com.stun4j.stf.core.build.StfConfigs;
 import com.stun4j.stf.core.spi.StfRegistry;
 import com.stun4j.stf.core.support.banner.Banner;
@@ -129,7 +130,7 @@ public final class StfContext {
   }
 
   static StfId newStfId(String oid, String methodName) {
-    Long stfId = H.cachedGuid().next();
+    Long stfId = LocalGuid.instance().next();
     String identity = StfConfigs.actionPathBy(oid, methodName);
     StfId id;
     TTL.set(id = new StfId(stfId, identity));
