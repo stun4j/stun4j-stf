@@ -15,7 +15,6 @@
  */
 package com.stun4j.stf.core.job;
 
-import static com.stun4j.stf.core.StfRunModeEnum.CLIENT;
 import static com.stun4j.stf.core.StfRunModeEnum.DEFAULT;
 import static com.stun4j.stf.core.job.JobConsts.ALL_JOB_GROUPS;
 import static com.stun4j.stf.core.support.executor.StfInternalExecutors.newWatcherOfJobManager;
@@ -35,6 +34,7 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import com.stun4j.stf.core.Stf;
 import com.stun4j.stf.core.StfCore;
+import com.stun4j.stf.core.StfDelayQueueCore;
 import com.stun4j.stf.core.StfRunModeEnum;
 import com.stun4j.stf.core.cluster.HeartbeatHandler;
 import com.stun4j.stf.core.cluster.StfClusterMember;
@@ -49,7 +49,8 @@ import sun.misc.Signal;
  * The core coordinator of the stf-job microkernel
  * <ul>
  * <li>In cluster deployment, only one active running instance is maintained for each stf-job</li>
- * <li>Try the best to prevent OOM,even when we have a lot of jobs to handle</li>
+ * <li>Try the best to prevent resource competition,OOM and other kinda problems,even when we have a lot of jobs to
+ * handle</li>
  * <li>An intelligent, adaptive job handling mechanism is built-in</li>
  * <li>Graceful shutdown is supported</li>
  * </ul>
@@ -74,10 +75,11 @@ public class JobManager extends BaseLifeCycle {
   private final JobRunners runners;
   private final JobRunner runner;
   private final JobMarkActor marker;
-  private final JobDelayMarkActor delayMarker;
+  private JobDelayMarkActor delayMarker;
 
   private final ScheduledExecutorService watcher;
   private final Map<String, ThreadPoolExecutor> workers;
+  private final boolean delayQueueEnabled;
 
   private HeartbeatHandler heartbeatHandler;
 
@@ -92,11 +94,13 @@ public class JobManager extends BaseLifeCycle {
 
   @Override
   protected void doStart() {
-    if (runMode != CLIENT) {
+    if (runMode == DEFAULT) {
       heartbeatHandler.doStart();
     }
     marker.doStart();
-    delayMarker.doStart();
+    if (this.delayQueueEnabled) {
+      delayMarker.doStart();
+    }
 
     if (runMode == DEFAULT) {
       loader.doStart();
@@ -122,7 +126,8 @@ public class JobManager extends BaseLifeCycle {
       }, scanFreqSeconds = this.scanFreqSeconds, scanFreqSeconds, TimeUnit.SECONDS);
     }
 
-    LOG.info("The stf-job-manager({} mode) is successfully started.", runMode.name().toLowerCase());
+    LOG.info("The stf-job-manager({} mode, dlq {}) is successfully started.", runMode.name().toLowerCase(),
+        this.delayQueueEnabled ? "enabled" : "disabled");
   }
 
   @Override
@@ -154,7 +159,9 @@ public class JobManager extends BaseLifeCycle {
 
     StfMonitor.INSTANCE.shutdown();
 
-    delayMarker.shutdown();
+    if (delayMarker != null) {
+      delayMarker.shutdown();
+    }
     marker.shutdown();
     heartbeatHandler.shutdown();
 
@@ -316,23 +323,24 @@ public class JobManager extends BaseLifeCycle {
   }
 
   public JobManager(JobLoader loader, JobRunners runners) {
-    this(loader, runners, DEFAULT);
-  }
-
-  public JobManager(JobLoader loader, JobRunners runners, StfRunModeEnum runMode) {
     this.scanFreqSeconds = DFT_SCAN_FREQ_SECONDS;
     this.handleBatchSize = DFT_HANDLE_BATCH_SIZE;
     this.batchMultiplyingFactor = DFT_BATCH_MULTIPLYING_FACTOR;
     this.vmResCheckEnabled = true;
-    this.stfCore = runners.getStfCore();
-    this.runMode = runMode;
+    StfCore stfc;
+    this.stfCore = stfc = runners.getStfCore();
+    this.runMode = stfc.getRunMode();
+    boolean delayQueueEnabled;
+    this.delayQueueEnabled = delayQueueEnabled = ((StfDelayQueueCore)this.stfCore).isDelayQueueEnabled();
     this.loader = loader;
     this.runners = runners;
     this.runner = runners.getRunner();
     StfEventBus.registerHandler(this.marker = new JobMarkActor(this.stfCore, 16384));// TODO mj:to be configured
-    StfEventBus.registerHandler(this.delayMarker = new JobDelayMarkActor(stfCore, 16384));
+    if (delayQueueEnabled) {
+      StfEventBus.registerHandler(this.delayMarker = new JobDelayMarkActor(stfCore, 16384));
+    }
     this.workers = Stream.of(ALL_JOB_GROUPS).reduce(new HashMap<String, ThreadPoolExecutor>(), (map, grp) -> {
-      map.put(grp, newWorkerOfJobManager(grp));
+      map.put(grp, newWorkerOfJobManager(grp));// StfInternalExecutors.newWorkerOfJobManager
       return map;
     }, (a, b) -> null);
     this.watcher = newWatcherOfJobManager();

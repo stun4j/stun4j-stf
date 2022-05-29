@@ -42,6 +42,8 @@ import com.stun4j.stf.core.utils.shaded.guava.common.primitives.Primitives;
 abstract class BaseStfCore implements StfCore, StfDelayQueueCore {
   protected final Logger LOG = LoggerFactory.getLogger(this.getClass());
   protected final ExecutorService worker;
+  private StfRunModeEnum runMode;
+  private boolean delayQueueEnabled;
 
   @Override
   public Long newStf(String bizObjId, String bizMethodName, Integer timeoutSeconds,
@@ -149,5 +151,27 @@ abstract class BaseStfCore implements StfCore, StfDelayQueueCore {
 
   {
     worker = newWorkerOfStfCore();
+  }
+
+  @Override
+  public StfRunModeEnum getRunMode() {
+    return runMode;
+  }
+
+  @Override
+  public StfCore withRunMode(StfRunModeEnum runMode) {
+    this.runMode = runMode;
+    return this;
+  }
+
+  @Override
+  public boolean isDelayQueueEnabled() {
+    return delayQueueEnabled;
+  }
+
+  @Override
+  public StfDelayQueueCore withDelayQueueEnabled(boolean enabled) {
+    this.delayQueueEnabled = enabled;
+    return this;
   }
 }

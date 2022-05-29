@@ -45,6 +45,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanClassLoaderAware;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -66,10 +67,12 @@ import com.stun4j.stf.core.StfContext;
 import com.stun4j.stf.core.StfCore;
 import com.stun4j.stf.core.StfCoreJdbc;
 import com.stun4j.stf.core.StfDelayQueue;
+import com.stun4j.stf.core.StfDelayQueueCore;
 import com.stun4j.stf.core.StfTxnOps;
 import com.stun4j.stf.core.build.StfConfig;
 import com.stun4j.stf.core.build.StfConfigs;
 import com.stun4j.stf.core.cluster.HeartbeatHandlerJdbc;
+import com.stun4j.stf.core.job.JobConsts;
 import com.stun4j.stf.core.job.JobLoader;
 import com.stun4j.stf.core.job.JobManager;
 import com.stun4j.stf.core.job.JobRunners;
@@ -130,6 +133,7 @@ public class StfAutoConfigure implements BeanClassLoaderAware, ApplicationContex
   }
 
   @Bean
+  @ConditionalOnProperty(prefix = "stun4j.stf.delay-queue", name = "enabled", havingValue = "true")
   StfDelayQueue stfDelayQueue() {
     return new StfDelayQueue(StfContext.delayQueueCore());
   }
@@ -140,7 +144,15 @@ public class StfAutoConfigure implements BeanClassLoaderAware, ApplicationContex
     // the initialization
     StfRegistry bizReg = new StfDefaultSpringRegistry(applicationContext);
     StfJdbcOps jdbcOps = new StfDefaultSpringJdbcOps(dataSource);
-    StfCore stfCore = new StfCoreJdbc(jdbcOps);
+    StfCore stfCore = new StfCoreJdbc(jdbcOps).withRunMode(props.getRunMode());
+
+    boolean delayQueueEnabled;
+    if (!(delayQueueEnabled = props.getDelayQueue().isEnabled())) {
+      JobConsts.ALL_JOB_GROUPS = new String[]{JobConsts.JOB_GROUP_TIMEOUT_WAITING_RUN,
+          JobConsts.JOB_GROUP_TIMEOUT_IN_PROGRESS};
+    }
+    ((StfDelayQueueCore)stfCore).withDelayQueueEnabled(delayQueueEnabled);
+
     StfContext.init(stfCore, bizReg);
 
     // load, sort, and validate the stf-flow configuration
@@ -169,8 +181,7 @@ public class StfAutoConfigure implements BeanClassLoaderAware, ApplicationContex
     JobScanner scanner = JobScannerJdbc.of(jdbcOps);
     JobLoader loader = new JobLoader(scanner);
     JobRunners runners = new JobRunners(stfCore);
-    JobManager jobMngr = new JobManager(loader, runners, props.getRunMode())
-        .withHeartbeatHandler(HeartbeatHandlerJdbc.of(jdbcOps));
+    JobManager jobMngr = new JobManager(loader, runners).withHeartbeatHandler(HeartbeatHandlerJdbc.of(jdbcOps));
 
     // configure loader
     com.stun4j.stf.boot.Job.JobLoader loaderCfg;

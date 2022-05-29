@@ -18,16 +18,16 @@ package com.stun4j.stf.core.job;
 import java.util.HashMap;
 import java.util.Map;
 
-public interface JobConsts {
-  static final String KEY_FEATURE_TIMEOUT_DELAY = "TimeoutDelay";
-  static final String JOB_GROUP_TIMEOUT_WAITING_RUN = "TimeoutWaitingRun";
-  static final String JOB_GROUP_TIMEOUT_IN_PROGRESS = "TimeoutInProgress";
-  static final String JOB_GROUP_TIMEOUT_DELAY_WAITING_RUN = KEY_FEATURE_TIMEOUT_DELAY + "WaitingRun";
-  static final String JOB_GROUP_TIMEOUT_DELAY_IN_PROGRESS = KEY_FEATURE_TIMEOUT_DELAY + "InProgress";
-  static final String[] ALL_JOB_GROUPS = new String[]{JOB_GROUP_TIMEOUT_WAITING_RUN, JOB_GROUP_TIMEOUT_IN_PROGRESS,
+public abstract class JobConsts {
+  public static final String KEY_FEATURE_TIMEOUT_DELAY = "TimeoutDelay";
+  public static final String JOB_GROUP_TIMEOUT_WAITING_RUN = "TimeoutWaitingRun";
+  public static final String JOB_GROUP_TIMEOUT_IN_PROGRESS = "TimeoutInProgress";
+  public static final String JOB_GROUP_TIMEOUT_DELAY_WAITING_RUN = KEY_FEATURE_TIMEOUT_DELAY + "WaitingRun";
+  public static final String JOB_GROUP_TIMEOUT_DELAY_IN_PROGRESS = KEY_FEATURE_TIMEOUT_DELAY + "InProgress";
+  public static String[] ALL_JOB_GROUPS = new String[]{JOB_GROUP_TIMEOUT_WAITING_RUN, JOB_GROUP_TIMEOUT_IN_PROGRESS,
       JOB_GROUP_TIMEOUT_DELAY_WAITING_RUN, JOB_GROUP_TIMEOUT_DELAY_IN_PROGRESS};
 
-  static Map<Integer, Integer> generateRetryBehaviorByPattern(
+  public static Map<Integer, Integer> generateRetryBehaviorByPattern(
       int timeoutSeconds) {/*- TODO mj:Open this block to make it configurable*/
     Map<Integer, Integer> map = new HashMap<>();
     map.put(1, 0);

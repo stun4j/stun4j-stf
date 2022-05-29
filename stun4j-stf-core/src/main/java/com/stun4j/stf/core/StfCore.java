@@ -26,6 +26,7 @@ import org.apache.commons.lang3.tuple.Pair;
  * @author JayMeng
  */
 public interface StfCore extends StfBatchable {
+  StfCore withRunMode(StfRunModeEnum runMode);
 
   @SuppressWarnings("unchecked")
   Long newStf(String bizObjId, String bizMethodName, Integer timeoutSeconds, Pair<?, Class<?>>... typedArgs);
@@ -44,9 +45,16 @@ public interface StfCore extends StfBatchable {
   void reForward(StfMetaGroupEnum metaGrp, Long stfId, int lastRetryTimes, String calleeInfo, boolean async,
       Object... calleeMethodArgs);
 
+  StfRunModeEnum getRunMode();
+
   static StfCore empty() {
     return new StfCore() {
       static final String MODULE_ID = "stf-core";
+
+      public StfCore withRunMode(StfRunModeEnum runMode) {
+        NOT_INITIALIZED_THROW.accept(MODULE_ID);
+        return null;
+      }
 
       @SuppressWarnings("unchecked")
       @Override
@@ -94,6 +102,12 @@ public interface StfCore extends StfBatchable {
       public boolean fallbackToSingleMarkDone(StfMetaGroupEnum metaGrp, Long stfId) {
         NOT_INITIALIZED_THROW.accept(MODULE_ID);
         return false;
+      }
+
+      @Override
+      public StfRunModeEnum getRunMode() {
+        NOT_INITIALIZED_THROW.accept(MODULE_ID);
+        return null;
       }
 
     };

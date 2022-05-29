@@ -13,16 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.stun4j.stf.core;
+package com.stun4j.stf.boot;
 
 /**
- * Stf DelayQueue interface for internal use.
+ * Stf DelayQueue configuration
+ * <p>
  * @author Jay Meng
  */
-public interface StfDelayQueueCore {
-  Long newStfDelay(StfCall callee, int timeoutSeconds, int delaySeconds);
+public class DelayQueue {
+  /**
+   * Whether Stf DelayQueue is enabled
+   * <p>
+   * Default: true
+   */
+  private boolean enabled = true;
 
-  StfDelayQueueCore withDelayQueueEnabled(boolean enabled);
+  public boolean isEnabled() {
+    return enabled;
+  }
 
-  boolean isDelayQueueEnabled();
+  public void setEnabled(boolean enabled) {
+    this.enabled = enabled;
+  }
+
 }

@@ -18,6 +18,7 @@ package com.stun4j.stf.core;
 import static com.google.common.base.Strings.lenientFormat;
 import static com.stun4j.stf.core.utils.Asserts.notNull;
 import static com.stun4j.stf.core.utils.Asserts.requireNonNull;
+import static com.stun4j.stf.core.utils.Asserts.state;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -88,6 +89,7 @@ public final class StfDelayQueue {
 
   public StfDelayQueue(StfDelayQueueCore core) {
     this.core = requireNonNull(core, "The stf-delayqueue-core can't be null");
+    state(core.isDelayQueueEnabled(), "The stf-delayqueue is disabled > Forgot to set 'stun4j.stf.delaty-queue.enabled' to true?");
     CONSTRUCTOR_CHECK_MEMO = new ConcurrentHashMap<>();
     TASK_METHOD_HEAD_MEMO = new ConcurrentHashMap<>();
   }

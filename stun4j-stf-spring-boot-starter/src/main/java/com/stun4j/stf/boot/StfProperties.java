@@ -88,6 +88,9 @@ public class StfProperties extends BaseVo {
   @NestedConfigurationProperty
   private DefaultExecutor defaultExecutor = new DefaultExecutor();
 
+  @NestedConfigurationProperty
+  private DelayQueue delayQueue = new DelayQueue();
+
   public void setConfRootPath(String confRootPath) {
     argument(confRootPath.indexOf("*") == -1, "'*' is not supported in root path of stf-flow configurations");
     if (confRootPath.endsWith("/")) {
@@ -102,6 +105,14 @@ public class StfProperties extends BaseVo {
 
   public void setDatasourceBeanName(String datasourceBeanName) {
     this.datasourceBeanName = datasourceBeanName;
+  }
+
+  public StfRunModeEnum getRunMode() {
+    return runMode;
+  }
+
+  public void setRunMode(StfRunModeEnum runMode) {
+    this.runMode = runMode;
   }
 
   public String getConfRootPath() {
@@ -140,12 +151,8 @@ public class StfProperties extends BaseVo {
     return defaultExecutor;
   }
 
-  public StfRunModeEnum getRunMode() {
-    return runMode;
-  }
-
-  public void setRunMode(StfRunModeEnum runMode) {
-    this.runMode = runMode;
+  public DelayQueue getDelayQueue() {
+    return delayQueue;
   }
 
 }
