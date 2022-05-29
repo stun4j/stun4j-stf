@@ -49,7 +49,7 @@ create index idx_stn_stf_delay_timeout_at on stn_stf_delay(timeout_at);
 --drop table stn_stf_sample_mock;
 create table stn_stf_sample_mock (
   id varchar2(255) not null,
-  value number(3, 0) not null,
+  value number(20, 0) not null,
   primary key (id)
 );
 

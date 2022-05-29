@@ -49,7 +49,7 @@ create index idx_stn_stf_delay_timeout_at on stn_stf_delay using btree (timeout_
 --drop table if exists stn_stf_sample_mock;
 create table stn_stf_sample_mock (
   id varchar(255) not null,
-  value smallint not null,
+  value bigint not null,
   primary key (id)
 );
 
