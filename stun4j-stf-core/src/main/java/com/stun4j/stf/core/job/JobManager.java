@@ -15,6 +15,8 @@
  */
 package com.stun4j.stf.core.job;
 
+import static com.stun4j.stf.core.StfRunModeEnum.CLIENT;
+import static com.stun4j.stf.core.StfRunModeEnum.DEFAULT;
 import static com.stun4j.stf.core.job.JobConsts.ALL_JOB_GROUPS;
 import static com.stun4j.stf.core.support.executor.StfInternalExecutors.newWatcherOfJobManager;
 import static com.stun4j.stf.core.support.executor.StfInternalExecutors.newWorkerOfJobManager;
@@ -33,6 +35,7 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import com.stun4j.stf.core.Stf;
 import com.stun4j.stf.core.StfCore;
+import com.stun4j.stf.core.StfRunModeEnum;
 import com.stun4j.stf.core.cluster.HeartbeatHandler;
 import com.stun4j.stf.core.cluster.StfClusterMember;
 import com.stun4j.stf.core.monitor.StfMonitor;
@@ -66,6 +69,7 @@ public class JobManager extends BaseLifeCycle {
   private static final int DFT_BATCH_MULTIPLYING_FACTOR = 16;
 
   private final StfCore stfCore;
+  private final StfRunModeEnum runMode;
   private final JobLoader loader;
   private final JobRunners runners;
   private final JobRunner runner;
@@ -88,32 +92,37 @@ public class JobManager extends BaseLifeCycle {
 
   @Override
   protected void doStart() {
-    heartbeatHandler.doStart();
+    if (runMode != CLIENT) {
+      heartbeatHandler.doStart();
+    }
     marker.doStart();
     delayMarker.doStart();
-    loader.doStart();
 
-    if (vmResCheckEnabled) {
-      StfMonitor.INSTANCE.doStart();
+    if (runMode == DEFAULT) {
+      loader.doStart();
+
+      if (vmResCheckEnabled) {
+        StfMonitor.INSTANCE.doStart();
+      }
+
+      int scanFreqSeconds;
+      sf = watcher.scheduleWithFixedDelay(() -> {
+        try {
+          if (vmResCheckEnabled) {
+            Pair<Boolean, Map<String, Object>> resRpt;
+            if ((resRpt = StfMonitor.INSTANCE.isVmResourceNotEnough()).getLeft()) {
+              LOG.warn("Handling of stf-jobs is paused due to insufficient resources > Reason: {}", resRpt.getRight());
+              return;
+            }
+          }
+          onSchedule();
+        } catch (Throwable e) {
+          Exceptions.swallow(e, LOG, "[onSchedule] An error occurred while handling stf-jobs");
+        }
+      }, scanFreqSeconds = this.scanFreqSeconds, scanFreqSeconds, TimeUnit.SECONDS);
     }
 
-    int scanFreqSeconds;
-    sf = watcher.scheduleWithFixedDelay(() -> {
-      try {
-        if (vmResCheckEnabled) {
-          Pair<Boolean, Map<String, Object>> resRpt;
-          if ((resRpt = StfMonitor.INSTANCE.isVmResourceNotEnough()).getLeft()) {
-            LOG.warn("Handling of stf-jobs is paused due to insufficient resources > Reason: {}", resRpt.getRight());
-            return;
-          }
-        }
-        onSchedule();
-      } catch (Throwable e) {
-        Exceptions.swallow(e, LOG, "[onSchedule] An error occurred while handling stf-jobs");
-      }
-    }, scanFreqSeconds = this.scanFreqSeconds, scanFreqSeconds, TimeUnit.SECONDS);
-
-    LOG.info("The stf-job-manager is successfully started");
+    LOG.info("The stf-job-manager({} mode) is successfully started.", runMode.name().toLowerCase());
   }
 
   @Override
@@ -143,10 +152,9 @@ public class JobManager extends BaseLifeCycle {
     runners.shutdown();
     loader.shutdown();
 
-    if (vmResCheckEnabled) {
-      StfMonitor.INSTANCE.shutdown();
-    }
+    StfMonitor.INSTANCE.shutdown();
 
+    delayMarker.shutdown();
     marker.shutdown();
     heartbeatHandler.shutdown();
 
@@ -308,11 +316,16 @@ public class JobManager extends BaseLifeCycle {
   }
 
   public JobManager(JobLoader loader, JobRunners runners) {
+    this(loader, runners, DEFAULT);
+  }
+
+  public JobManager(JobLoader loader, JobRunners runners, StfRunModeEnum runMode) {
     this.scanFreqSeconds = DFT_SCAN_FREQ_SECONDS;
     this.handleBatchSize = DFT_HANDLE_BATCH_SIZE;
     this.batchMultiplyingFactor = DFT_BATCH_MULTIPLYING_FACTOR;
     this.vmResCheckEnabled = true;
     this.stfCore = runners.getStfCore();
+    this.runMode = runMode;
     this.loader = loader;
     this.runners = runners;
     this.runner = runners.getRunner();

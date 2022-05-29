@@ -24,6 +24,8 @@ import com.stun4j.stf.core.StfTxnOps;
 import com.stun4j.stf.sample.boot.persistence.ReqDao;
 import com.stun4j.stf.sample.boot.persistence.ReqPo;
 import com.stun4j.stf.sample.boot.utils.mock_data.MockHelper;
+import com.stun4j.stf.sample.boot.utils.mock_data.MockHelper.MockError;
+import static com.stun4j.stf.sample.boot.utils.mock_data.MockHelper.MockErrorTypeEnum.THROW_EX;
 
 /**
  * @author Jay Meng
@@ -39,12 +41,12 @@ public class BizServiceOrphanStep {
   public void handle(Req req) {
     String reqId = req.getId();
     String reqBody = req.toJson("insert");
-
-    boolean error = mock.anError(getClass());
     txnOps.executeWithoutResult(st -> {
       reqDao.insert(new ReqPo(reqId, reqBody));
-      if (error) {/*- Here we simply simulated an error.You should clearly see the retry of this task after a while. */
-        throw new RuntimeException("Sorry, DB is temporarily down!");
+
+      if (mock.newError(getClass(), THROW_EX, LOG, "Sorry, DB is temporarily down!")
+          .has()) {/*- Here we simply simulated an error.You should clearly see the retry of this task after a while. */
+        return;
       }
     });
     LOG.info("The bizOrphanStep#handle is done [reqId={}]", reqId);

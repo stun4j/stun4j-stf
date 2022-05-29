@@ -15,8 +15,8 @@
  */
 package com.stun4j.stf.sample.boot.application;
 
-import static com.stun4j.stf.core.StfContext.commitLastDone;
 import static com.stun4j.stf.core.utils.Asserts.raiseIllegalStateException;
+import static com.stun4j.stf.sample.boot.utils.mock_data.MockHelper.MockErrorTypeEnum.THROW_EX;
 
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -26,6 +26,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.stun4j.stf.core.StfContext;
+import com.stun4j.stf.core.StfTxnOps;
 import com.stun4j.stf.core.support.executor.StfExecutorService;
 import com.stun4j.stf.sample.boot.domain.BizServiceMultiStep;
 import com.stun4j.stf.sample.boot.domain.Req;
@@ -75,21 +77,19 @@ public class AppService {
   }
 
   public void sendNotification(String reqId) {
-    if (mock.anError(
-        getClass())) {/*- Here we simply simulated 3 timeouts.You can clearly see the ladder of retry intervals. */
-      LOG.error("Notification of request#{} has timed out...", reqId);
+    if (mock.newError(this.getClass(), THROW_EX, LOG, "Notification of request#%s has timed out...", reqId)
+        .has()) {/*- Here we simply simulated multiple timeouts.You can clearly see the ladder of retry intervals. */
       return;
     }
     LOG.info("Notification of request#{} is sent successfully.", reqId);
-    commitLastDone();
+    StfContext.commitLastDone();
 
     /*
      * An equivalent code block is written as follows:
      * (More transparent, but the code above is better in performance)
      */
     // You can comment out the above block and uncomment the following block->
-    // if (mock.decrementAndGet(this.getClass()) >= 0) {
-    // LOG.error("Notification of request#{} has timed out...", reqId);
+    // if (mock.newError(this.getClass(), THROW_EX, LOG, "Notification of request#%s has timed out...", reqId).has()) {
     // return;
     // }
     // txnOps.executeWithoutResult(st -> {
@@ -100,6 +100,6 @@ public class AppService {
 
   @Autowired
   MockHelper mock;
-  // @Autowired
-  // private StfTxnOps txnOps;
+//  @Autowired
+//  private StfTxnOps txnOps;
 }

@@ -14,6 +14,45 @@
 * 开箱支持MySQL、PostgreSQL、Oracle三大主流关系型数据库
 * 制品为袖珍型jar包，易于使用集成，亦可独立部署
 
+## 核心图解
+### 基本原理
+![fundamental](https://user-images.githubusercontent.com/24976735/170415176-cb1b92c6-a4e9-414d-9ac0-96e0a73d65b6.png)
+### 水平伸缩和高可用
+![sha](https://user-images.githubusercontent.com/24976735/170385763-0118e324-4f6d-47da-968d-29fbea7f79fa.png)
+### 补偿式工作流
+```yml
+stfs {
+  local-vars {
+    dp = com.stun4j.stf.sample.boot.domain
+  }
+  actions {
+    acceptReq {
+      args = [{use-in:{class:${dp}.Req}}]
+    }
+    step1Tx {
+      args = [{invoke-on-in:{method:getId, class:Long}}, {invoke-on-in:{method:getReqId, class:String}}]
+    }
+    step2Tx {
+      args = [{use-in:{class:${dp}.Tx}}]
+    }
+    endTx {
+      args = [{use-in:{class:${dp}.Tx}}]
+    }
+    sendNotification {
+      oid = bizApp
+      args = [{use-in:{class:String}}]
+      timeout = 10s
+    }
+  }
+  forwards {
+    acceptReq.to = step1Tx
+    step1Tx.to = step2Tx
+    step2Tx.to = endTx
+    endTx.to = sendNotification
+  }
+}
+```
+
 ## 参与
 * 报告bugs、给到建议反馈，请提交一个[issue](https://github.com/stun4j/stun4j-stf/issues/new)
 * 参与贡献 改进或新功能，请提交pull request并创建一个[issue](https://github.com/stun4j/stun4j-stf/issues/new)以便讨论与进度追踪

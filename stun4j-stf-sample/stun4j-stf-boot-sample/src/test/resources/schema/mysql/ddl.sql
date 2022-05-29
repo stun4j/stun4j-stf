@@ -49,7 +49,7 @@ create table stn_stf_delay (
 --drop table if exists stn_stf_sample_mock;
 create table stn_stf_sample_mock (
   id varchar(255) not null,
-  value tinyint(3) not null,
+  value bigint(20) not null,
   primary key (id)
 );
 

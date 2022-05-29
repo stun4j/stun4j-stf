@@ -15,8 +15,6 @@
  */
 package com.stun4j.stf.core.cluster;
 
-import static com.stun4j.stf.core.StfHelper.H;
-
 import com.stun4j.guid.core.LocalGuid;
 import com.stun4j.stf.core.support.BaseEntity;
 import com.stun4j.stf.core.support.event.StfEventBus;
@@ -53,7 +51,7 @@ public class StfClusterMember extends BaseEntity<String> implements Comparable<S
 
   public static String calculateId() {/*-TODO mj:trace all the ids which might be generated during the runtime(e.g. for a more thorough cleanup?but be care of the rarely happened reuse problem)*/
     LocalGuid guid;
-    synchronized (guid = LocalGuid.instance()) {// H.cachedGuid();
+    synchronized (guid = LocalGuid.instance()) {
       return guid.getDatacenterId() + "-" + guid
           .getWorkerId();/*-TODO mj:This may lead to a 'thundering herd', but what if that's the desired effect?Meanwhile,also a slight performance advantage here*/
     }

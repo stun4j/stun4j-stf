@@ -169,7 +169,8 @@ public class StfAutoConfigure implements BeanClassLoaderAware, ApplicationContex
     JobScanner scanner = JobScannerJdbc.of(jdbcOps);
     JobLoader loader = new JobLoader(scanner);
     JobRunners runners = new JobRunners(stfCore);
-    JobManager jobMngr = new JobManager(loader, runners).withHeartbeatHandler(HeartbeatHandlerJdbc.of(jdbcOps));
+    JobManager jobMngr = new JobManager(loader, runners, props.getRunMode())
+        .withHeartbeatHandler(HeartbeatHandlerJdbc.of(jdbcOps));
 
     // configure loader
     com.stun4j.stf.boot.Job.JobLoader loaderCfg;

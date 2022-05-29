@@ -87,19 +87,28 @@ public class StfTxnCallback<T> implements InvocationHandler {
         }
 
         @Override
-        public void beforeCompletion() {
-          // support normal 'single' transaction
+        public void beforeCompletion() {// This way to support 'nested' transaction
+          if (TransactionResourceManager.getResourceMap().size() > 1) {
+            // This approach gives not the strictest transactional guarantees(in Stf manner) but higher performance.
+            // So from Stf point of view, Do not use 'nested transaction' unless you have to!!!
+            // Most of times,
+            doCommitLastDone(true);
+          }
+        }
+
+        private void doCommitLastDone(boolean asyncCommit) {
+          // Support normal 'single' transaction
           boolean isLaStfCommitted = false;
           if (laStfId != null && !StfContext.isLastCommitted()) {
             String callerObjId = StfContext.getBizObjId(callerClass);
             String identity = StfConfigs.actionPathBy(callerObjId, callerMethodName);
             if (identity.equals(laStfId.getIdentity())) {
-              StfContext.commitLastDone(laStfId.getValue());
+              StfContext.commitLastDone(laStfId.getValue(), asyncCommit);
               isLaStfCommitted = true;
             }
           }
 
-          // support 'nested' transaction,meanwhile,try continue processing last-committed transaction,for last stfs to
+          // Support 'nested' transaction,meanwhile,try continue processing last-committed transaction,for last stfs to
           // be confirmed if any
           String callerObjId = null;
           try {
@@ -110,9 +119,9 @@ public class StfTxnCallback<T> implements InvocationHandler {
                 .getResource(callerKey);
             if (nestedTxLaStfCommitInfo != null) {
               if (!nestedTxLaStfCommitInfo.getLeft()) {
-                Long laStfId = nestedTxLaStfCommitInfo.getRight();
-                if (!laStfId.equals(this.laStfId.getValue()) || !isLaStfCommitted) {
-                  StfContext.commitLastDone(laStfId);
+                Long nestedLaStfId = nestedTxLaStfCommitInfo.getRight();
+                if (!nestedLaStfId.equals(laStfId.getValue()) || !isLaStfCommitted) {
+                  StfContext.commitLastDone(nestedLaStfId, asyncCommit);
                 }
                 nestedTxLaStfCommitInfo.setLeft(true);
               }
@@ -139,7 +148,7 @@ public class StfTxnCallback<T> implements InvocationHandler {
           /*
            * Assuming this is the last time call StfContext#laStfId,so this is the right time to remove TTL,for the
            * purpose preventing the resource leak.
-           * Store 'laStfId' here,that's the way to support normal single transaction,but not the nested transaction.
+           * Store 'laStfId' here,that's the way to support normal single transaction(not the nested transaction).
            */// ->
           laStfId = StfContext.laStfId();
           StfContext.removeTTL();
@@ -152,9 +161,9 @@ public class StfTxnCallback<T> implements InvocationHandler {
             if (calleeInfo == null) {
               if (!StfConfigs.existForwardsFromOf(callerObjId,
                   callerMethodName)) {/*- TODO mj:using orphan do the judgment?*/
-                if (LOG.isDebugEnabled()) {// The debug level is friendly for using DelayQueue
+                if (LOG.isDebugEnabled()) {
                   LOG.debug(
-                      "[{}] No matched callee > Using raw transaction-ops is recommended, e.g. Spring's TransactionTemplate, StfTxnOps#rawExecuteXxx",
+                      "[{}] No matched callee > The end of the call chain? Using DelayQueue? Or maybe you just forgot to register in the stf-flow-conf?",
                       callerMethodName);
                 }
               }
@@ -165,13 +174,19 @@ public class StfTxnCallback<T> implements InvocationHandler {
             Pair<?, Class<?>>[] args = StfConfigs.determineActionMethodArgs(calleeObjId, calleeMethodName, bizOut);
             Long newStfId = StfContext.preCommitNextStep(calleeObjId, calleeMethodName, args);
 
-            // support 'nested' transaction(found unexpected re-order confirming last stf in such scenario)->
+            // Support 'nested' transaction(found unexpected re-order confirming last stf in such scenario)->
             String calleeKey = lineageKeyOf(calleeObjId, calleeMethodName);
             TransactionResourceManager.bindResource(calleeKey, MutablePair.of(false, newStfId));
             // <-
           } catch (Throwable e) {
             Exceptions.sneakyThrow(e, LOG, "[{}#{}] Pre commit next-step |error: '{}'", callerObjId, callerMethodName,
                 e.getMessage());
+          } finally {
+            // Try support single transaction as opposed to nested transaction
+            if (TransactionResourceManager.getResourceMap().size() <= 1) {
+              // This approach gives the strictest transactional guarantees,in Stf manner
+              doCommitLastDone(false);
+            }
           }
         }
       });

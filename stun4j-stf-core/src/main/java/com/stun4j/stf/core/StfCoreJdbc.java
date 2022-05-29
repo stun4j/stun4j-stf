@@ -75,7 +75,8 @@ public class StfCoreJdbc extends BaseStfCore {
     String calleeInfo = calleePair.getKey();
     Object[] calleeMethodArgs = calleePair.getValue();
     if (!async) {
-      invokeConsumer(stfMeta, calleeInfo, calleeMethodArgs, lastRetryTimes, batch, bizFn);
+      invokeConsumer(stfMeta, calleeInfo, calleeMethodArgs, lastRetryTimes, false,
+          bizFn);/*- This 'false' is somewhat weird,meaning that ‘Sync calls’ must also be non-batch */
       return;
     }
     worker.execute(() -> invokeConsumer(stfMeta, calleeInfo, calleeMethodArgs, lastRetryTimes, batch, bizFn));

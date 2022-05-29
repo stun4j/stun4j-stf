@@ -15,6 +15,12 @@
  */
 package com.stun4j.stf.sample.boot.utils.mock_data;
 
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
+
+import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -28,20 +34,69 @@ public class MockHelper {
   @Autowired
   JdbcTemplate jdbc;
 
-  Integer decrementAndGet(Class<?> sampleClz) {
+  Long decrementAndGet(Class<?> sampleClz) {
     String sampleId = sampleClz.getSimpleName();
-    Integer cur = jdbc.queryForObject(String.format("select value from stn_stf_sample_mock where id = '%s'", sampleId),
-        Integer.class);
+    Long cur = jdbc.queryForObject(String.format("select value from stn_stf_sample_mock where id = '%s'", sampleId),
+        Long.class);
     int res = jdbc.update(
         String.format("update stn_stf_sample_mock set value = value - 1 where id = '%s' and value = ?", sampleId), cur);
     return res == 1 ? cur - 1 : decrementAndGet(sampleClz);
   }
 
-  public boolean anError(Class<?> sampleClz) {
-    boolean error = false;
-    if (decrementAndGet(sampleClz) >= 0) {
-      error = true;
+  public MockError newError(Class<?> sampleClz) {
+    return newError(sampleClz, MockErrorTypeEnum.RETURN, null, null);
+  }
+
+  public MockError newError(Class<?> sampleClz, MockErrorTypeEnum errorType, Logger logger, String fmt,
+      Object... params) {
+    try {
+      return CompletableFuture.supplyAsync(() -> {
+        if (decrementAndGet(sampleClz) < 0) {
+          return new MockError(false, null);
+        }
+        String msg = null;
+        if (logger != null && fmt != null) {
+          msg = String.format(fmt, params);
+          logger.error(msg);
+        }
+        String finalMsg = msg;
+        return new MockError(true, () -> {
+          if (errorType == MockErrorTypeEnum.RETURN) {
+            return finalMsg;
+          } else if (errorType == MockErrorTypeEnum.THROW_EX) {
+            throw new RuntimeException(Optional.ofNullable(finalMsg).orElse("Unexpected error occured!"));
+          }
+          System.exit(-1);
+          return null;
+        });
+      }).get();
+    } catch (Exception e) {
+      return new MockError(false, null);
     }
-    return error;
+  }
+
+  public class MockError {
+    Pair<Boolean, Supplier<?>> pair;
+
+    public boolean has() {
+      if (pair.getKey()) {
+        returnOrThrow().get();
+        return true;
+      }
+      return false;
+    }
+
+    public Supplier<?> returnOrThrow() {
+      return pair.getValue();
+    }
+
+    public MockError(boolean error, Supplier<?> errRtn) {
+      this.pair = Pair.of(error, errRtn);
+    }
+
+  }
+
+  public enum MockErrorTypeEnum {
+    THROW_EX, SYS_EXIT, RETURN
   }
 }

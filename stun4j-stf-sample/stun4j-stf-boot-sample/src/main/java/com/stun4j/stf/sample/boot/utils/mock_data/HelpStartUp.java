@@ -17,8 +17,12 @@ package com.stun4j.stf.sample.boot.utils.mock_data;
 
 import java.util.stream.Stream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.ApplicationArguments;
+import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.dao.DataAccessException;
@@ -33,14 +37,29 @@ import com.stun4j.stf.sample.boot.domain.BizServiceOrphanStep;
  * @author Jay Meng
  */
 @Component
-public class HelpStartUp implements ApplicationContextAware {
+public class HelpStartUp implements ApplicationContextAware, ApplicationRunner {
+  private static final Logger LOG = LoggerFactory.getLogger(HelpStartUp.class);
 
   @Autowired
   private StfTxnOps txnOps;
+  private ApplicationContext applicationContext;
 
   @Override
   public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+    this.applicationContext = applicationContext;
+
+  }
+
+  @Override
+  public void run(ApplicationArguments args) throws Exception {
+    boolean freshStart = args.containsOption("fresh-start")
+        ? Boolean.valueOf(args.getOptionValues("fresh-start").get(0))
+        : true;
+    if (!freshStart) {
+      return;
+    }
     // Clean business related datas(include mock datas),comment out the following code block if you don't need it//->
+    LOG.info("To give this example a fresh start, we are cleaning up the data associated with...");
     JdbcTemplate jdbc = applicationContext.getBean(JdbcTemplate.class);
     Stream.of(
         new String[]{"stn_stf", "stn_stf_delay", "stn_stf_sample_req", "stn_stf_sample_tx", "stn_stf_sample_acct_op"})
@@ -51,12 +70,12 @@ public class HelpStartUp implements ApplicationContextAware {
     txnOps.rawExecuteWithoutResult(st -> {
       jdbc.update("delete from stn_stf_sample_mock");
       try {
-        jdbc.update(String.format("insert into stn_stf_sample_mock (id, value) values ('%s', 3)",
+        jdbc.update(String.format("insert into stn_stf_sample_mock (id, value) values ('%s', 3)", // 3
             AppService.class.getSimpleName()));
       } catch (DataAccessException e) {
       }
       try {
-        jdbc.update(String.format("insert into stn_stf_sample_mock (id, value) values ('%s', 1)",
+        jdbc.update(String.format("insert into stn_stf_sample_mock (id, value) values ('%s', 1)", // 1
             BizServiceOrphanStep.class.getSimpleName()));
       } catch (DataAccessException e) {
       }

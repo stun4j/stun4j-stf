@@ -15,7 +15,6 @@
  */
 package com.stun4j.stf.core;
 
-import static com.stun4j.stf.core.StfHelper.H;
 import static com.stun4j.stf.core.utils.Asserts.requireNonNull;
 
 import java.util.HashMap;
@@ -26,6 +25,7 @@ import java.util.function.Supplier;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import com.alibaba.ttl.TransmittableThreadLocal;
 import com.stun4j.guid.core.LocalGuid;
@@ -72,14 +72,32 @@ public final class StfContext {
     return TTL.get();
   }
 
-  static void commitLastDone(Long laStfId) {// TODO mj:build-in idempotent mechanism?
+  static void commitLastDone(Long laStfId) {
+    commitLastDone(laStfId, true);
+  }
+
+  static void commitLastDone(Long laStfId, boolean async) {// TODO mj:build-in idempotent mechanism?
     markLastCommitted();
-    _core.markDone(StfMetaGroupEnum.CORE, laStfId, true);
+    try {
+      _core.markDone(StfMetaGroupEnum.CORE, laStfId, async);
+    } finally {
+      if (TransactionSynchronizationManager.isActualTransactionActive()) {
+        return;
+      }
+      LAST_COMMITTED.remove();
+    }
   }
 
   static void commitLastDead(Long laStfId) {
     markLastCommitted();
-    _core.markDead(StfMetaGroupEnum.CORE, laStfId, true);
+    try {
+      _core.markDead(StfMetaGroupEnum.CORE, laStfId, true);
+    } finally {
+      if (TransactionSynchronizationManager.isActualTransactionActive()) {
+        return;
+      }
+      LAST_COMMITTED.remove();
+    }
   }
 
   @SafeVarargs

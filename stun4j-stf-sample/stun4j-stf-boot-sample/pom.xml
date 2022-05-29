@@ -88,7 +88,6 @@
 					<include>**/*.conf</include>
 					<include>*.yml</include>
 					<include>*.xml</include>
-					<include>*.sql</include>
 				</includes>
 			</resource>
 		</resources>

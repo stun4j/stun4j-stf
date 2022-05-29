@@ -20,6 +20,7 @@ import static com.stun4j.guid.core.utils.Asserts.argument;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
+import com.stun4j.stf.core.StfRunModeEnum;
 import com.stun4j.stf.core.support.BaseVo;
 
 /**
@@ -28,6 +29,13 @@ import com.stun4j.stf.core.support.BaseVo;
  */
 @ConfigurationProperties("stun4j.stf")
 public class StfProperties extends BaseVo {
+
+  /**
+   * The run mode of Stf
+   * <p>
+   * Default: default
+   */
+  private StfRunModeEnum runMode = StfRunModeEnum.DEFAULT;
 
   /**
    * The spring bean name of underlying sql datasource
@@ -130,6 +138,14 @@ public class StfProperties extends BaseVo {
 
   public DefaultExecutor getDefaultExecutor() {
     return defaultExecutor;
+  }
+
+  public StfRunModeEnum getRunMode() {
+    return runMode;
+  }
+
+  public void setRunMode(StfRunModeEnum runMode) {
+    this.runMode = runMode;
   }
 
 }
