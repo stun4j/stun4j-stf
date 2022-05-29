@@ -19,23 +19,44 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.stun4j.stf.sample.boot.application.AppService;
+import com.stun4j.stf.core.StfTxnOps;
+import com.stun4j.stf.core.support.executor.StfRunnable;
+import com.stun4j.stf.sample.boot.domain.BizServiceOrphanStep;
 import com.stun4j.stf.sample.boot.domain.Req;
 import com.stun4j.stf.sample.boot.utils.mock_data.Data;
 
 /**
  * @author Jay Meng
  */
-@RestController
-@RequestMapping("test")
-public class TestRs {
+@RestController("entry")
+@RequestMapping("orphan")
+public class OrphanUsage {
   @Autowired
-  private AppService svc;
+  private BizServiceOrphanStep svc;
+  @Autowired
+  private StfTxnOps txnOps;
 
   @RequestMapping
-  String index() {
-    Req req = Data.generateReq();
-    svc.acceptReq(req);
+  public String index() {
+    /*-
+     * 1.Sometimes a method has neither upstream nor downstream, and it is an orphan
+     * method(BizServiceOrphanStep#handle). Stf also supports retry on orphan.
+     * 
+     * 2.In addition to thread pool, Stf also supports independent thread to complete asynchronous workflows.
+     */
+    Req req = txnOps.executeWithFinalResult(() -> Data.generateReq(), st -> {
+    });
+
+    /*-
+     * 3.Another thing is that you can think of Stf as a compensatory workflow that runs behind the
+     * scene.
+     */
+    // You can comment out the following code block and take a glance, Stf will take all the control->
+    new Thread(StfRunnable.of(() -> {
+      svc.handle(req);
+    })).start();
+    // <-
+
     return req.getId();
   }
 }

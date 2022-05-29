@@ -9,18 +9,11 @@ import com.stun4j.stf.sample.boot.domain.Req;
 import com.stun4j.stf.sample.boot.utils.mock_data.Data;
 
 @RestController
-@RequestMapping("test4")
-public class TestRs4 {
+@RequestMapping("nested")
+public class NestedTxUsage {
 
   @Autowired
   private AppServiceTraditional svcTraditional;
-
-  @RequestMapping
-  String index() {
-    Req req = Data.generateReq();
-    svcTraditional.syncInvoke(req);
-    return req.getId();
-  }
 
   @RequestMapping("type1")
   String type1() {

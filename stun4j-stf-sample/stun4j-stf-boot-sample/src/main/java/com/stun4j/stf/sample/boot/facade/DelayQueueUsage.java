@@ -8,8 +8,8 @@ import com.stun4j.stf.core.StfDelayQueue;
 import com.stun4j.stf.sample.boot.utils.mock_data.Data;
 
 @RestController
-@RequestMapping("test3")
-public class TestRs3 {
+@RequestMapping("dlq")
+public class DelayQueueUsage {
 
   @Autowired
   private StfDelayQueue queue;

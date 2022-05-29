@@ -27,7 +27,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.stun4j.stf.core.StfContext;
-import com.stun4j.stf.core.StfTxnOps;
 import com.stun4j.stf.core.support.executor.StfExecutorService;
 import com.stun4j.stf.sample.boot.domain.BizServiceMultiStep;
 import com.stun4j.stf.sample.boot.domain.Req;

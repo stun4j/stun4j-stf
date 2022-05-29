@@ -43,10 +43,6 @@ public class MockHelper {
     return res == 1 ? cur - 1 : decrementAndGet(sampleClz);
   }
 
-  public MockError newError(Class<?> sampleClz) {
-    return newError(sampleClz, MockErrorTypeEnum.RETURN, null, null);
-  }
-
   public MockError newError(Class<?> sampleClz, MockErrorTypeEnum errorType, Logger logger, String fmt,
       Object... params) {
     try {
