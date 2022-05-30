@@ -20,7 +20,7 @@ public class DelayQueueUsage {
      * 1.If you just need a simple DelayQueue interface that doesn't require any configuration and doesn't have any
      * upstream and downstream implications.Check this sample.
      * 
-     * 2.Stf DelayQueue is distributed, highly-reliable and can support theoretically arbitrary precision delay time.
+     * 2.Stf DelayQueue is distributed, highly-reliable and can support any delay time with accuracy of seconds.
      * 
      * 3.Stf DelayQueue has high-throughput, high-availability and good horizontal-scaling-capability
      */
