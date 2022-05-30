@@ -84,7 +84,7 @@ public class AppServiceTraditional {
 
   @Transactional
   public void syncInvokeWithNestedTransactionType1(Req req) {
-    syncInvoke(req);// Be aware that appSvc#sendNotification will be called implicitly after a while
+    syncInvoke(req);// Note that appSvc#sendNotification will be called implicitly after a while
   }
 
   public void syncInvokeWithNestedTransactionType2(Req req) {

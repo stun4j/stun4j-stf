@@ -87,13 +87,16 @@ public class StfTxnCallback<T> implements InvocationHandler {
         }
 
         @Override
-        public void beforeCompletion() {// This way to support 'nested' transaction
-          if (TransactionResourceManager.getResourceMap().size() > 1) {
-            // This approach gives not the strictest transactional guarantees(in Stf manner) but higher performance.
-            // So from Stf point of view, Do not use 'nested transaction' unless you have to!!!
-            // Most of times,
-            doCommitLastDone(true);
-          }
+        public void beforeCompletion() {
+          // This way to support 'nested' transaction(Can be effectively distinguished from single
+          // Transaction).Also this is the part of the 'Consistency first' strategy->
+          // if (TransactionResourceManager.getResourceMap().size() > 1) {
+          // // This approach gives not the strictest transactional guarantees(in Stf manner) but higher performance.
+          // // So from Stf point of view, Do not use 'nested transaction' unless you have to!!!
+          // doCommitLastDone(true);
+          // }
+          // <-
+          doCommitLastDone(true);
         }
 
         private void doCommitLastDone(boolean asyncCommit) {
@@ -181,13 +184,16 @@ public class StfTxnCallback<T> implements InvocationHandler {
           } catch (Throwable e) {
             Exceptions.sneakyThrow(e, LOG, "[{}#{}] Pre commit next-step |error: '{}'", callerObjId, callerMethodName,
                 e.getMessage());
-          } finally {
-            // Try support single transaction as opposed to nested transaction
-            if (TransactionResourceManager.getResourceMap().size() <= 1) {
-              // This approach gives the strictest transactional guarantees,in Stf manner
-              doCommitLastDone(false);
-            }
           }
+          // This way I call it 'Consistency first' strategy->
+          // finally {
+          // // Try support single transaction as opposed to nested transaction
+          // if (TransactionResourceManager.getResourceMap().size() <= 1) {
+          // // This approach gives the strictest transactional guarantees,in Stf manner
+          // doCommitLastDone(false);
+          // }
+          // }
+          // <-
         }
       });
     }
