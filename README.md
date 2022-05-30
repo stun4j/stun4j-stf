@@ -14,6 +14,14 @@
 * 开箱支持MySQL、PostgreSQL、Oracle三大主流关系型数据库
 * 制品为袖珍型jar包，易于使用集成，亦可独立部署
 
+## 如何获取
+### 方式1：通过源码构建
+切到项目根目录，在控制台执行如下maven命令：
+```shell
+$ mvn clean package -Dmaven.test.skip=true
+```
+构建完成后，会在各自的target目录中生成`stun4j-stf-core-<version>.jar`和`stun4j-stf-spring-boot-starter-<version>.jar`，放入你工程的classpath即可。spring-boot工程仅需要`boot-starter`这个jar(`stun4j-stf-boot-sample`工程提供了具体示例)，如果你希望通过low-level api的方式来使用Stf，那么你可以了解并使用`core`这个jar。
+
 ## 核心图解
 ### 基本原理
 ![fundamental](https://user-images.githubusercontent.com/24976735/170415176-cb1b92c6-a4e9-414d-9ac0-96e0a73d65b6.png)

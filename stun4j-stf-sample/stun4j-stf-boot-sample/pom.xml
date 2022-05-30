@@ -18,19 +18,9 @@
 	<dependencies>
 		<!-- module -->
 		<dependency>
-			<groupId>com.stun4j</groupId>
-			<artifactId>stun4j-stf-core</artifactId>
-			<version>${project.version}</version>
-		</dependency>
-		<dependency>
 			<groupId>com.stun4j.boot</groupId>
 			<artifactId>stun4j-stf-spring-boot-starter</artifactId>
 			<version>${project.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>com.stun4j.boot</groupId>
-			<artifactId>stun4j-guid-spring-boot-starter</artifactId>
-			<version>${stun4j-guid.version}</version>
 		</dependency>
 		<!-- db -->
 		<dependency>
