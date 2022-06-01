@@ -20,7 +20,11 @@
 ```shell
 $ mvn clean package -Dmaven.test.skip=true
 ```
-构建完成后，会在各自的target目录中生成`stun4j-stf-core-<version>.jar`和`stun4j-stf-spring-boot-starter-<version>.jar`，放入你工程的classpath即可。spring-boot工程仅需要`boot-starter`这个jar(`stun4j-stf-boot-sample`工程提供了具体示例)，如果你希望通过low-level api的方式来使用Stf，那么你可以了解并使用`core`这个jar。
+构建完成后，会在各自的target目录中生成`stun4j-stf-core-<version>.jar`和`stun4j-stf-spring-boot-starter-<version>.jar`，放入你工程的classpath即可。spring-boot工程仅需要`boot-starter`这个jar（`stun4j-stf-boot-sample`工程提供了具体示例），如果你希望通过low-level api的方式来使用Stf，那么你可以了解并使用`core`这个jar。
+
+## 如何使用
+### [专属的**spring-boot-starter**如何使用](stun4j-stf-spring-boot-starter/README.md)
+### **补偿式工作流**如何使用(TBD)
 
 ## 核心图解
 ### 基本原理

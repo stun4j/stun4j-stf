@@ -26,7 +26,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.stun4j.stf.core.StfContext;
+import static com.stun4j.stf.core.StfContext.*;
+import com.stun4j.stf.core.StfTxnOps;
 import com.stun4j.stf.core.support.executor.StfExecutorService;
 import com.stun4j.stf.sample.boot.domain.BizServiceMultiStep;
 import com.stun4j.stf.sample.boot.domain.Req;
@@ -51,7 +52,7 @@ public class AppService {
     Long txId = txBegin.getId();
     String reqId = req.getId();
     /*-
-    * 1.Each downstream method is guaranteed to be called, even if any exceptions such as system crash, timeout, etc.
+    * 1.Each downstream method is guaranteed to be called, even if any error occurred such as system crash, timeout, etc.
     *
     * 2.Stf supports non-forking asynchronous task chain by using StfExecutorService or StfRunnable,StfCallable.
     *
@@ -81,11 +82,12 @@ public class AppService {
       return;
     }
     LOG.info("Notification of request#{} is sent successfully.", reqId);
-    StfContext.commitLastDone();
+    forceCommitLastDone();
 
     /*
      * An equivalent code block is written as follows:
      * (More transparent, but the code above is better in performance)
+     * (Furthermore,the code above can't be used in an active transaction)
      */
     // You can comment out the above block and uncomment the following block->
     // if (mock.newError(this.getClass(), THROW_EX, LOG, "Notification of request#%s has timed out...", reqId).has()) {
@@ -99,6 +101,7 @@ public class AppService {
 
   @Autowired
   MockHelper mock;
-//  @Autowired
-//  private StfTxnOps txnOps;
+  @SuppressWarnings("unused")
+  @Autowired
+  private StfTxnOps txnOps;
 }

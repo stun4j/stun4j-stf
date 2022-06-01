@@ -92,7 +92,6 @@ public class StfTxnCallback<T> implements InvocationHandler {
           // Transaction).Also this is the part of the 'Consistency first' strategy->
           // if (TransactionResourceManager.getResourceMap().size() > 1) {
           // // This approach gives not the strictest transactional guarantees(in Stf manner) but higher performance.
-          // // So from Stf point of view, Do not use 'nested transaction' unless you have to!!!
           // doCommitLastDone(true);
           // }
           // <-

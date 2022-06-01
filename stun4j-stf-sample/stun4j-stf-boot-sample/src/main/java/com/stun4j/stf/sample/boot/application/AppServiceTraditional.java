@@ -68,42 +68,46 @@ public class AppServiceTraditional {
     Tx txToEnd = step2TxRes.getTx();
     svc.endTx(txToEnd);
 
-    // If we are currently running within an 'outer' transaction->
-    // This is not correct!!!->
+    // If you are currently running in an transaction,
+    // For operations that are asynchronous in nature, you must keep in mind, as follows:->
+    // This is not correct!!!Never do this!!!->
     // stfExec.execute(() -> {
     // appSvc.sendNotification(reqId);
     // });
     // <-
 
-    // This is correct，but not good!!!->
+    // This is not correct too!!!->
     // appSvc.sendNotification(reqId);
     // <-
     // <-
-
   }
 
-  @Transactional
   public void syncInvokeWithNestedTransactionType1(Req req) {
-    syncInvoke(req);// Note that appSvc#sendNotification will be called implicitly after a while
-  }
-
-  public void syncInvokeWithNestedTransactionType2(Req req) {
     txnOps.rawExecuteWithoutResult(st -> {
       syncInvoke(req);
     });
 
-    stfExec.execute(() -> {
-      appSvc.sendNotification(req.getId());
-    });
+    appSvc.sendNotification(req.getId());
   }
 
-  public void syncInvokeWithNestedTransactionType3(Req req) {
+  public void syncInvokeWithNestedTransactionType2(Req req) {
     txnOps.executeWithoutResult(st -> {
       syncInvoke(req);
     });
 
     stfExec.execute(() -> {
       appSvc.sendNotification(req.getId());
+    });
+  }
+
+  @Transactional
+  public void syncInvokeWithNestedTransactionType3(Req req) {
+    syncInvoke(req);// Note that appSvc#sendNotification will be called implicitly after a while
+  }
+
+  public void syncInvokeWithNestedTransactionType4(Req req) {
+    txnOps.executeWithoutResult(st -> {
+      syncInvoke(req);
     });
   }
 

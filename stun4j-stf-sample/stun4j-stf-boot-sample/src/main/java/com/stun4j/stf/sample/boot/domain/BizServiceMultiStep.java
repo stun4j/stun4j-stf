@@ -15,8 +15,6 @@
  */
 package com.stun4j.stf.sample.boot.domain;
 
-import static com.stun4j.stf.core.StfContext.commitLastDone;
-
 import java.math.BigDecimal;
 import java.util.concurrent.TimeUnit;
 
@@ -94,7 +92,7 @@ public class BizServiceMultiStep {
          * transaction.
          */
         txDao.markTxFail(txId);
-        commitLastDone();
+        st.commitLastDone();
         res.withErrorCode(1);
         return out;
       }
@@ -123,11 +121,11 @@ public class BizServiceMultiStep {
      */
     txnOps.executeWithoutResult(tx.getReqId(), st -> {
       if (!txDao.markTxSuccess(txId)) {
-        commitLastDone();
+        st.commitLastDone();
         return;
       }
       if (!acctDao.increaseAcctAmt(amtDt, acctNoTo)) {
-        commitLastDone();
+        st.commitLastDone();
         return;
       }
       acctOpDao.insertAcctOpOfIncrement(acctOpSeqNo, acctNoTo, amtDt, txId);

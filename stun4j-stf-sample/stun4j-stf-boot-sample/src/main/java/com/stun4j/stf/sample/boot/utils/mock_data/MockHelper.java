@@ -53,16 +53,25 @@ public class MockHelper {
         String msg = null;
         if (logger != null && fmt != null) {
           msg = String.format(fmt, params);
-          logger.error(msg);
         }
         String finalMsg = msg;
         return new MockError(true, () -> {
-          if (errorType == MockErrorTypeEnum.RETURN) {
+          if (errorType == MockErrorTypeEnum.THROW_EX) {
+            RuntimeException ex;
+            logger.error(finalMsg,
+                ex = new RuntimeException(Optional.ofNullable(finalMsg).orElse("Unexpected error occured!")));
+            throw ex;
+          } else if (errorType == MockErrorTypeEnum.SYS_EXIT) {
+            String exitMsg = "Encounter an unexpected system exit!";
+            if (logger.isErrorEnabled()) {
+              logger.error(exitMsg);
+            } else {
+              System.out.println(exitMsg);
+            }
+            System.exit(-1);
+          } else if (errorType == MockErrorTypeEnum.RETURN) {
             return finalMsg;
-          } else if (errorType == MockErrorTypeEnum.THROW_EX) {
-            throw new RuntimeException(Optional.ofNullable(finalMsg).orElse("Unexpected error occured!"));
           }
-          System.exit(-1);
           return null;
         });
       }).get();

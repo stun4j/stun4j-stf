@@ -16,6 +16,8 @@
 package com.stun4j.stf.core;
 
 import static com.stun4j.stf.core.utils.Asserts.requireNonNull;
+import static com.stun4j.stf.core.utils.Asserts.state;
+import static org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -25,7 +27,6 @@ import java.util.function.Supplier;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import com.alibaba.ttl.TransmittableThreadLocal;
 import com.stun4j.guid.core.LocalGuid;
@@ -48,56 +49,46 @@ public final class StfContext {
   private static StfCore _core;
   private static StfRegistry _bizReg;
 
-  /** must be called in the very beginning */
-  public static void init(StfCore stfCore, StfRegistry bizReg) {
-    StfContext._core = requireNonNull(stfCore, "The stf-core can't be null");
-    StfContext._bizReg = requireNonNull(bizReg, "The stf-biz-reg can't be null");
-  }
-
-  public static StfDelayQueueCore delayQueueCore() {
-    return (StfDelayQueueCore)StfContext._core;
-  }
-
-  public static void commitLastDone() {
+  public static void forceCommitLastDone() {// Do not use this method in any active transaction!!!
+    state(!isActualTransactionActive(), "Can't be called in an active transaction");
     Long laStfId = safeGetLaStfIdValue();
-    commitLastDone(laStfId);
+    try {
+      _core.markDone(StfMetaGroupEnum.CORE, laStfId, true);
+    } finally {
+      removeTTL();
+    }
   }
 
-  public static void commitLastDead() {
-    Long laStfId = safeGetLaStfIdValue();
-    commitLastDead(laStfId);
+  public static Long safeGetLaStfIdValue() {
+    return Optional.ofNullable(laStfId()).orElse(StfId.empty()).getValue();
   }
 
   public static StfId laStfId() {
     return TTL.get();
   }
 
+  static void commitLastDone() {
+    Long laStfId = safeGetLaStfIdValue();
+    commitLastDone(laStfId);
+  }
+
+  static void commitLastDead() {
+    Long laStfId = safeGetLaStfIdValue();
+    commitLastDead(laStfId);
+  }
+
   static void commitLastDone(Long laStfId) {
     commitLastDone(laStfId, true);
   }
 
-  static void commitLastDone(Long laStfId, boolean async) {// TODO mj:build-in idempotent mechanism?
+  static void commitLastDone(Long laStfId, boolean async) {// TODO mj:Count as build-in idempotent mechanism?
     markLastCommitted();
-    try {
-      _core.markDone(StfMetaGroupEnum.CORE, laStfId, async);
-    } finally {
-      if (TransactionSynchronizationManager.isActualTransactionActive()) {
-        return;
-      }
-      LAST_COMMITTED.remove();
-    }
+    _core.markDone(StfMetaGroupEnum.CORE, laStfId, async);
   }
 
   static void commitLastDead(Long laStfId) {
     markLastCommitted();
-    try {
-      _core.markDead(StfMetaGroupEnum.CORE, laStfId, true);
-    } finally {
-      if (TransactionSynchronizationManager.isActualTransactionActive()) {
-        return;
-      }
-      LAST_COMMITTED.remove();
-    }
+    _core.markDead(StfMetaGroupEnum.CORE, laStfId, true);
   }
 
   @SafeVarargs
@@ -107,22 +98,6 @@ public final class StfContext {
 
   static Object getBizObj(String bizObjId) {
     return _bizReg.getObj(bizObjId);
-  }
-
-  public static Class<?> getBizObjClass(String bizObjId) {
-    return _bizReg.getObjClass(bizObjId);
-  }
-
-  public static void putBizObj(String bizObjId, Object obj) {
-    _bizReg.putObj(bizObjId, obj);
-  }
-
-  public static void putBizObjClass(String bizObjId, Supplier<Class<?>> classProvider) {
-    _bizReg.putObjClass(bizObjId, classProvider.get());
-  }
-
-  public static Long safeGetLaStfIdValue() {
-    return Optional.ofNullable(laStfId()).orElse(StfId.empty()).getValue();
   }
 
   static String getBizObjId(Class<?> bizClass) {
@@ -207,4 +182,31 @@ public final class StfContext {
       TRANSACTION_RESOURCES = ThreadLocal.withInitial(HashMap::new);
     }
   }
+
+  /** Must be called in the very beginning */
+  public static void init(StfCore stfCore, StfRegistry bizReg) {
+    StfContext._core = requireNonNull(stfCore, "The stf-core can't be null");
+    StfContext._bizReg = requireNonNull(bizReg, "The stf-biz-reg can't be null");
+  }
+
+  public static StfDelayQueueCore delayQueueCore() {
+    return (StfDelayQueueCore)StfContext._core;
+  }
+
+  public static Class<?> getBizObjClass(String bizObjId) {
+    return _bizReg.getObjClass(bizObjId);
+  }
+
+  public static void putBizObj(String bizObjId, Object obj) {
+    _bizReg.putObj(bizObjId, obj);
+  }
+
+  public static void putBizObjClass(String bizObjId, Supplier<Class<?>> classProvider) {
+    _bizReg.putObjClass(bizObjId, classProvider.get());
+  }
+
+  // static boolean isActualStfTransactionActive() {
+  // return TransactionSynchronizationManager.isActualTransactionActive()
+  // && TransactionResourceManager.getResourceMap().size() > 0;
+  // }
 }

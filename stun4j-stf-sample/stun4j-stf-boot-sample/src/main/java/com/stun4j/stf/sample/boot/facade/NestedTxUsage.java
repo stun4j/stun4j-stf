@@ -35,4 +35,11 @@ public class NestedTxUsage {
     svcTraditional.syncInvokeWithNestedTransactionType3(req);
     return req.getId();
   }
+
+  @RequestMapping("type4")
+  String type4() {
+    Req req = Data.generateReq();
+    svcTraditional.syncInvokeWithNestedTransactionType4(req);
+    return req.getId();
+  }
 }

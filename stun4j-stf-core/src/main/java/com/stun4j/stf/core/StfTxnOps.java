@@ -26,6 +26,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionOperations;
@@ -57,7 +58,7 @@ public class StfTxnOps {
 
   // Low side-effect apis - - - - - - - - - - - - - - - - -->
   public <OUT> OUT executeWithFinalResult(Supplier<OUT> outInitSupplier,
-      Function<OUT, Consumer<TransactionStatus>> action) {
+      Function<OUT, Consumer<StfTransactionStatus>> action) {
     StackTraceElement[] callStacks = Thread.currentThread().getStackTrace();
     OUT out = outInitSupplier.get();
     doExecuteWithoutResult(out, action.apply(out), callStacks, null, null);
@@ -65,13 +66,13 @@ public class StfTxnOps {
   }
 
   public <OUT> OUT executeWithNonFinalResult(Supplier<OUT> outInitSupplier,
-      Function<OUT, Function<TransactionStatus, OUT>> action) {
+      Function<OUT, Function<StfTransactionStatus, OUT>> action) {
     StackTraceElement[] callStacks = Thread.currentThread().getStackTrace();
     OUT out = outInitSupplier.get();
     return doExecute(out, action.apply(out), callStacks, null);
   }
 
-  public <OUT> OUT executeWithFinalResult(Supplier<OUT> outSupplier, Consumer<TransactionStatus> action) {
+  public <OUT> OUT executeWithFinalResult(Supplier<OUT> outSupplier, Consumer<StfTransactionStatus> action) {
     StackTraceElement[] callStacks = Thread.currentThread().getStackTrace();
     OUT out = outSupplier.get();
     doExecuteWithoutResult(out, action, callStacks, null, null);
@@ -79,14 +80,14 @@ public class StfTxnOps {
   }
 
   public <OUT> OUT executeWithNonFinalResult(Supplier<OUT> outSupplier,
-      Function<OUT, Consumer<TransactionStatus>> action, Supplier<TransactionOperations> txnOpsProvider) {
+      Function<OUT, Consumer<StfTransactionStatus>> action, Supplier<TransactionOperations> txnOpsProvider) {
     StackTraceElement[] callStacks = Thread.currentThread().getStackTrace();
     OUT out = outSupplier.get();
     doExecuteWithoutResult(out, action.apply(out), callStacks, null, txnOpsProvider);
     return out;
   }
 
-  public <OUT> OUT executeWithFinalResult(Supplier<OUT> outSupplier, Consumer<TransactionStatus> action,
+  public <OUT> OUT executeWithFinalResult(Supplier<OUT> outSupplier, Consumer<StfTransactionStatus> action,
       Supplier<TransactionOperations> txnOpsProvider) {
     StackTraceElement[] callStacks = Thread.currentThread().getStackTrace();
     OUT out = outSupplier.get();
@@ -94,35 +95,35 @@ public class StfTxnOps {
     return out;
   }
 
-  public <T> T execute(Function<TransactionStatus, T> action) {
+  public <T> T execute(Function<StfTransactionStatus, T> action) {
     StackTraceElement[] callStacks = Thread.currentThread().getStackTrace();
     return doExecute(null, action, callStacks, null);
   }
 
-  public <T> T execute(Function<TransactionStatus, T> action, Supplier<TransactionOperations> txnOpsProvider) {
+  public <T> T execute(Function<StfTransactionStatus, T> action, Supplier<TransactionOperations> txnOpsProvider) {
     StackTraceElement[] callStacks = Thread.currentThread().getStackTrace();
     return doExecute(null, action, callStacks, txnOpsProvider);
   }
 
-  public <T> void executeWithoutResult(Consumer<TransactionStatus> action) {
+  public <T> void executeWithoutResult(Consumer<StfTransactionStatus> action) {
     StackTraceElement[] callStacks = Thread.currentThread().getStackTrace();
     doExecuteWithoutResult(null, action, callStacks, null, null);
   }
 
-  public <T> void executeWithoutResult(Consumer<TransactionStatus> action,
+  public <T> void executeWithoutResult(Consumer<StfTransactionStatus> action,
       Supplier<TransactionOperations> txnOpsProvider) {
     StackTraceElement[] callStacks = Thread.currentThread().getStackTrace();
     doExecuteWithoutResult(null, action, callStacks, null, txnOpsProvider);
   }
 
-  public <T> void executeWithoutResult(Consumer<TransactionStatus> action,
-      BiFunction<Throwable, TransactionStatus, Boolean> onError) {
+  public <T> void executeWithoutResult(Consumer<StfTransactionStatus> action,
+      BiFunction<Throwable, StfTransactionStatus, Boolean> onError) {
     StackTraceElement[] callStacks = Thread.currentThread().getStackTrace();
     doExecuteWithoutResult(null, action, callStacks, onError, null);
   }
 
-  public <T> void executeWithoutResult(Consumer<TransactionStatus> action,
-      BiFunction<Throwable, TransactionStatus, Boolean> onError, Supplier<TransactionOperations> txnOpsProvider) {
+  public <T> void executeWithoutResult(Consumer<StfTransactionStatus> action,
+      BiFunction<Throwable, StfTransactionStatus, Boolean> onError, Supplier<TransactionOperations> txnOpsProvider) {
     StackTraceElement[] callStacks = Thread.currentThread().getStackTrace();
     doExecuteWithoutResult(null, action, callStacks, onError, txnOpsProvider);
   }
@@ -131,49 +132,51 @@ public class StfTxnOps {
 
   // TODO mj:give a check on out shouldn't be null('callee has param' is a good start),null leads unknown
   // error,currently
-  public <T> T execute(T out, Function<TransactionStatus, T> action) {
+  public <T> T execute(T out, Function<StfTransactionStatus, T> action) {
     StackTraceElement[] callStacks = Thread.currentThread().getStackTrace();
     return doExecute(out, action, callStacks, null);
   }
 
-  public <T> T execute(T out, Function<TransactionStatus, T> action, Supplier<TransactionOperations> txnOpsProvider) {
+  public <T> T execute(T out, Function<StfTransactionStatus, T> action,
+      Supplier<TransactionOperations> txnOpsProvider) {
     StackTraceElement[] callStacks = Thread.currentThread().getStackTrace();
     return doExecute(out, action, callStacks, txnOpsProvider);
   }
 
-  public <T> void executeWithoutResult(T out, Consumer<TransactionStatus> action) {
+  public <T> void executeWithoutResult(T out, Consumer<StfTransactionStatus> action) {
     StackTraceElement[] callStacks = Thread.currentThread().getStackTrace();
     doExecuteWithoutResult(out, action, callStacks, null, null);
   }
 
-  public <T> void executeWithoutResult(T out, Consumer<TransactionStatus> action,
+  public <T> void executeWithoutResult(T out, Consumer<StfTransactionStatus> action,
       Supplier<TransactionOperations> txnOpsProvider) {
     StackTraceElement[] callStacks = Thread.currentThread().getStackTrace();
     doExecuteWithoutResult(out, action, callStacks, null, txnOpsProvider);
   }
 
-  public <T> void executeWithoutResult(T out, Consumer<TransactionStatus> action,
-      BiFunction<Throwable, TransactionStatus, Boolean> onError) {
+  public <T> void executeWithoutResult(T out, Consumer<StfTransactionStatus> action,
+      BiFunction<Throwable, StfTransactionStatus, Boolean> onError) {
     StackTraceElement[] callStacks = Thread.currentThread().getStackTrace();
     doExecuteWithoutResult(out, action, callStacks, onError, null);
   }
 
-  public <T> void executeWithoutResult(T out, Consumer<TransactionStatus> action,
-      BiFunction<Throwable, TransactionStatus, Boolean> onError, Supplier<TransactionOperations> txnOpsProvider) {
+  public <T> void executeWithoutResult(T out, Consumer<StfTransactionStatus> action,
+      BiFunction<Throwable, StfTransactionStatus, Boolean> onError, Supplier<TransactionOperations> txnOpsProvider) {
     StackTraceElement[] callStacks = Thread.currentThread().getStackTrace();
     doExecuteWithoutResult(out, action, callStacks, onError, txnOpsProvider);
   }
 
-  private <T> T doExecute(T out, Function<TransactionStatus, T> action, StackTraceElement[] callStacks,
+  private <T> T doExecute(T out, Function<StfTransactionStatus, T> action, StackTraceElement[] callStacks,
       Supplier<TransactionOperations> txnOpsProvider) {
     Pair<String, String> callerInfo = determineCallerInfo(callStacks);
     return doExecute0(out, action, callerInfo.getLeft(), callerInfo.getRight(), txnOpsProvider);
   }
 
-  private <T> T doExecute0(T out, Function<TransactionStatus, T> action, String callerClassName,
+  private <T> T doExecute0(T out, Function<StfTransactionStatus, T> action, String callerClassName,
       String callerMethodName, Supplier<TransactionOperations> txnOpsProvider) {
     Long laStfId = StfContext.safeGetLaStfIdValue();
-    return determineTxnOps(txnOpsProvider).execute(StfTxnCallback.of(st -> {
+    return determineTxnOps(txnOpsProvider).execute(StfTxnCallback.of(rawSt -> {
+      StfTransactionStatus st = new StfTransactionStatus(rawSt);
       try {
         return action.apply(st);
       } catch (Throwable e) {
@@ -199,17 +202,18 @@ public class StfTxnOps {
     }, callerClassName, callerMethodName, out));
   }
 
-  private <T> void doExecuteWithoutResult(T out, Consumer<TransactionStatus> action, StackTraceElement[] callStacks,
-      BiFunction<Throwable, TransactionStatus, Boolean> onError, Supplier<TransactionOperations> txnOpsProvider) {
+  private <T> void doExecuteWithoutResult(T out, Consumer<StfTransactionStatus> action, StackTraceElement[] callStacks,
+      BiFunction<Throwable, StfTransactionStatus, Boolean> onError, Supplier<TransactionOperations> txnOpsProvider) {
     Pair<String, String> callerInfo = determineCallerInfo(callStacks);
     doExecuteWithoutResult0(out, action, callerInfo.getLeft(), callerInfo.getRight(), onError, txnOpsProvider);
   }
 
-  private <T> void doExecuteWithoutResult0(T out, Consumer<TransactionStatus> action, String callerClassName,
-      String callerMethodName, BiFunction<Throwable, TransactionStatus, Boolean> onError,
+  private <T> void doExecuteWithoutResult0(T out, Consumer<StfTransactionStatus> action, String callerClassName,
+      String callerMethodName, BiFunction<Throwable, StfTransactionStatus, Boolean> onError,
       Supplier<TransactionOperations> txnOpsProvider) {
     Long laStfId = StfContext.safeGetLaStfIdValue();
-    determineTxnOps(txnOpsProvider).execute(StfTxnCallback.of(st -> {
+    determineTxnOps(txnOpsProvider).execute(StfTxnCallback.of(rawSt -> {
+      StfTransactionStatus st = new StfTransactionStatus(rawSt);
       try {
         action.accept(st);
       } catch (Throwable e) {

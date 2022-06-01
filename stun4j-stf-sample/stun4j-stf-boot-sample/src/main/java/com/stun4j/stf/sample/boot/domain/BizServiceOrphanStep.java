@@ -15,6 +15,8 @@
  */
 package com.stun4j.stf.sample.boot.domain;
 
+import static com.stun4j.stf.sample.boot.utils.mock_data.MockHelper.MockErrorTypeEnum.THROW_EX;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,8 +26,6 @@ import com.stun4j.stf.core.StfTxnOps;
 import com.stun4j.stf.sample.boot.persistence.ReqDao;
 import com.stun4j.stf.sample.boot.persistence.ReqPo;
 import com.stun4j.stf.sample.boot.utils.mock_data.MockHelper;
-import com.stun4j.stf.sample.boot.utils.mock_data.MockHelper.MockError;
-import static com.stun4j.stf.sample.boot.utils.mock_data.MockHelper.MockErrorTypeEnum.THROW_EX;
 
 /**
  * @author Jay Meng
