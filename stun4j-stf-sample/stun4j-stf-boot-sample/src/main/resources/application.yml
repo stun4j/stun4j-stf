@@ -12,4 +12,3 @@ spring:
 stun4j:
   stf:
     conf-full-load-order: [bizMultiStep-flow, bizOnTop-flow]
-    
