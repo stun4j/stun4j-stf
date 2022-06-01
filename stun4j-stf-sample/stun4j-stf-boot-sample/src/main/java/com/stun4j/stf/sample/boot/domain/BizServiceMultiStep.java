@@ -85,7 +85,7 @@ public class BizServiceMultiStep {
       if (!acctDao.decreaseAcctAmt(amtDt, acctNoFrom)) {
         /*-
          * 1.The Stf framework guarantees retry, but sometimes the business side may need to stop retry early.The
-         * StfContext#commitLastDone method is used to do this.
+         * StfTransactionStatus#commitLastDone method is used to do this.
          * 
          * 2.Here are a few of these scenarios, e.g. insufficient balance for debits, non-existent accounts.
          * And when these occur, we also need to mark the business-transfer-transaction as a failure in the same JDBC

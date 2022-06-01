@@ -11,8 +11,6 @@ spring:
       maximum-pool-size: 20
 stun4j:
   stf:
-    delay-queue:
-      enabled: true
     conf-full-load-order: [bizMultiStep-flow, bizOnTop-flow]
       
     

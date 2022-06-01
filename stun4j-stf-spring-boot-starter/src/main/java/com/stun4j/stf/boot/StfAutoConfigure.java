@@ -133,7 +133,7 @@ public class StfAutoConfigure implements BeanClassLoaderAware, ApplicationContex
   }
 
   @Bean
-  @ConditionalOnProperty(prefix = "stun4j.stf.delay-queue", name = "enabled", havingValue = "true")
+  @ConditionalOnProperty(prefix = "stun4j.stf.delay-queue", name = "enabled", havingValue = "true", matchIfMissing = true)
   StfDelayQueue stfDelayQueue() {
     return new StfDelayQueue(StfContext.delayQueueCore());
   }
