@@ -22,7 +22,8 @@ public class BizService {
   public OutObj step(ParamObj param) {
     //略...
     return txnOps.executeWithFinalResult(() -> new OutObj(param), out -> st -> {
-      //执行本地事务操作、修改out对象,略...
+      //(如需修改out对象，尽可能在当前闭包内完成)，略...
+      //执行本地事务操作，略...
     });
   }
 }
@@ -55,7 +56,7 @@ public class BizService {
   private StfDelayQueue queue;
   
   //spring容器中taskObjId就是beanId
-  //普通的POJO容器中，需要以KV形式自行注册taskObjId和taskObj
+  //普通的POJO容器中，需以KV形式自行注册taskObjId和taskObj
   public Long delayRun(String taskObjId, String taskMethodName, int timeoutSeconds, int delaySeconds, Object... taskParams) {
     Long taskNo = queue.offer(taskObjId, taskMethodName, timeoutSeconds, delaySeconds, taskParams);
     return taskNo;
