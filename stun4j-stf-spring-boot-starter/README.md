@@ -12,7 +12,7 @@ public class SampleApplication {
   }
 }
 ```
-### 通过**自动装配**的`StfTxnOps`，在用户（业务）代码中使用**柔性事务**
+### 通过**自动装配**的`StfTxnOps`，在用户（业务）代码中使用 ***柔性事务***
 ```java
 @Service
 public class BizService {
@@ -28,7 +28,7 @@ public class BizService {
   }
 }
 ```
-### 通过**自动装配**的`StfExecutorService`，在用户（业务）代码中使用**异步任务链**
+### 通过**自动装配**的`StfExecutorService`，在用户（业务）代码中使用 ***异步任务链***
 ```java
 @Service
 public class AppService {
@@ -48,7 +48,7 @@ public class AppService {
   }
 }
 ```
-### 通过**自动装配**的`StfDelayQueue`，在用户（业务）代码中使用**延时队列**
+### 通过**自动装配**的`StfDelayQueue`，在用户（业务）代码中使用 ***延时队列***
 ```java
 @Service
 public class BizService {
