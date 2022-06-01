@@ -49,7 +49,7 @@ public final class StfContext {
   private static StfCore _core;
   private static StfRegistry _bizReg;
 
-  public static void forceCommitLastDone() {// Do not use this method in any active transaction!!!
+  public static void commitLastDoneWithoutTx() {// Do not use this method in any active transaction!!!
     state(!isActualTransactionActive(), "Can't be called in an active transaction");
     Long laStfId = safeGetLaStfIdValue();
     try {

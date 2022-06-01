@@ -15,6 +15,7 @@
  */
 package com.stun4j.stf.sample.boot.application;
 
+import static com.stun4j.stf.core.StfContext.commitLastDoneWithoutTx;
 import static com.stun4j.stf.core.utils.Asserts.raiseIllegalStateException;
 import static com.stun4j.stf.sample.boot.utils.mock_data.MockHelper.MockErrorTypeEnum.THROW_EX;
 
@@ -26,7 +27,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import static com.stun4j.stf.core.StfContext.*;
 import com.stun4j.stf.core.StfTxnOps;
 import com.stun4j.stf.core.support.executor.StfExecutorService;
 import com.stun4j.stf.sample.boot.domain.BizServiceMultiStep;
@@ -82,7 +82,7 @@ public class AppService {
       return;
     }
     LOG.info("Notification of request#{} is sent successfully.", reqId);
-    forceCommitLastDone();
+    commitLastDoneWithoutTx();
 
     /*
      * An equivalent code block is written as follows:
