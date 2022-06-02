@@ -44,11 +44,12 @@ public class DefaultExecutor {
    * If false, core threads stay alive even when idle. If true, core threads use keepAliveTime to time out
    * waiting for work.
    * <p>
-   * Default: false
+   * Default: true
    */
-  private boolean allowCoreThreadTimeOut = false;
+  private boolean allowCoreThreadTimeOut = true;
   /**
    * Default: back-pressure
+   * <p>
    * @see java.util.concurrent.ThreadPoolExecutor.AbortPolicy
    * @see java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy
    * @see com.stun4j.stf.core.utils.executor.PoolExecutors.DiscardPolicy

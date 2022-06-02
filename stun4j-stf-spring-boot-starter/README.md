@@ -68,7 +68,7 @@ public class BizService {
 ```yml
 #略...
 stun4j:
-  stf: #可选(如不出现，则采用默认配置)
+  stf: #可选(如不出现,则采用默认配置)
     conf-root-path: <如file:/apps/foo/stfs> #flow配置所处的根路径(可选,默认值: classpath:stfs)
     conf-full-load-order: <如[bizFoo-flow, bizBar-flow]> #flow配置的文件名和 左右或前后 顺序(可选,但一般都需要明确指定,除非你不关心配置间的父子关系,比如,对于具有相同oid的config-block,右侧/后面 文件会覆盖 左侧/前面 文件的定义)
     conf-exclude-filenames: <如[excludeFoo-flow, excludeBar-flow]> #需被排除、不会被加载的flow配置文件名(可选,如不指定,表示均需加载)
@@ -79,19 +79,49 @@ stun4j:
 ```yml
 #略...
 stun4j:
-  stf: #可选(如不出现，则采用默认配置)
-    transaction: #Stf事务全局属性的相关配置 #可选(如不出现，则采用默认配置)
-      isolation-level: default #隔离级别(可选,默认值:default 其它取值read-committed,repeatable-read)
-      propagation: required #传播机制(可选,默认值:required 其它取值mandatory,nested,never,not-supported,requires-new,supports)
+  stf: #可选(如不出现,则采用默认配置)
+    transaction: #Stf事务全局属性的相关配置 #可选(如不出现,则采用默认配置)
+      isolation-level: default #隔离级别(可选,默认值:default,其它取值read-committed,repeatable-read)
+      propagation: required #传播机制(可选,默认值:required,其它取值mandatory,nested,never,not-supported,requires-new,supports)
 #略...
 ```
 ### 2.3 **异步任务链线程池** 相关配置
+```yml
+#略...
+stun4j:
+  stf: #可选(如不出现,则采用默认配置)
+    default-executor: #Stf开放供业务使用的、默认的、全局任务执行线程池 #可选(如不出现，则采用默认配置)
+      allow-core-thread-time-out: true #是否允许核心线程超时(可选,默认值:true 其它取值false)
+      task-queue-size: 1024 #线程队列size(可选,默认值:1024)
+      thread-keep-alive-time-seconds: 60 #线程的保活秒数(可选,默认值:60)
+      thread-reject-policy: back-pressure #线程的拒绝策略(可选,默认值:back-pressure,其它取值drop-with-ex-throw,silent-drop,silent-drop-oldest)
+#略...
+```      
 ### 2.4 **延时队列** 相关配置
-### 2.5 **任务微内核引擎** 相关配置
-#### 2.5.1 **任务监控** 相关配置
-### 2.6 **运行模式** 相关配置
-### 2.7 **数据源** 相关配置
-### 2.8 **GUID** 相关配置
-Stf及其集群的正确工作需要确保内置的GUID正确工作，开箱即用的GUID策略是基于本地IP的，关于这块的详细介绍和讨论可从这个[教程](https://github.com/stun4j/stun4j-guid/blob/master/stun4j-guid-spring-boot-starter/README.md#2-applicationyml%E9%85%8D%E7%BD%AE%E8%AF%A6%E8%A7%A3)入手
+```yml
+#略...
+stun4j:
+  stf: #可选(如不出现,则采用默认配置)
+    delay-queue: #可选(如不出现,则采用默认配置)
+      enabled: true #是否启用delay-queue(可选,默认值:true 其它取值false)
+#略...
+```    
+### 2.5 **任务核心引擎** 相关配置
+```yml
+#略...
+stun4j:
+  stf: #可选(如不出现,则采用默认配置)
+    job: #可选(如不出现,则采用默认配置)
+      manager: #可选(如不出现,则采用默认配置)
+        scan-freq-secs: 3 #扫描频率秒数(可选,默认值:3)
+        handle-batch-size: 20 #批处理job数量(可选,默认值:20)
+        batch-multiplying-factor: 16 #影响批处理吞吐的一个可调因子(可选,默认值:16)
+#略...
+```    
+### 2.6 **任务监控** 相关配置
+### 2.7 **运行模式** 相关配置
+### 2.8 **数据源** 相关配置
+### 2.9 **GUID** 相关配置
+Stf及其集群的正确工作必须确保内置的GUID也是正确工作的，开箱即用的GUID策略是基于**本地IP**的，关于这块的详细介绍和讨论可从这个[教程](https://github.com/stun4j/stun4j-guid/blob/master/stun4j-guid-spring-boot-starter/README.md#2-applicationyml%E9%85%8D%E7%BD%AE%E8%AF%A6%E8%A7%A3)入手
 
 [< 回索引](../README.md)

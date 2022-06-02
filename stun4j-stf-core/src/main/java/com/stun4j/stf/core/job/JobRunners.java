@@ -25,40 +25,21 @@ import static com.stun4j.stf.core.job.JobConsts.JOB_GROUP_TIMEOUT_WAITING_RUN;
 import static com.stun4j.stf.core.support.executor.StfInternalExecutors.newWorkerOfJobRunner;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.google.common.base.Functions;
 import com.stun4j.stf.core.Stf;
 import com.stun4j.stf.core.StfCore;
 import com.stun4j.stf.core.support.BaseLifeCycle;
-import com.stun4j.stf.core.support.NullValue;
 import com.stun4j.stf.core.utils.Exceptions;
 
 /** @author Jay Meng */
 public class JobRunners extends BaseLifeCycle {
   private final StfCore stfCore;
   private final Map<String, ThreadPoolExecutor> workers;
-  private final Map<String, Runnings> runnings;
   private final JobRunner runner;
-
-  private class Runnings {
-    private final ConcurrentMap<Long, Object> jobIds = new ConcurrentHashMap<>();
-
-    public void register(Long jobId) {
-      jobIds.putIfAbsent(jobId, NullValue.INSTANCE);
-    }
-
-    public void deregister(Long jobId) {
-      jobIds.remove(jobId);
-    }
-  }
 
   @Override
   public void doShutdown() {
@@ -77,7 +58,6 @@ public class JobRunners extends BaseLifeCycle {
     workers.get(jobGrp).execute(() -> {
       Long jobId = job.getId();
       try {
-        JobRunners.this.runnings.get(jobGrp).register(jobId);
         switch (jobGrp) {
           case JOB_GROUP_TIMEOUT_WAITING_RUN:
           case JOB_GROUP_TIMEOUT_IN_PROGRESS:
@@ -94,19 +74,8 @@ public class JobRunners extends BaseLifeCycle {
         }
       } catch (Throwable e) {
         Exceptions.swallow(e, LOG, "An error occurred while handing stf-job#{} [grp={}]", jobId, jobGrp);
-      } finally {
-        JobRunners.this.runnings.get(jobGrp).deregister(jobId);
       }
     });
-    // TODO mj:error handle
-  }
-
-  // prevent pool-running jobs to be picked
-  Stream<Stf> getNotRunning(List<Stf> jobs) {
-    Map<Long, ?> allRunningJobIds = runnings.values().stream().flatMap(runnings -> {
-      return runnings.jobIds.keySet().stream();
-    }).collect(Collectors.toMap(Functions.identity(), v -> NullValue.INSTANCE));
-    return jobs.stream().filter(job -> job != null && !allRunningJobIds.containsKey(job.getId()));
   }
 
   public int getAvailablePoolSize(String jobGrp) {
@@ -120,13 +89,10 @@ public class JobRunners extends BaseLifeCycle {
   public JobRunners(StfCore stfCore, Map<Integer, Integer> retryIntervalSeconds) {
     this.stfCore = stfCore;
     this.runner = JobRunner.init(retryIntervalSeconds);
-
-    this.runnings = new HashMap<>();
-    this.workers = new HashMap<>();
-    Stream.of(ALL_JOB_GROUPS).forEach((jobGrp) -> {
-      this.workers.put(jobGrp, newWorkerOfJobRunner(jobGrp));
-      this.runnings.put(jobGrp, new Runnings());
-    });
+    this.workers = Stream.of(ALL_JOB_GROUPS).reduce(new HashMap<>(), (map, grp) -> {
+      map.put(grp, newWorkerOfJobRunner(grp));
+      return map;
+    }, (a, b) -> null);
   }
 
   public StfCore getStfCore() {

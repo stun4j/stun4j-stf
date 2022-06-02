@@ -340,7 +340,7 @@ public class JobManager extends BaseLifeCycle {
       StfEventBus.registerHandler(this.delayMarker = new JobDelayMarkActor(stfCore, 16384));
     }
     this.workers = Stream.of(ALL_JOB_GROUPS).reduce(new HashMap<String, ThreadPoolExecutor>(), (map, grp) -> {
-      map.put(grp, newWorkerOfJobManager(grp));// StfInternalExecutors.newWorkerOfJobManager
+      map.put(grp, newWorkerOfJobManager(grp));
       return map;
     }, (a, b) -> null);
     this.watcher = newWatcherOfJobManager();
