@@ -80,7 +80,7 @@ stun4j:
 #略...
 stun4j:
   stf: #可选(如不出现,则采用默认配置)
-    transaction: #Stf事务全局属性的相关配置 #可选(如不出现,则采用默认配置)
+    transaction: #事务全局属性的相关配置(可选,如不出现,则采用默认配置)
       isolation-level: default #隔离级别(可选,默认值:default,其它取值read-committed,repeatable-read)
       propagation: required #传播机制(可选,默认值:required,其它取值mandatory,nested,never,not-supported,requires-new,supports)
 #略...
@@ -90,24 +90,24 @@ stun4j:
 #略...
 stun4j:
   stf: #可选(如不出现,则采用默认配置)
-    default-executor: #Stf开放供业务使用的、默认的、全局任务执行线程池 #可选(如不出现，则采用默认配置)
+    default-executor: #开放供业务使用的、默认的、全局任务执行线程池(可选,如不出现,则采用默认配置)
       allow-core-thread-time-out: true #是否允许核心线程超时(可选,默认值:true 其它取值false)
       task-queue-size: 1024 #线程队列size(可选,默认值:1024)
       thread-keep-alive-time-seconds: 60 #线程的保活秒数(可选,默认值:60)
       thread-reject-policy: back-pressure #线程的拒绝策略(可选,默认值:back-pressure,其它取值drop-with-ex-throw,silent-drop,silent-drop-oldest)
 #略...
-```      
+```
 ### 2.4 **延时队列** 相关配置
 ```yml
 #略...
 stun4j:
   stf: #可选(如不出现,则采用默认配置)
-    delay-queue: #可选(如不出现,则采用默认配置)
+    delay-queue: #可选,如不出现,则采用默认配置
       enabled: true #是否启用delay-queue(可选,默认值:true 其它取值false)
 #略...
-```    
-### 2.5 **任务核心引擎** 相关配置
-#### 2.5.1 **Manager** 相关配置
+```
+### 2.5 **任务引擎** 相关配置
+#### 2.5.1 **核心协调者** 相关配置
 ```yml
 #略...
 stun4j:
@@ -118,8 +118,8 @@ stun4j:
         handle-batch-size: 20 #批处理任务数量(可选,默认值:20)
         batch-multiplying-factor: 16 #影响批处理吞吐的一个可调因子(可选,默认值:16)
 #略...
-```    
-#### 2.5.2 **Loader** 相关配置
+```
+#### 2.5.2 **队列充填器** 相关配置
 ```yml
 #略...
 stun4j:
@@ -129,11 +129,42 @@ stun4j:
         load-size: 300 #扫描加载任务数最大值的一个因子(可选,默认值:300)
         scan-freq-secs: 3 #扫描频率秒数(可选,默认值:3)
 #略...
-```  
-#### 2.5.3 **任务监控** 相关配置
-### 2.6 **运行模式** 相关配置
-### 2.7 **数据源** 相关配置
-### 2.8 **GUID** 相关配置
+```
+### 2.6 **监控** 相关配置
+```yml
+#略...
+stun4j:
+  stf: #可选(如不出现,则采用默认配置)
+    monitor: #可选(如不出现,则采用默认配置)
+      vm-res-check-enabled: true #是否开启资源检查(可选,默认值:true)
+      consider-jvm-mem: false #资源检查是否考察jvm内存(可选,默认值:false)
+      consider-sys-load: false #资源检查是否考察系统负载(可选,默认值:false)
+      jvm-cpu: #可选(如不出现,则采用默认配置)
+        high-factor: 0.65f #高水位阈值(可选,默认值:0.65f,即65%)
+      jvm-mem: #可选(如不出现,则采用默认配置)
+        high-factor: 0.85f #高水位阈值(可选,默认值:0.85f,即85%)
+        include-non-heap: false #jvm内存检查是否考察non-heap(可选,默认值:false)
+      sys-load: #可选(如不出现,则采用默认配置)
+        high-factor: 0.8f #高水位阈值(可选,默认值:0.8f,即80%)
+#略...
+```
+### 2.7 **运行模式** 相关配置
+```yml
+#略...
+stun4j:
+  stf: #可选(如不出现,则采用默认配置)
+    run-mode: default #运行模式(可选,默认值:default,其它取值client)
+#略...
+```
+### 2.8 **数据源** 相关配置
+```yml
+#略...
+stun4j:
+  stf: #可选(如不出现,则采用默认配置)
+    datasource-bean-name: dataSource #数据源在spring容器中的bean名称(可选,默认值:dataSource)
+#略...
+```
+### 2.9 **GUID** 相关配置
 Stf及其集群的正确工作必须确保内置的GUID也是正确工作的，开箱即用的GUID策略是基于**本地IP**的，关于这块的详细介绍和讨论可从这个[教程](https://github.com/stun4j/stun4j-guid/blob/master/stun4j-guid-spring-boot-starter/README.md#2-applicationyml%E9%85%8D%E7%BD%AE%E8%AF%A6%E8%A7%A3)入手
 
 [< 回索引](../README.md)

@@ -107,11 +107,6 @@ public class Monitor {
      */
     private boolean includeNonHeap;
 
-    /**
-     * Default: true
-     */
-    private boolean checkEnabled = true;
-
     public float getHighFactor() {
       return highFactor;
     }
@@ -126,14 +121,6 @@ public class Monitor {
 
     public void setIncludeNonHeap(boolean includeNonHeap) {
       this.includeNonHeap = includeNonHeap;
-    }
-
-    public boolean isCheckEnabled() {
-      return checkEnabled;
-    }
-
-    public void setCheckEnabled(boolean checkEnabled) {
-      this.checkEnabled = checkEnabled;
     }
 
   }
