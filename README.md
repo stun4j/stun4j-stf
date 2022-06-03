@@ -15,7 +15,27 @@
 * 制品为袖珍型jar包，易于使用集成，亦可独立部署
 
 ## 如何获取
-### 方式1：通过源码构建
+### 方式1：从Maven中央仓库获取
+在你工程的**pom.xml**中加入如下片段，即可从maven中央仓库获取：
+
+#### 获取专属的**spring-boot-starter**，便于在spring-boot工程中使用
+```xml
+<dependency>
+  <groupId>com.stun4j.boot</groupId>
+  <artifactId>stun4j-stf-spring-boot-starter</artifactId>
+  <version>1.0.0</version>
+</dependency>
+```
+#### 或者
+#### 获取**核心库**，以lowlevel-api的方式使用
+```xml
+<dependency>
+  <groupId>com.stun4j</groupId>
+  <artifactId>stun4j-stf-core</artifactId>
+  <version>1.0.0</version>
+</dependency>
+```
+### 方式2：通过源码构建
 切到项目根目录，在控制台执行如下maven命令：
 ```shell
 $ mvn clean package -Dmaven.test.skip=true
