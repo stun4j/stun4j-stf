@@ -27,7 +27,7 @@
 </dependency>
 ```
 #### 或者
-#### 获取**核心库**，以lowlevel-api的方式使用
+#### 获取**核心库**，直接使用
 ```xml
 <dependency>
   <groupId>com.stun4j</groupId>
