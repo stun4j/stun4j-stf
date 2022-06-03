@@ -49,12 +49,12 @@ public class SchemaFileHelper {
       try (BufferedReader br = new BufferedReader(new FileReader(fileTpl));
           RandomAccessFile fileTo = new RandomAccessFile(SCHEMA_FILE_WITH_TBL_NAME_CHANGED, "rw");
           FileChannel fchTo = fileTo.getChannel()) {
-        // touch the first line,change the table name
         String line = br.readLine();
-        line = line.replaceFirst("\\s{1}\\w*\\s{1}\\(", Strings.lenientFormat(" %s (", TBL_NAME));
-        // do the rest copy
         do {
-          if (line.startsWith("create index")) {
+          if (line.startsWith("create table stn_stf (")) {
+            line = line.replaceFirst("stn_stf", TBL_NAME);
+          }
+          if (line.startsWith("create index") && line.indexOf("on stn_stf ") != -1) {
             line = line.replaceAll("stn_stf", TBL_NAME);
           }
           fchTo.write(ByteBuffer.wrap(line.getBytes()));
