@@ -1,5 +1,4 @@
 # stun4j-stf-spring-boot-starter使用说明
-
 ## 1. 快速开始
 ### 使用`@EnableStf`注解
 在使用`@SpringBootApplication`注解的地方，使用`@EnableStf`注解，如下：
@@ -166,5 +165,8 @@ stun4j:
 ```
 ### 2.9 **GUID** 相关配置
 Stf及其集群的正确工作必须确保内置的GUID也是正确工作的，开箱即用的GUID策略是基于**本地IP**的，关于这块的详细介绍和讨论可从这个[教程](https://github.com/stun4j/stun4j-guid/blob/master/stun4j-guid-spring-boot-starter/README.md#2-applicationyml%E9%85%8D%E7%BD%AE%E8%AF%A6%E8%A7%A3)入手
+
+## 3. 兼容性
+支持Spring Boot 2.4.0+
 
 [< 回索引](../README.md)
