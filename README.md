@@ -44,7 +44,8 @@ $ mvn clean package -Dmaven.test.skip=true
 
 ## 如何使用
 ### [专属的**spring-boot-starter**如何使用](stun4j-stf-spring-boot-starter/README.md)
-### [**补偿式工作流**如何使用](https://github.com/stun4j/stun4j-stf/blob/main/stun4j-stf-core/README.md)
+### [**Sample**如何使用](stun4j-stf-sample/stun4j-stf-boot-sample/README.md)
+### [**补偿式工作流**如何使用](stun4j-stf-core/README.md)
 
 ## 核心图解
 ### 基本原理

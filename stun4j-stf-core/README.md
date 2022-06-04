@@ -1,12 +1,12 @@
-# 补偿式工作流使用说明
+# 1. 补偿式工作流使用说明
 ## Stf的哲学
 **补偿式工作流**是Stf非常有意思的一个特性，它是一种简约的DSL，用以编排业务在异常下的补偿动作。同时，它又不是典型意义上的工作流，因为Stf希望程序的主控权是能够握于开发者手中的，**主控方**在coder（有匠心的工程师），**辅控方**可以是flow（冰冷的低代码）。
 
 更多的介绍，后续还会撰文阐述。
 
-下文将主要结合[stun4j-stf-boot-sample](https://github.com/stun4j/stun4j-stf/tree/main/stun4j-stf-sample/stun4j-stf-boot-sample)工程，对补偿式工作流的使用进行说明。
+下文将主要结合[stun4j-stf-boot-sample](../stun4j-stf-sample/stun4j-stf-boot-sample)工程，对补偿式工作流的使用进行说明。
 ## 基本语法
-来看[sample中的配置片段](https://github.com/stun4j/stun4j-stf/blob/main/stun4j-stf-sample/stun4j-stf-boot-sample/src/main/resources/stfs/bizMultiStep-flow.conf)，如下：
+来看[sample中的配置片段](../stun4j-stf-sample/stun4j-stf-boot-sample/src/main/resources/stfs/bizMultiStep-flow.conf)，如下：
 ```yml
 stfs {
   local-vars { #允许自定义本地变量
@@ -41,7 +41,7 @@ stfs {
   }
 }
 ```
-再看[另外一个配置](https://github.com/stun4j/stun4j-stf/blob/main/stun4j-stf-sample/stun4j-stf-boot-sample/src/main/resources/stfs/bizOnTop-flow.conf)
+再看[另外一个配置](../stun4j-stf-sample/stun4j-stf-boot-sample/src/main/resources/stfs/bizOnTop-flow.conf)
 ```yml
 stfs {
   global { #全局定义区块
@@ -61,10 +61,15 @@ stfs {
 ```
 ## 配置大于规约
 ### 文件路径相关
-一般只需将工作流相关的配置文件，放置于工程**classpath下的stfs目录**，就会进行加载和读取。当然也可以额外进行指定，参考[此处](https://github.com/stun4j/stun4j-stf/tree/main/stun4j-stf-spring-boot-starter#21-%25E8%25A1%25A5%25E5%2581%25BF%25E5%25BC%258F%25E5%25B7%25A5%25E4%25BD%259C%25E6%25B5%2581-%25E7%259B%25B8%25E5%2585%25B3%25E9%2585%258D%25E7%25BD%25AE)。
+一般只需将工作流相关的配置文件，放置于工程**classpath下的stfs目录**，就会被加载和读取。当然也可额外进行指定，参考[此处](../stun4j-stf-spring-boot-starter#21-%25E8%25A1%25A5%25E5%2581%25BF%25E5%25BC%258F%25E5%25B7%25A5%25E4%25BD%259C%25E6%25B5%2581-%25E7%259B%25B8%25E5%2585%25B3%25E9%2585%258D%25E7%25BD%25AE)。
 ### 文件名相关
-如果在一个stf-flow配置中，没有为相应的action配置oid，而一个action又必须具备oid，否则是无法调用的，据此，给出oid的定位顺序，如下：
+在Stf中，一个action必须具备oid，否则是无法调用的。如果在一个stf-flow的配置中，没有为相应的action配置oid，那么其oid会按照如下顺序进行定位，如下：
+
 `配置文件名前缀 -> flow配置中'global区块'中定义的oid -> flow配置中'action区块'中定义的oid`
-右侧默认继承左侧，可override左侧，具体请看[sample工程相关配置](https://github.com/stun4j/stun4j-stf/tree/main/stun4j-stf-sample/stun4j-stf-boot-sample/src/main/resources/stfs)。
+
+右侧默认继承左侧，可override左侧，具体请看[sample工程相关配置](../stun4j-stf-sample/stun4j-stf-boot-sample/src/main/resources/stfs)。
+
+# 2. Stf框架所需的表结构
+Stf框架运行需要的表结构位于`stun4j-stf-core`工程的`src/test/resources/schema`目录下。
 
 [< 回索引](../README.md)

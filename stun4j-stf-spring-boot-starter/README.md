@@ -73,7 +73,7 @@ stun4j:
     conf-exclude-filenames: <如[excludeFoo-flow, excludeBar-flow]> #需被排除、不会被加载的flow配置文件名(可选,如不指定,表示均需加载)
 #略...
 ```
-更多关于**补偿式工作流**的介绍可参考[这篇](https://github.com/stun4j/stun4j-stf/tree/main/stun4j-stf-core#%E8%A1%A5%E5%81%BF%E5%BC%8F%E5%B7%A5%E4%BD%9C%E6%B5%81%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E)
+更多关于**补偿式工作流**的介绍可参考[这篇](../stun4j-stf-core#%E8%A1%A5%E5%81%BF%E5%BC%8F%E5%B7%A5%E4%BD%9C%E6%B5%81%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E)
 ### 2.2 **柔性事务** 相关配置
 ```yml
 #略...
@@ -167,6 +167,6 @@ stun4j:
 Stf及其集群的正确工作必须确保内置的GUID也是正确工作的，开箱即用的GUID策略是基于**本地IP**的，关于这块的详细介绍和讨论可从这个[教程](https://github.com/stun4j/stun4j-guid/blob/master/stun4j-guid-spring-boot-starter/README.md#2-applicationyml%E9%85%8D%E7%BD%AE%E8%AF%A6%E8%A7%A3)入手
 
 ## 3. 兼容性
-支持Spring Boot 2.4.0+
+支持JDK1.8+，Spring Boot 2.4.0+
 
 [< 回索引](../README.md)
