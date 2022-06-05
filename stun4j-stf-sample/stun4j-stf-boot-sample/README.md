@@ -1,5 +1,4 @@
 # Sample使用说明
-stun4j-stf-boot-sample是一个spring-boot的maven工程，下文将进行说明。
 ## 1. 数据初始化
 Sample工程是一个简化了的**转账交易场景**，唯一需要初始化的是一系列模拟的交易账户。
 ### 1.1 Schema导入
