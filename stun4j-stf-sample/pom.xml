@@ -7,9 +7,20 @@
 		<version>${revision}</version>
 	</parent>
 	<artifactId>stun4j-stf-sample</artifactId>
-  <name>Stun4j Stf Sample</name>
+	<name>Stun4j Stf Sample</name>
 	<packaging>pom</packaging>
 	<modules>
 		<module>stun4j-stf-boot-sample</module>
 	</modules>
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-deploy-plugin</artifactId>
+				<configuration>
+					<skip>true</skip>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
 </project>
