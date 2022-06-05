@@ -1,18 +1,21 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<parent>
-		<groupId>com.stun4j</groupId>
-		<artifactId>stun4j-stf-sample</artifactId>
-		<version>${revision}</version>
-	</parent>
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>2.7.0</version>
+    <relativePath />
+  </parent>
 	<groupId>com.stun4j.boot</groupId>
 	<artifactId>stun4j-stf-boot-sample</artifactId>
+	<version>1.0.1-SNAPSHOT</version>
 	<name>Stun4j Stf Boot Sample</name>
 
 	<properties>
 		<mybatis-plus-boot-starter.verion>3.5.2</mybatis-plus-boot-starter.verion>
 		<start-class>com.stun4j.stf.sample.boot.StfSampleApplication</start-class>
+		<guava.version>31.1-jre</guava.version>
 	</properties>
 
 	<dependencies>
@@ -61,6 +64,7 @@
 		<dependency>
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
+			<version>${guava.version}</version>
 		</dependency>
 
 		<!-- log -->
