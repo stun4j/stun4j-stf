@@ -12,7 +12,7 @@ Data的生成需要运行一个程序，它会通过JDBC生成一些模拟的账
 Sample为了演示方便，内置了一些mock机制，主要用来模拟异常，比如模拟`AppService#sendNotification`会超时`3`次，模拟`BizServiceOrphanStep#handle`会产生异常`1`次，这几个**mock计数**都实现为了**分布式计数器**。
 具体请看`com.stun4j.stf.sample.boot.utils.mock_data`这个包。
 ## 4. 演示入口
-Sample的演示入口都是一些**rest api**，api的命名、类的命名都直接揭示了演示意图，这块看代码会比文字说明更清晰，其中关键代码也都附上了注释。
+Sample的演示入口都是一些**Http Api**，api的命名、类的命名等已基本揭示了演示意图。这块看代码会比文字说明更清晰，其中关键代码已附上了注释。
 入口代码位于`com.stun4j.stf.sample.boot.facade`这个包下。
 
 [< 回索引](../../README.md)
