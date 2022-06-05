@@ -4,7 +4,7 @@
 ### 柔性事务、延时队列、可编排、自适应批处理、异步任务链、分布式、极简设计、高可用、高性能、易于使用
 | 稳定版 | 主要变动 | 发布日期 |
 | ------------- | ------------- | ------------|
-| 1.0.1 | 兼容较低版本的Spring | 2022/06/05 |
+| 1.0.1 | 兼容较低版本的Spring | 2022/06/06 |
 | 1.0.0 | 初版发布 | 2022/06/03 |
 ## 功能特性
 * 柔性事务，基于BASE理论，以本地事务为基石，无惧任何失败（超时、宕机、异常等等）
@@ -26,7 +26,7 @@
 <dependency>
   <groupId>com.stun4j.boot</groupId>
   <artifactId>stun4j-stf-spring-boot-starter</artifactId>
-  <version>1.0.0</version>
+  <version>1.0.1</version>
 </dependency>
 ```
 #### 或者
@@ -35,7 +35,7 @@
 <dependency>
   <groupId>com.stun4j</groupId>
   <artifactId>stun4j-stf-core</artifactId>
-  <version>1.0.0</version>
+  <version>1.0.1</version>
 </dependency>
 ```
 ### 方式2：通过源码构建
