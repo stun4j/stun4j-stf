@@ -20,20 +20,24 @@ import java.util.stream.Stream;
 
 import javax.sql.DataSource;
 
+import org.springframework.core.SpringVersion;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.stun4j.stf.core.spi.StfJdbcOps;
+import com.stun4j.stf.core.utils.functions.TriFunction;
 
 /** @author Jay Meng */
 public class StfDefaultSpringJdbcOps implements StfJdbcOps {
-  private final JdbcTemplate jdbcOps;
+  private final JdbcTemplate rawOps;
+  private final TriFunction<String, Object[], StfJdbcRowMapper<?>, Stream<?>> qryFn;
 
   @Override
   public DataSource getDataSource() {
-    return jdbcOps.getDataSource();
+    return rawOps.getDataSource();
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   /**
    * @return the result Stream, containing stf objects, needing to be closed once fully processed (e.g. through a
@@ -41,29 +45,36 @@ public class StfDefaultSpringJdbcOps implements StfJdbcOps {
    */
   public <T> Stream<T> queryForStream(String sql, Object[] args, StfJdbcRowMapper<T> rowMapper)
       throws DataAccessException {
-    return jdbcOps.queryForStream(sql, (rs, rowNum) -> rowMapper.mapRow(rs, rowNum), args);
+    return (Stream<T>)qryFn.apply(sql, args, rowMapper);
   }
 
   @Override
   public int update(String sql, Object... args) throws DataAccessException {
-    return jdbcOps.update(sql, args);
+    return rawOps.update(sql, args);
   }
 
   @Override
   public int[] batchUpdate(String sql, List<Object[]> batchArgs) throws DataAccessException {
-    return jdbcOps.batchUpdate(sql, batchArgs);
+    return rawOps.batchUpdate(sql, batchArgs);
   }
 
   public StfDefaultSpringJdbcOps(DataSource ds) {
-    this.jdbcOps = new JdbcTemplate(ds);
+    this(new JdbcTemplate(ds));
   }
 
+  @SuppressWarnings("deprecation")
   public StfDefaultSpringJdbcOps(JdbcTemplate jdbcOps) {
-    this.jdbcOps = jdbcOps;
+    this.rawOps = jdbcOps;
+    String springVer = SpringVersion.getVersion();
+    boolean supportStreamQry = springVer.substring(0, 3).compareTo("5.3") >= 0;
+    qryFn = supportStreamQry
+        ? (sql, args, rowMapper) -> rawOps.queryForStream(sql, (rs, rowNum) -> rowMapper.mapRow(rs, rowNum), args)
+        : (sql, args, rowMapper) -> rawOps.query(sql, args, (rs, rowNum) -> rowMapper.mapRow(rs, rowNum)).stream();
+
   }
 
   public JdbcTemplate getRawOps() {
-    return jdbcOps;
+    return rawOps;
   }
 
 }
