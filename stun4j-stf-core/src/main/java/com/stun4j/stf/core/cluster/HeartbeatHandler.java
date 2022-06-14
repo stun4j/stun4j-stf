@@ -26,13 +26,13 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import com.google.common.eventbus.Subscribe;
-import com.stun4j.stf.core.support.BaseLifeCycle;
+import com.stun4j.stf.core.support.BaseLifecycle;
 import com.stun4j.stf.core.utils.Exceptions;
 
 /**
  * @author JayMeng
  */
-public abstract class HeartbeatHandler extends BaseLifeCycle {
+public abstract class HeartbeatHandler extends BaseLifecycle {
   private static final int DFT_MIN_HB_TIMEOUT_SECONDS = 3;
   private static final int DFT_MAX_HB_TIMEOUT_SECONDS = 60;
   private static final int DFT_HB_TIMEOUT_SECONDS = 10;

@@ -30,7 +30,7 @@ import com.stun4j.stf.core.utils.Exceptions;
  * </ul>
  * @author Jay Meng
  */
-public class BaseLifeCycle implements LifeCycle {
+public class BaseLifecycle implements Lifecycle {
   protected final Logger LOG = LoggerFactory.getLogger(this.getClass());
   private AtomicBoolean startOnce = new AtomicBoolean(false);
   private AtomicBoolean shutdownOnce = new AtomicBoolean(false);

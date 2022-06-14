@@ -32,11 +32,11 @@ import java.util.stream.Stream;
 
 import com.stun4j.stf.core.Stf;
 import com.stun4j.stf.core.StfCore;
-import com.stun4j.stf.core.support.BaseLifeCycle;
+import com.stun4j.stf.core.support.BaseLifecycle;
 import com.stun4j.stf.core.utils.Exceptions;
 
 /** @author Jay Meng */
-public class JobRunners extends BaseLifeCycle {
+public class JobRunners extends BaseLifecycle {
   private final StfCore stfCore;
   private final Map<String, ThreadPoolExecutor> workers;
   private final JobRunner runner;

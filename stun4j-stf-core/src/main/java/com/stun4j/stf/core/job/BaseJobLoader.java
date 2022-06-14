@@ -32,14 +32,14 @@ import java.util.stream.Stream;
 
 import com.stun4j.stf.core.Stf;
 import com.stun4j.stf.core.cluster.StfClusterMember;
-import com.stun4j.stf.core.support.BaseLifeCycle;
+import com.stun4j.stf.core.support.BaseLifecycle;
 import com.stun4j.stf.core.utils.Exceptions;
 
 /**
  * Base class for loading stf-jobs into queue to speed up their retrieval
  * @author Jay Meng
  */
-public abstract class BaseJobLoader extends BaseLifeCycle {
+public abstract class BaseJobLoader extends BaseLifecycle {
   private static final int DFT_MIN_LOAD_SIZE = 100;
   private static final int DFT_MAX_LOAD_SIZE = 3000;
   private static final int DFT_LOAD_SIZE = 300;

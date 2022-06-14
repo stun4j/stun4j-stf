@@ -25,7 +25,7 @@ import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
 
 import com.stun4j.guid.core.utils.Utils;
-import com.stun4j.stf.core.support.BaseLifeCycle;
+import com.stun4j.stf.core.support.BaseLifecycle;
 import com.stun4j.stf.core.utils.executor.NamedThreadFactory;
 import com.sun.management.OperatingSystemMXBean;
 
@@ -33,7 +33,7 @@ import com.sun.management.OperatingSystemMXBean;
  * @author Jay Meng
  */
 @SuppressWarnings("restriction")
-public final class JvmCpu extends BaseLifeCycle {
+public final class JvmCpu extends BaseLifecycle {
   private static final int TIME_WINDOW_SECONDS = 30;
 
   public static final JvmCpu INSTANCE;

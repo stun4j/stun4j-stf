@@ -24,12 +24,12 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 
 import com.google.common.base.Suppliers;
-import com.stun4j.stf.core.support.BaseLifeCycle;
+import com.stun4j.stf.core.support.BaseLifecycle;
 
 /**
  * @author Jay Meng
  */
-public class StfMonitor extends BaseLifeCycle {
+public class StfMonitor extends BaseLifecycle {
   public static final StfMonitor INSTANCE;
   private final JvmCpu jvmCpu;
   private final SystemLoad systemLoad;

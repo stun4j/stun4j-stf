@@ -39,7 +39,7 @@ import com.stun4j.stf.core.StfRunModeEnum;
 import com.stun4j.stf.core.cluster.HeartbeatHandler;
 import com.stun4j.stf.core.cluster.StfClusterMember;
 import com.stun4j.stf.core.monitor.StfMonitor;
-import com.stun4j.stf.core.support.BaseLifeCycle;
+import com.stun4j.stf.core.support.BaseLifecycle;
 import com.stun4j.stf.core.support.event.StfEventBus;
 import com.stun4j.stf.core.utils.Exceptions;
 
@@ -57,7 +57,7 @@ import sun.misc.Signal;
  * @author Jay Meng
  */
 @SuppressWarnings("restriction")
-public class JobManager extends BaseLifeCycle {
+public class JobManager extends BaseLifecycle {
   private static final int DFT_MIN_SCAN_FREQ_SECONDS = 3;
   private static final int DFT_SCAN_FREQ_SECONDS = 3;
 

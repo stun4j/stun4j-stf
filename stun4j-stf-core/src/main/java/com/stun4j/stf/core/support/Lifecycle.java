@@ -25,7 +25,7 @@ package com.stun4j.stf.core.support;
  * elegantly as possible), but not vice versa.
  * @author Jay Meng
  */
-public interface LifeCycle {
+public interface Lifecycle {
   void start();
 
   void shutdown();

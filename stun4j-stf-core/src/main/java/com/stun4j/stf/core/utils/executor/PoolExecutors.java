@@ -77,7 +77,9 @@ public final class PoolExecutors {
 
   public static ScheduledExecutorService newScheduler(int corePoolSize, ThreadFactory threadFactory,
       RejectedExecutionHandler reject) {
-    return new ScheduledThreadPoolExecutor(corePoolSize, threadFactory, reject);
+    ScheduledThreadPoolExecutor sche = new ScheduledThreadPoolExecutor(corePoolSize, threadFactory, reject);
+    sche.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
+    return sche;
   }
 
   public static ScheduledExecutorService newSingleThreadScheduler(String prefix, boolean daemon) {

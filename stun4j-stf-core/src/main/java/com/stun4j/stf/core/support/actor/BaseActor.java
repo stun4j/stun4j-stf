@@ -21,7 +21,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.stun4j.stf.core.support.BaseLifeCycle;
+import com.stun4j.stf.core.support.BaseLifecycle;
 import com.stun4j.stf.core.utils.Exceptions;
 import com.stun4j.stf.core.utils.Utils;
 import com.stun4j.stf.core.utils.executor.NamedThreadFactory;
@@ -30,7 +30,7 @@ import com.stun4j.stf.core.utils.executor.NamedThreadFactory;
  * Base class for actor implementation
  * @author Jay Meng
  */
-public abstract class BaseActor<T> extends BaseLifeCycle implements Actor<T> {
+public abstract class BaseActor<T> extends BaseLifecycle implements Actor<T> {
   protected final Logger LOG = LoggerFactory.getLogger(this.getClass());
   private static final int[] MSGS_SIZE_LADDER;
   private static final int MSGS_SIZE_LADDER_LENGTH;

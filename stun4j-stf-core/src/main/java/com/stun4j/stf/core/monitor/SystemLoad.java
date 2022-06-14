@@ -22,7 +22,7 @@ import java.lang.management.ManagementFactory;
 import org.apache.commons.lang3.tuple.Pair;
 
 import com.stun4j.guid.core.utils.Utils;
-import com.stun4j.stf.core.support.BaseLifeCycle;
+import com.stun4j.stf.core.support.BaseLifecycle;
 import com.stun4j.stf.core.utils.executor.NamedThreadFactory;
 import com.sun.management.OperatingSystemMXBean;
 
@@ -30,7 +30,7 @@ import com.sun.management.OperatingSystemMXBean;
  * @author Jay Meng
  */
 @SuppressWarnings("restriction")
-public final class SystemLoad extends BaseLifeCycle {
+public final class SystemLoad extends BaseLifecycle {
   private static final int TIME_WINDOW_SECONDS = 60;
   public static final SystemLoad INSTANCE;
 
