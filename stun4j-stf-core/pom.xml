@@ -14,9 +14,9 @@
 
 	<properties>
 		<!-- core -->
-		<ttl.version>2.12.6</ttl.version>
+		<ttl.version>2.14.0</ttl.version>
 		<!-- test -->
-		<testcontainers.version>1.17.2</testcontainers.version>
+		<testcontainers.version>1.17.3</testcontainers.version>
 	</properties>
 
 	<dependencies>

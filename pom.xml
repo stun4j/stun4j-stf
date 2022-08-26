@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>2.7.0</version>
+		<version>2.7.3</version>
 		<relativePath />
 	</parent>
 	<groupId>com.stun4j</groupId>
@@ -70,11 +70,11 @@
 
 		<!-- helper -->
 		<guava.version>31.1-jre</guava.version>
-		<stun4j-guid.version>1.2.2.1</stun4j-guid.version>
+		<stun4j-guid.version>2.0.0</stun4j-guid.version>
 		<config.version>1.4.2</config.version>
 
 		<!-- log -->
-		<log4j2.version>2.17.2</log4j2.version>
+		<log4j2.version>2.18.0</log4j2.version>
 	</properties>
 
 	<dependencyManagement>
@@ -131,6 +131,10 @@
 						</goals>
 					</execution>
 				</executions>
+			</plugin>
+			<plugin>
+				<groupId>pl.project13.maven</groupId>
+				<artifactId>git-commit-id-plugin</artifactId>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
