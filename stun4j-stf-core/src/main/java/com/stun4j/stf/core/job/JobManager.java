@@ -168,8 +168,8 @@ public class JobManager extends BaseLifecycle {
     LOG.info("The stf-job-manager is successfully shut down");
   }
 
-  protected boolean lockJob(String jobGrp, Long jobId, int timeoutSecs, int curRetryTimes) {
-    if (!stfCore.lockStf(jobGrp, jobId, timeoutSecs, curRetryTimes)) {
+  protected boolean lockJob(String jobGrp, Long jobId, int timeoutSecs, int curRetryTimes, long curTimeoutAt) {
+    if (!stfCore.lockStf(jobGrp, jobId, timeoutSecs, curRetryTimes, curTimeoutAt)) {
       LOG.warn("Lock job#{} failed.It may be running [jobGrp={}]", jobId, jobGrp);
       return false;
     }
@@ -226,7 +226,7 @@ public class JobManager extends BaseLifecycle {
           continue;
         }
 
-        if (lockJob(jobGrp, job.getId(), pair.getValue(), job.getRetryTimes())) {
+        if (lockJob(jobGrp, job.getId(), pair.getValue(), job.getRetryTimes(), job.getTimeoutAt())) {
           // job.setExecutor(jobMayLocked.getExecutor());TODO mj:record who lock the stf-job if necessary
           return job;
         }
@@ -290,7 +290,7 @@ public class JobManager extends BaseLifecycle {
       if (!(pair = runner.checkWhetherTheJobCanRun(jobGrp, job, stfCore)).getKey()) {
         continue;
       }
-      preBatchArgs.add(new Object[]{job, pair.getValue(), job.getId(), job.getRetryTimes()});
+      preBatchArgs.add(new Object[]{job, pair.getValue(), job.getId(), job.getRetryTimes(), job.getTimeoutAt()});
       break;
     }
     return false;

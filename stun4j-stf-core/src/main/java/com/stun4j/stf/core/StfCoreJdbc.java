@@ -116,12 +116,12 @@ public class StfCoreJdbc extends BaseStfCore {
   };
 
   @Override
-  public boolean lockStf(String jobGrp, Long stfId, int timeoutSecs, int curRetryTimes) {
+  public boolean lockStf(String jobGrp, Long stfId, int timeoutSecs, int curRetryTimes, long curTimeoutAt) {
     if (checkFail(stfId)) {
       return false;
     }
     StfMetaGroupEnum metaGrp = jobGrp.indexOf(KEY_FEATURE_TIMEOUT_DELAY) == -1 ? CORE : DELAY;
-    return doLockStf(metaGrp, stfId, timeoutSecs, curRetryTimes);
+    return doLockStf(metaGrp, stfId, timeoutSecs, curRetryTimes, curTimeoutAt);
   }
 
   @Override
@@ -163,14 +163,15 @@ public class StfCoreJdbc extends BaseStfCore {
   }
 
   @Override
-  protected boolean doLockStf(StfMetaGroupEnum metaGrp, Long stfId, int timeoutSecs, int curRetryTimes) {
+  protected boolean doLockStf(StfMetaGroupEnum metaGrp, Long stfId, int timeoutSecs, int curRetryTimes,
+      long curTimeoutAt) {
     if (H.isDataSourceClose()) {
       H.logOnDataSourceClose(LOG, "doLockStf", of("stf", stfId));
       return false;
     }
     long now;
     int cnt = jdbcOps.update(metaGrp == CORE ? LOCK_SQL : LOCK_DELAY_SQL,
-        (now = System.currentTimeMillis()) + timeoutSecs * 1000, now, stfId, curRetryTimes);
+        (now = System.currentTimeMillis()) + timeoutSecs * 1000, now, stfId, curRetryTimes, curTimeoutAt);
     return cnt == 1;
   }
 
@@ -237,7 +238,7 @@ public class StfCoreJdbc extends BaseStfCore {
     INIT_SQL = lenientFormat(initSqlTpl, coreTblName, I.name(), N.name(), 0);
     INIT_DELAY_SQL = lenientFormat(initSqlTpl, delayTblName, I.name(), N.name(), 0);
 
-    String lockSqlTpl = "update %s set st = '%s', retry_times = retry_times + 1, timeout_at = ?, up_at = ? where id = ? and retry_times = ? and st in ('%s', '%s')";
+    String lockSqlTpl = "update %s set st = '%s', retry_times = retry_times + 1, timeout_at = ?, up_at = ? where id = ? and retry_times = ? and timeout_at = ? and st in ('%s', '%s')";
     LOCK_SQL = lenientFormat(lockSqlTpl, coreTblName, P.name(), I.name(), P.name());
     LOCK_DELAY_SQL = lenientFormat(lockSqlTpl, delayTblName, P.name(), I.name(), P.name());
 

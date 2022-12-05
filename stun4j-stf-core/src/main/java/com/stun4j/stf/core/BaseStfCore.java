@@ -68,10 +68,10 @@ abstract class BaseStfCore implements StfCore, StfDelayQueueCore {
     long now = System.currentTimeMillis();
     List<Stf> jobs = new ArrayList<>();
     List<Object[]> batchArgs = preBatchArgs.stream().map(arg -> {
-      int timeoutSeconds = (Integer)arg[1];
+      int timeoutSecs = (Integer)arg[1];
       Stf job = (Stf)arg[0];
       jobs.add(job);
-      arg[0] = now + timeoutSeconds * 1000;
+      arg[0] = now + timeoutSecs * 1000;
       arg[1] = now;
       return arg;
     }).collect(Collectors.toList());
@@ -134,7 +134,8 @@ abstract class BaseStfCore implements StfCore, StfDelayQueueCore {
 
   protected abstract void doNewStfDelay(Long delayStfId, StfCall callee, int timeoutSeconds, int delaySeconds);
 
-  protected abstract boolean doLockStf(StfMetaGroupEnum metaGrp, Long stfId, int timeoutSecs, int curRetryTimes);
+  protected abstract boolean doLockStf(StfMetaGroupEnum metaGrp, Long stfId, int timeoutSecs, int curRetryTimes,
+      long curTimeoutAt);
 
   protected abstract int[] doBatchLockStfs(StfMetaGroupEnum metaGrp, List<Object[]> batchArgs);
 
