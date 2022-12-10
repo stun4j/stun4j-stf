@@ -23,7 +23,7 @@ import org.junit.ClassRule;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.MySQLContainer;
 
-import com.stun4j.stf.core.SchemaFileHelper;
+import com.stun4j.stf.core.support.SchemaFileHelper;
 import com.stun4j.stf.core.utils.DataSourceUtils;
 
 @SuppressWarnings("rawtypes")

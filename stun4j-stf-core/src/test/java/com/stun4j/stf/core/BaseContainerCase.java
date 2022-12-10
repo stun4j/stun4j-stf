@@ -20,6 +20,8 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 
+import com.stun4j.stf.core.job.JobScanner;
+import com.stun4j.stf.core.job.JobScannerJdbc;
 import com.stun4j.stf.core.support.JdbcAware;
 import com.stun4j.stf.core.support.persistence.StfDefaultSpringJdbcOps;
 
@@ -65,10 +67,16 @@ public abstract class BaseContainerCase<BEAN_TYPE> {
     this.containerType = TestConsts.CONTAINER_TYPE_JDBC;
   }
 
-  // push-down 1 level
-  protected StfCore newStfCore(BEAN_TYPE biz) {
+  protected StfCore newStfCore(Object biz) {
     if (biz instanceof JdbcAware) {
       return new StfCoreJdbc(((JdbcAware)biz).getJdbcOps(), tblName);
+    }
+    return null;
+  }
+
+  protected JobScanner newJobScanner(Object biz) {
+    if (biz instanceof JdbcAware) {
+      return new JobScannerJdbc(((JdbcAware)biz).getJdbcOps(), tblName);
     }
     return null;
   }

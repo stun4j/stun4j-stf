@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.stun4j.stf.core;
+package com.stun4j.stf.core.support;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -27,6 +27,7 @@ import org.springframework.core.io.ClassPathResource;
 
 import com.google.common.base.Strings;
 import com.stun4j.guid.core.LocalGuid;
+import com.stun4j.stf.core.TestConsts;
 
 public class SchemaFileHelper {
   public static String classpath(String dbVendor, long roundId) {

@@ -87,7 +87,7 @@ public abstract class BaseJobScannerCase extends BaseContainerCase<JobScanner> {
 
     long theVeryBegining = System.currentTimeMillis();
     if (isNormal) {
-      stf.newStf("foo", "bar", 1);// give a shortest timeout
+      stf.newStf("foo", "bar", 1);// given a shortest timeout
     }
     Utils.sleepSeconds(1);
     if (isNormal) {
@@ -114,9 +114,9 @@ public abstract class BaseJobScannerCase extends BaseContainerCase<JobScanner> {
     // Change the state of 1 data item to 'P'
     Long stfId = StfContext.safeGetLaStfIdValue();
     // This changes the initial state of Stf: I->P, and the following process is the same!
-//    if (isNormal) {
-//      stf.doForward(stfId);
-//    }
+    // if (isNormal) {
+    // stf.doForward(stfId);
+    // }
 
     // tricky help test
     Map<String, Object> obj = null;

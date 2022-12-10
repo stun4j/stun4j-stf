@@ -1,4 +1,4 @@
-package com.stun4j.stf.core.job;
+package com.stun4j.stf.core;
 
 import java.io.File;
 
@@ -11,7 +11,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import com.stun4j.stf.core.support.SchemaFileHelper;
 import com.stun4j.stf.core.utils.DataSourceUtils;
 
-public class JobScannerJdbcPostgreSQLTest extends BaseJobScannerCase {
+public class StfCoreJdbcPostgreSQLTest extends BaseStfCoreCase {
   @ClassRule
   public static final JdbcDatabaseContainer DB;
   static final String TBL_NAME;
@@ -26,7 +26,7 @@ public class JobScannerJdbcPostgreSQLTest extends BaseJobScannerCase {
     DB = new PostgreSQLContainer("postgres").withInitScript(SchemaFileHelper.classpath(dbVendor, roundId));
   }
 
-  public JobScannerJdbcPostgreSQLTest() {
+  public StfCoreJdbcPostgreSQLTest() {
     super(DB, TBL_NAME);
   }
 
@@ -35,5 +35,4 @@ public class JobScannerJdbcPostgreSQLTest extends BaseJobScannerCase {
     SchemaFileHelper.cleanup(SCHEMA_FILE_WITH_TBL_NAME_CHANGED);
     DB.close();
   }
-
 }

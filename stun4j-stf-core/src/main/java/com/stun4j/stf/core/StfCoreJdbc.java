@@ -36,6 +36,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.dao.DuplicateKeyException;
 
 import com.stun4j.stf.core.spi.StfJdbcOps;
+import com.stun4j.stf.core.support.JdbcAware;
 import com.stun4j.stf.core.support.JsonHelper;
 import com.stun4j.stf.core.support.event.StfDelayTriggeredEvent;
 import com.stun4j.stf.core.support.event.StfDoneEvent;
@@ -51,7 +52,7 @@ import com.stun4j.stf.core.utils.consumers.TriConsumer;
  * The jdbc implementation of {@link BaseStfCore}
  * @author Jay Meng
  */
-public class StfCoreJdbc extends BaseStfCore {
+public class StfCoreJdbc extends BaseStfCore implements JdbcAware {
   private static final Pair<String, Object[]> EMPTY_CALLEE_PAIR = of(null, null);
   private final String INIT_SQL;
   private final String INIT_DELAY_SQL;
@@ -255,6 +256,7 @@ public class StfCoreJdbc extends BaseStfCore {
         coreTblName, P.name(), N.name(), 0, delayTblName, P.name());
   }
 
+  @Override
   public StfJdbcOps getJdbcOps() {
     return jdbcOps;
   }
