@@ -15,9 +15,14 @@
  */
 package com.stun4j.stf.core.serializer;
 
+import static com.stun4j.stf.core.utils.Asserts.notNull;
+import static com.stun4j.stf.core.utils.Asserts.requireNonNull;
+
 import java.io.IOException;
 
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.core.KotlinDetector;
+import org.springframework.util.ClassUtils;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
@@ -29,15 +34,18 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.TreeNode;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectMapper.DefaultTyping;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.jsontype.PolymorphicTypeValidator;
+import com.fasterxml.jackson.databind.jsontype.TypeSerializer;
+import com.fasterxml.jackson.databind.jsontype.impl.StdTypeResolverBuilder;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.SerializerFactory;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.stun4j.stf.core.support.NullValue;
-import static com.stun4j.stf.core.utils.Asserts.*;
 
 /**
  * Generic Jackson 2-based {@link Serializer} that maps {@link Object objects} to JSON using dynamic typing.
@@ -46,7 +54,7 @@ import static com.stun4j.stf.core.utils.Asserts.*;
  * @author Mao Shuai
  * @author Jay Meng
  *         <p>
- *         From spring-data-redis:2.6.4,changes listed below
+ *         From spring-data-redis:2.7.6,changes listed below
  *         <ul>
  *         <li>Disable all Spring dependency,use Asserts#notNull,commons-lang3 instead</li>
  *         <li>Use Serializer instead of RedisSerializer</li>
@@ -79,12 +87,24 @@ public class GenericJackson2JsonSerializer implements Serializer {
     // the type hint embedded for deserialization using the default typing feature.
     registerNullValueSerializer(mapper, classPropertyTypeName);
 
+    // mj:upgrade from 2.6.4:modify->
+    // if (StringUtils.isNotBlank(classPropertyTypeName)) {
+    // mapper.activateDefaultTypingAsProperty(mapper.getPolymorphicTypeValidator(), DefaultTyping.NON_FINAL,
+    // classPropertyTypeName);
+    // } else {
+    // mapper.activateDefaultTyping(mapper.getPolymorphicTypeValidator(), DefaultTyping.NON_FINAL, As.PROPERTY);
+    // }
+
+    StdTypeResolverBuilder typer = new TypeResolverBuilder(DefaultTyping.EVERYTHING,
+        mapper.getPolymorphicTypeValidator());
+    typer = typer.init(JsonTypeInfo.Id.CLASS, null);
+    typer = typer.inclusion(JsonTypeInfo.As.PROPERTY);
+
     if (StringUtils.isNotBlank(classPropertyTypeName)) {
-      mapper.activateDefaultTypingAsProperty(mapper.getPolymorphicTypeValidator(), DefaultTyping.NON_FINAL,
-          classPropertyTypeName);
-    } else {
-      mapper.activateDefaultTyping(mapper.getPolymorphicTypeValidator(), DefaultTyping.NON_FINAL, As.PROPERTY);
+      typer = typer.typeProperty(classPropertyTypeName);
     }
+    mapper.setDefaultTyping(typer);
+    // <-
   }
 
   /**
@@ -190,5 +210,80 @@ public class GenericJackson2JsonSerializer implements Serializer {
       jgen.writeStringField(classIdentifier, NullValue.class.getName());
       jgen.writeEndObject();
     }
+
+    // mj:upgrade from 2.6.4:add->
+    @Override
+    public void serializeWithType(NullValue value, JsonGenerator gen, SerializerProvider serializers,
+        TypeSerializer typeSer) throws IOException {
+      serialize(value, gen, serializers);
+    }
+    // <-
   }
+
+  // mj:upgrade from 2.6.4:add->
+  /**
+   * Custom {@link StdTypeResolverBuilder} that considers typing for non-primitive types. Primitives, their wrappers and
+   * primitive arrays do not require type hints. The default {@code DefaultTyping#EVERYTHING} typing does not satisfy
+   * those requirements.
+   * @author Mark Paluch
+   * @since 2.7.2
+   */
+  private static class TypeResolverBuilder extends ObjectMapper.DefaultTypeResolverBuilder {
+    private static final long serialVersionUID = 1L;
+
+    public TypeResolverBuilder(DefaultTyping t, PolymorphicTypeValidator ptv) {
+      super(t, ptv);
+    }
+
+    @Override
+    public ObjectMapper.DefaultTypeResolverBuilder withDefaultImpl(Class<?> defaultImpl) {
+      return this;
+    }
+
+    /**
+     * Method called to check if the default type handler should be used for given type. Note: "natural types" (String,
+     * Boolean, Integer, Double) will never use typing; that is both due to them being concrete and final, and since
+     * actual serializers and deserializers will also ignore any attempts to enforce typing.
+     */
+    public boolean useForType(JavaType t) {
+
+      if (t.isJavaLangObject()) {
+        return true;
+      }
+
+      t = resolveArrayOrWrapper(t);
+
+      if (t.isEnumType() || ClassUtils.isPrimitiveOrWrapper(t.getRawClass())) {
+        return false;
+      }
+
+      if (t.isFinal() && !KotlinDetector.isKotlinType(t.getRawClass())
+          && t.getRawClass().getPackage().getName().startsWith("java")) {
+        return false;
+      }
+
+      // [databind#88] Should not apply to JSON tree models:
+      return !TreeNode.class.isAssignableFrom(t.getRawClass());
+    }
+
+    private JavaType resolveArrayOrWrapper(JavaType type) {
+
+      while (type.isArrayType()) {
+        type = type.getContentType();
+        if (type.isReferenceType()) {
+          type = resolveArrayOrWrapper(type);
+        }
+      }
+
+      while (type.isReferenceType()) {
+        type = type.getReferencedType();
+        if (type.isArrayType()) {
+          type = resolveArrayOrWrapper(type);
+        }
+      }
+
+      return type;
+    }
+  }
+  // <-
 }
