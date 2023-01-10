@@ -29,9 +29,9 @@ public abstract class JobConsts {
 
   public static Map<Integer, Integer> generateRetryBehaviorByPattern(
       int timeoutSeconds) {/*- TODO mj:Open this block to make it configurable*/
-    Map<Integer, Integer> map = new HashMap<>();
-    map.put(1, 0);
-    map.put(2, 1 * timeoutSeconds);
+    Map<Integer/* retry-times current op */, Integer/* timeout-secs current op */> map = new HashMap<>();
+    map.put(1, timeoutSeconds);
+    map.put(2, timeoutSeconds);
     map.put(3, 2 * timeoutSeconds);
     map.put(4, 3 * timeoutSeconds);
     map.put(5, 5 * timeoutSeconds);

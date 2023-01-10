@@ -24,7 +24,6 @@ import org.junit.runners.MethodSorters;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.testcontainers.containers.GenericContainer;
 
-import com.google.common.collect.Maps;
 import com.stun4j.guid.core.LocalGuid;
 import com.stun4j.guid.core.utils.Utils;
 import com.stun4j.stf.core.BaseContainerCase;
@@ -36,8 +35,7 @@ import com.stun4j.stf.core.support.JdbcAware;
 import com.stun4j.stf.core.support.persistence.StfDefaultSpringJdbcOps;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public abstract class BaseJobScannerCase extends BaseContainerCase<JobScanner> {
-  static final Map<Class<? extends BaseContainerCase>, JobScanner> JOB_SCANNER_COMPONENTS = Maps.newConcurrentMap();
+public abstract class JobScannerCase extends BaseContainerCase<JobScanner> {
 
   static {
     LocalGuid.init(0, 0);
@@ -45,13 +43,8 @@ public abstract class BaseJobScannerCase extends BaseContainerCase<JobScanner> {
 
   @Override
   public JobScanner bizBean() {
-    return JOB_SCANNER_COMPONENTS.computeIfAbsent(this.getClass(), (k) -> {
-      if (this.isContainerTypeJdbc()) {
-        JdbcTemplate jdbcOps = newJdbcTemplate(db);
-        return new JobScannerJdbc(new StfDefaultSpringJdbcOps(jdbcOps), tblName);
-      }
-      throw new RuntimeException("biz bean init error");
-    });
+    JdbcTemplate jdbcOps = newJdbcTemplate(db);
+    return new JobScannerJdbc(new StfDefaultSpringJdbcOps(jdbcOps), tblName);
   }
 
   @Test
@@ -63,22 +56,6 @@ public abstract class BaseJobScannerCase extends BaseContainerCase<JobScanner> {
   public void _02_timeout_scanTimeoutJobsWaitingRun() {
     _02_03_07_08_template(StateEnum.I, true);
   }
-
-  // public static void main(String[] args) {
-  // String url = "jdbc:mysql://localhost/test";
-  // String username = "root";
-  // String password = "1111";
-  // JdbcTemplate jdbc = new JdbcTemplate(new DriverManagerDataSource(url, username, password));
-  // jdbc.execute("delete from stn_stf");
-  // StfDefaultSpringJdbcOps ops;
-  // BaseStfCore stf = new StfCoreJdbc(ops = new StfDefaultSpringJdbcOps(jdbc), "stn_stf");
-  // stf.init("foo", "bar", 0);
-  //
-  // JobScanner biz = new JobScannerJdbc(ops, "stn_stf");
-  // try (Stream<Stf> stfs = biz.scanTimeoutJobsWaitingRun(1, false)) {
-  // System.out.println(stfs.count());
-  // }
-  // }
 
   @SuppressWarnings("unchecked")
   private void _01_06_template(boolean isNormal) {
@@ -127,13 +104,8 @@ public abstract class BaseJobScannerCase extends BaseContainerCase<JobScanner> {
         obj = jdbc.queryForMap("select * from " + tblName + " where st=? limit 1", jobType.name());
       }
     }
-    // long realDbUpAt = safeGetUpAt(obj);
     // do the real test
     long now = System.currentTimeMillis();
-    // System.out.println("time(ms) now: " + start);
-    // Minimum timeout period for query results(This value is derived inversely from db, so it is used as the threshold
-    // for the timeout)
-    // long shortestTimeout = start - realDbUpAt;
     jdbc.update("update " + tblName + " set timeout_at = ?", now);
     Stream<Stf> stfs = null;
     try {
@@ -156,10 +128,6 @@ public abstract class BaseJobScannerCase extends BaseContainerCase<JobScanner> {
     }
 
     now = System.currentTimeMillis();
-    // System.out.println("time(ms) passed: " + (now - start));
-    // time passed by,So shortestTimeout is recalculated and then incremented by 1ms.(Deliberately extended the timeout
-    // threshold just a little bit, so you can't expect to find anything)
-    // long shortestTimeout = now - realDbUpAt;
     jdbc.update("update " + tblName + " set timeout_at = ?", now + 500);// +1000?
     Stream<Stf> stfs2 = null;
     try {
@@ -178,26 +146,6 @@ public abstract class BaseJobScannerCase extends BaseContainerCase<JobScanner> {
         stfs2.close();
       }
     }
-
-    // now = System.currentTimeMillis();
-    // shortestTimeout = now - realDbUpAt;
-    // Stream<Stf> stfs3 = null;
-    // try {
-    // if (StateEnum.I == jobType) {
-    // if (isNormal) {
-    // stfs3 = biz.scanTimeoutJobsWaitingRun(1, true);
-    // }
-    // } else {
-    // if (isNormal) {
-    // stfs3 = biz.scanTimeoutJobsInProgress(1, true);
-    // }
-    // }
-    // assert stfs3.count() == 0 : "should find 0 timeout running job,because we never create any of this kinda job";
-    // } finally {
-    // if (stfs3 != null) {
-    // stfs3.close();
-    // }
-    // }
   }
 
   long safeGetUpAt(Map<String, Object> obj) {
@@ -205,11 +153,11 @@ public abstract class BaseJobScannerCase extends BaseContainerCase<JobScanner> {
     return realDbUpAt;
   }
 
-  public BaseJobScannerCase(GenericContainer db, String tblName) {
+  public JobScannerCase(GenericContainer db, String tblName) {
     super(db, tblName);
   }
 
-  public BaseJobScannerCase(GenericContainer db) {
+  public JobScannerCase(GenericContainer db) {
     super(db);
   }
 }

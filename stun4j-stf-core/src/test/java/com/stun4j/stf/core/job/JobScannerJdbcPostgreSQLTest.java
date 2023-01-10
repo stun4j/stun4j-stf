@@ -1,29 +1,27 @@
 package com.stun4j.stf.core.job;
 
+import static com.stun4j.stf.core.support.SchemaFileHelper.cleanup;
+import static com.stun4j.stf.core.utils.DataSourceUtils.DB_VENDOR_POSTGRE_SQL;
+
 import java.io.File;
 
 import org.apache.commons.lang3.tuple.Triple;
 import org.junit.AfterClass;
 import org.junit.ClassRule;
 import org.testcontainers.containers.JdbcDatabaseContainer;
-import org.testcontainers.containers.PostgreSQLContainer;
 
-import com.stun4j.stf.core.support.SchemaFileHelper;
-import com.stun4j.stf.core.utils.DataSourceUtils;
-
-public class JobScannerJdbcPostgreSQLTest extends BaseJobScannerCase {
+@SuppressWarnings("rawtypes")
+public class JobScannerJdbcPostgreSQLTest extends JobScannerCase {
   @ClassRule
   public static final JdbcDatabaseContainer DB;
   static final String TBL_NAME;
   static final File SCHEMA_FILE_WITH_TBL_NAME_CHANGED;
 
   static {
-    String dbVendor = DataSourceUtils.DB_VENDOR_POSTGRE_SQL;
-    Triple<String, File, Long> rtn = SchemaFileHelper.extracted(dbVendor);
+    Triple<String, File, JdbcDatabaseContainer> rtn = determineJdbcMeta(DB_VENDOR_POSTGRE_SQL);
     TBL_NAME = rtn.getLeft();
     SCHEMA_FILE_WITH_TBL_NAME_CHANGED = rtn.getMiddle();
-    long roundId = rtn.getRight();
-    DB = new PostgreSQLContainer("postgres").withInitScript(SchemaFileHelper.classpath(dbVendor, roundId));
+    DB = rtn.getRight();
   }
 
   public JobScannerJdbcPostgreSQLTest() {
@@ -32,7 +30,7 @@ public class JobScannerJdbcPostgreSQLTest extends BaseJobScannerCase {
 
   @AfterClass
   public static void afterClass() {
-    SchemaFileHelper.cleanup(SCHEMA_FILE_WITH_TBL_NAME_CHANGED);
+    cleanup(SCHEMA_FILE_WITH_TBL_NAME_CHANGED);
     DB.close();
   }
 

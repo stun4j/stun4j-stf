@@ -36,7 +36,7 @@ public interface StfCore extends StfBatchable {
     return newStf(bizObjId, bizMethodName, null, typedArgs);
   }
 
-  boolean lockStf(String jobGrp, Long stfId, int timeoutSecs, int curRetryTimes, long curTimeoutAt);
+  long lockStf(String jobGrp, Long stfId, int timeoutSeconds, int lastRetryTimes, long lastTimeoutAt);
 
   void markDone(StfMetaGroupEnum metaGrp, Long stfId, boolean async);
 
@@ -65,9 +65,9 @@ public interface StfCore extends StfBatchable {
       }
 
       @Override
-      public boolean lockStf(String jobGrp, Long stfId, int timeoutSecs, int curRetryTimes, long curTimeoutAt) {
+      public long lockStf(String jobGrp, Long stfId, int timeoutSeconds, int lastRetryTimes, long lastTimeoutAt) {
         NOT_INITIALIZED_THROW.accept(MODULE_ID);
-        return false;
+        return -1;
       }
 
       @Override
@@ -81,7 +81,7 @@ public interface StfCore extends StfBatchable {
       }
 
       @Override
-      public void reForward(StfMetaGroupEnum metaGrp, Long stfId, int curRetryTimes, String calleeInfo, boolean async,
+      public void reForward(StfMetaGroupEnum metaGrp, Long stfId, int lastRetryTimes, String calleeInfo, boolean async,
           Object... calleeMethodArgs) {
         NOT_INITIALIZED_THROW.accept(MODULE_ID);
       }

@@ -15,6 +15,7 @@
  */
 package com.stun4j.stf.core.job;
 
+import static com.stun4j.stf.core.StfHelper.partialUpdateJobInfoWhenLocked;
 import static com.stun4j.stf.core.StfRunModeEnum.DEFAULT;
 import static com.stun4j.stf.core.job.JobConsts.ALL_JOB_GROUPS;
 import static com.stun4j.stf.core.support.executor.StfInternalExecutors.newWatcherOfJobManager;
@@ -168,12 +169,13 @@ public class JobManager extends BaseLifecycle {
     LOG.info("The stf-job-manager is successfully shut down");
   }
 
-  protected boolean lockJob(String jobGrp, Long jobId, int timeoutSecs, int curRetryTimes, long curTimeoutAt) {
-    if (!stfCore.lockStf(jobGrp, jobId, timeoutSecs, curRetryTimes, curTimeoutAt)) {
+  protected long lockJob(String jobGrp, Long jobId, int timeoutSecs, int lastRetryTimes, long lastTimeoutAt) {
+    long lockedAt;
+    if ((lockedAt = stfCore.lockStf(jobGrp, jobId, timeoutSecs, lastRetryTimes, lastTimeoutAt)) == -1) {
       LOG.warn("Lock job#{} failed.It may be running [jobGrp={}]", jobId, jobGrp);
-      return false;
+      return lockedAt;
     }
-    return true;
+    return lockedAt;
   }
 
   private void onSchedule() {
@@ -226,8 +228,11 @@ public class JobManager extends BaseLifecycle {
           continue;
         }
 
-        if (lockJob(jobGrp, job.getId(), pair.getValue(), job.getRetryTimes(), job.getTimeoutAt())) {
-          // job.setExecutor(jobMayLocked.getExecutor());TODO mj:record who lock the stf-job if necessary
+        long lockedAt;
+        int dynaTimeoutSecs;
+        if ((lockedAt = lockJob(jobGrp, job.getId(), dynaTimeoutSecs = pair.getValue(), job.getRetryTimes(),
+            job.getTimeoutAt())) > 0) {
+          partialUpdateJobInfoWhenLocked(job, lockedAt, dynaTimeoutSecs);
           return job;
         }
       } catch (Throwable e) {
@@ -255,7 +260,6 @@ public class JobManager extends BaseLifecycle {
       }
 
       List<Object[]> preBatchArgs = new ArrayList<>();
-      List<Stf> lockedJobs = null;
       boolean isQueueEmpty = false;
       try {
         for (int j = 0; j < batchSize; j++) {
@@ -265,9 +269,7 @@ public class JobManager extends BaseLifecycle {
           }
         }
         if (!preBatchArgs.isEmpty()) {
-          lockedJobs = stfCore.batchLockStfs(jobGrp, preBatchArgs);
-        }
-        if (lockedJobs != null) {
+          List<Stf> lockedJobs = stfCore.batchLockStfs(jobGrp, preBatchArgs);
           for (Stf lockedJob : lockedJobs) {
             runners.execute(jobGrp, lockedJob);
           }

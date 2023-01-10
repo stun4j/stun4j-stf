@@ -86,9 +86,9 @@ public class JobRunners extends BaseLifecycle {
     this(stfCore, null);
   }
 
-  public JobRunners(StfCore stfCore, Map<Integer, Integer> retryIntervalSeconds) {
+  public JobRunners(StfCore stfCore, Map<Integer, Integer> retryBehavior) {
     this.stfCore = stfCore;
-    this.runner = JobRunner.init(retryIntervalSeconds);
+    this.runner = JobRunner.init(retryBehavior);
     this.workers = Stream.of(ALL_JOB_GROUPS).reduce(new HashMap<>(), (map, grp) -> {
       map.put(grp, newWorkerOfJobRunner(grp));
       return map;

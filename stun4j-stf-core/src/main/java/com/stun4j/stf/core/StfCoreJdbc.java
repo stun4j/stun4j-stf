@@ -22,6 +22,7 @@ import static com.stun4j.stf.core.StateEnum.P;
 import static com.stun4j.stf.core.StateEnum.S;
 import static com.stun4j.stf.core.StfConsts.DFT_CORE_TBL_NAME;
 import static com.stun4j.stf.core.StfConsts.DFT_DELAY_TBL_NAME_SUFFIX;
+import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.LOWER_CASE_ALL_FIELDS;
 import static com.stun4j.stf.core.StfHelper.H;
 import static com.stun4j.stf.core.StfMetaGroupEnum.CORE;
 import static com.stun4j.stf.core.StfMetaGroupEnum.DELAY;
@@ -87,23 +88,23 @@ public class StfCoreJdbc extends BaseStfCore implements JdbcAware {
       calleeMethodArgs) -> {
     if (metaGrp == CORE) {
       invokeCall(stfId, calleeInfo, calleeMethodArgs);
-    } else {
-      try {
-        if (!doDelayTransfer(stfId)) {
-          return;
-        }
-      } catch (DuplicateKeyException e) {// Shouldn't happen
-        try {
-          H.tryCommitLaStfOnDup(LOG, stfId, coreTblName, (DuplicateKeyException)e,
-              laStfDelayId -> this.fallbackToSingleMarkDone(DELAY, laStfDelayId));
-        } catch (Throwable e1) {
-          Exceptions.swallow(e1, LOG, "Unexpected error occurred while auto committing stf-delay");
-        }
+      return;
+    }
+    try {
+      if (!doDelayTransfer(stfId)) {
         return;
       }
-      this.markDone(DELAY, stfId, true);// Stf internally using Stf itself:)
-      invokeCall(stfId, calleeInfo, calleeMethodArgs);
+    } catch (DuplicateKeyException e) {// Shouldn't happen
+      try {
+        H.tryCommitLaStfOnDup(LOG, stfId, coreTblName, (DuplicateKeyException)e,
+            laStfDelayId -> this.fallbackToSingleMarkDone(DELAY, laStfDelayId));
+      } catch (Throwable e1) {
+        Exceptions.swallow(e1, LOG, "Unexpected error occurred while auto committing stf-delay");
+      }
+      return;
     }
+    this.markDone(DELAY, stfId, true);// Stf internally using Stf itself:)
+    invokeCall(stfId, calleeInfo, calleeMethodArgs);
   };
 
   private final TriConsumer<Long, StfMetaGroupEnum, Boolean> markDone = (metaGrp, stfId, batch) -> {
@@ -117,12 +118,12 @@ public class StfCoreJdbc extends BaseStfCore implements JdbcAware {
   };
 
   @Override
-  public boolean lockStf(String jobGrp, Long stfId, int timeoutSecs, int curRetryTimes, long curTimeoutAt) {
+  public long lockStf(String jobGrp, Long stfId, int timeoutSeconds, int lastRetryTimes, long lastTimeoutAt) {
     if (checkFail(stfId)) {
-      return false;
+      return -1;
     }
     StfMetaGroupEnum metaGrp = jobGrp.indexOf(KEY_FEATURE_TIMEOUT_DELAY) == -1 ? CORE : DELAY;
-    return doLockStf(metaGrp, stfId, timeoutSecs, curRetryTimes, curTimeoutAt);
+    return doLockStf(metaGrp, stfId, timeoutSeconds, lastRetryTimes, lastTimeoutAt);
   }
 
   @Override
@@ -142,38 +143,38 @@ public class StfCoreJdbc extends BaseStfCore implements JdbcAware {
   }
 
   @Override
-  protected void doNewStf(Long newStfId, StfCall callee, int timeoutSecs) {
+  protected void doNewStf(Long newStfId, StfCall callee, int timeoutSeconds) {
     if (H.isDataSourceClose()) {
       H.logOnDataSourceClose(LOG, "doNewStf", of("stf", newStfId));
       return;
     }
     String calleeJson = JsonHelper.toJson(callee);
     long now = System.currentTimeMillis();
-    jdbcOps.update(INIT_SQL, newStfId, calleeJson, timeoutSecs, (now + timeoutSecs * 1000), now, now);
+    jdbcOps.update(INIT_SQL, newStfId, calleeJson, timeoutSeconds, (now + timeoutSeconds * 1000), now, now);
   }
 
   @Override
-  protected void doNewStfDelay(Long newStfDelayId, StfCall callee, int timeoutSecs, int delaySecs) {
+  protected void doNewStfDelay(Long newStfDelayId, StfCall callee, int timeoutSeconds, int delaySecs) {
     if (H.isDataSourceClose()) {
       H.logOnDataSourceClose(LOG, "doNewStfDelay", of("stfd", newStfDelayId));
       return;
     }
     String calleeJson = JsonHelper.toJson(callee);
     long now = System.currentTimeMillis();
-    jdbcOps.update(INIT_DELAY_SQL, newStfDelayId, calleeJson, timeoutSecs, (now + delaySecs * 1000), now, now);
+    jdbcOps.update(INIT_DELAY_SQL, newStfDelayId, calleeJson, timeoutSeconds, (now + delaySecs * 1000), now, now);
   }
 
   @Override
-  protected boolean doLockStf(StfMetaGroupEnum metaGrp, Long stfId, int timeoutSecs, int curRetryTimes,
-      long curTimeoutAt) {
+  protected long doLockStf(StfMetaGroupEnum metaGrp, Long stfId, int timeoutSeconds, int lastRetryTimes,
+      long lastTimeoutAt) {
     if (H.isDataSourceClose()) {
       H.logOnDataSourceClose(LOG, "doLockStf", of("stf", stfId));
-      return false;
+      return -1;
     }
     long now;
     int cnt = jdbcOps.update(metaGrp == CORE ? LOCK_SQL : LOCK_DELAY_SQL,
-        (now = System.currentTimeMillis()) + timeoutSecs * 1000, now, stfId, curRetryTimes, curTimeoutAt);
-    return cnt == 1;
+        (now = System.currentTimeMillis()) + timeoutSeconds * 1000, now, stfId, lastRetryTimes, lastTimeoutAt);
+    return cnt == 1 ? now : -1;
   }
 
   @Override
@@ -222,7 +223,7 @@ public class StfCoreJdbc extends BaseStfCore implements JdbcAware {
   @Override
   protected boolean doDelayTransfer(Long stfDelayId) {
     long now;
-    int cnt = jdbcOps.update(DELAY_TRANSFER_SQL, now = System.currentTimeMillis(), now, stfDelayId);
+    int cnt = jdbcOps.update(DELAY_TRANSFER_SQL, now = System.currentTimeMillis(), now, now, stfDelayId);
     return cnt == 1;
   }
 
@@ -235,9 +236,9 @@ public class StfCoreJdbc extends BaseStfCore implements JdbcAware {
     this.jdbcOps = jdbcOps;
     String delayTblName = (this.coreTblName = coreTblName) + DFT_DELAY_TBL_NAME_SUFFIX;
 
-    String initSqlTpl = "insert into %s (id, callee, st, is_dead, retry_times, timeout_secs, timeout_at, ct_at, up_at) values(?, ?, '%s', '%s', %s, ?, ?, ?, ?)";
-    INIT_SQL = lenientFormat(initSqlTpl, coreTblName, I.name(), N.name(), 0);
-    INIT_DELAY_SQL = lenientFormat(initSqlTpl, delayTblName, I.name(), N.name(), 0);
+    String initSqlTpl = "insert into %s (%s) values(?, ?, '%s', '%s', %s, ?, ?, ?, ?)";
+    INIT_SQL = lenientFormat(initSqlTpl, coreTblName, LOWER_CASE_ALL_FIELDS, I.name(), N.name(), 0);
+    INIT_DELAY_SQL = lenientFormat(initSqlTpl, delayTblName, LOWER_CASE_ALL_FIELDS, I.name(), N.name(), 0);
 
     String lockSqlTpl = "update %s set st = '%s', retry_times = retry_times + 1, timeout_at = ?, up_at = ? where id = ? and retry_times = ? and timeout_at = ? and st in ('%s', '%s')";
     LOCK_SQL = lenientFormat(lockSqlTpl, coreTblName, P.name(), I.name(), P.name());
@@ -251,9 +252,9 @@ public class StfCoreJdbc extends BaseStfCore implements JdbcAware {
     MARK_DEAD_SQL = lenientFormat(markDeadSqlTpl, coreTblName, Y.name(), S.name());
     MARK_DEAD_DELAY_SQL = lenientFormat(markDeadSqlTpl, delayTblName, Y.name(), S.name());
 
-    DELAY_TRANSFER_SQL = lenientFormat(
-        "insert into %s (id, callee, st, is_dead, retry_times, timeout_secs, timeout_at, ct_at, up_at) select id, callee, '%s', '%s', %s, timeout_secs, timeout_at, ?, ? from %s where id = ? and st = '%s'",
-        coreTblName, P.name(), N.name(), 0, delayTblName, P.name());
+    String delayTransSqlTpl = "insert into %s (%s) select id, callee, '%s', '%s', %s, timeout_secs, ? + timeout_secs * 1000, ?, ? from %s where id = ? and st = '%s'";
+    DELAY_TRANSFER_SQL = lenientFormat(delayTransSqlTpl, coreTblName, LOWER_CASE_ALL_FIELDS, I.name(), N.name(), 0,
+        delayTblName, P.name());
   }
 
   @Override
@@ -262,7 +263,7 @@ public class StfCoreJdbc extends BaseStfCore implements JdbcAware {
   }
 
   private void invokeConsumer(Pair<Long, StfMetaGroupEnum> stfMeta, String calleeInfo, Object[] calleeMethodArgs,
-      Integer curRetryTimes, boolean batch, BaseConsumer<Long> bizFn) {
+      Integer lastRetryTimes, boolean batch, BaseConsumer<Long> bizFn) {
     Long stfId = stfMeta.getLeft();
     StfMetaGroupEnum metaGrp = stfMeta.getRight();
     if (bizFn instanceof PairConsumer) {

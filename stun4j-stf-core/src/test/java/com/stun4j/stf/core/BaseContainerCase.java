@@ -15,22 +15,74 @@
  */
 package com.stun4j.stf.core;
 
+import java.io.File;
+
+import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.JdbcDatabaseContainer;
+import org.testcontainers.containers.MySQLContainer;
+import org.testcontainers.containers.PostgreSQLContainer;
 
 import com.stun4j.stf.core.job.JobScanner;
 import com.stun4j.stf.core.job.JobScannerJdbc;
+import com.stun4j.stf.core.spi.StfJdbcOps.StfJdbcRowMapper;
 import com.stun4j.stf.core.support.JdbcAware;
+import com.stun4j.stf.core.support.SchemaFileHelper;
 import com.stun4j.stf.core.support.persistence.StfDefaultSpringJdbcOps;
+
+import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.CALLEE;
+import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.CT_AT;
+import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.ID;
+import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.IS_DEAD;
+import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.RETRY_TIMES;
+import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.ST;
+import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.TIMEOUT_AT;
+import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.TIMEOUT_SECS;
+import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.UP_AT;
+import com.stun4j.stf.core.utils.DataSourceUtils;
 
 public abstract class BaseContainerCase<BEAN_TYPE> {
   protected final GenericContainer db;
   protected final String tblName;
   protected final byte containerType;
 
-  public abstract BEAN_TYPE bizBean();
+  public static final StfJdbcRowMapper<Stf> STF_ROW_MAPPER = (rs, arg) -> {
+    Stf stf = new Stf();
+    stf.setId(rs.getLong(ID.lowerCaseName()));
+    stf.setBody(rs.getString(CALLEE.lowerCaseName()));
+    stf.setSt(rs.getString(ST.lowerCaseName()));
+    stf.setIsDead(rs.getString(IS_DEAD.lowerCaseName()));
+    stf.setRetryTimes(rs.getInt(RETRY_TIMES.lowerCaseName()));
+    stf.setTimeoutSecs(rs.getInt(TIMEOUT_SECS.lowerCaseName()));
+    stf.setTimeoutAt(rs.getLong(TIMEOUT_AT.lowerCaseName()));
+    stf.setCtAt(rs.getLong(CT_AT.lowerCaseName()));
+    stf.setUpAt(rs.getLong(UP_AT.lowerCaseName()));
+    return stf;
+  };
+
+  /** Focus on core biz bean assemble */
+  public BEAN_TYPE bizBean() {
+    return null;
+  }
+
+  @SuppressWarnings("resource")
+  protected static Triple<String, File, JdbcDatabaseContainer> determineJdbcMeta(String dbVendor) {
+    Triple<String, File, Long> rtn = SchemaFileHelper.extracted(dbVendor);
+    String tblName = rtn.getLeft();
+    File schemaFileWithTblNameChanged = rtn.getMiddle();
+    long roundId = rtn.getRight();
+    JdbcDatabaseContainer db;
+    if (DataSourceUtils.DB_VENDOR_MY_SQL.equals(dbVendor)) {
+      db = new MySQLContainer("mysql:5.7").withInitScript(SchemaFileHelper.classpath(dbVendor, roundId));
+    } else if (DataSourceUtils.DB_VENDOR_POSTGRE_SQL.equals(dbVendor)) {
+      db = new PostgreSQLContainer("postgres").withInitScript(SchemaFileHelper.classpath(dbVendor, roundId));
+    } else {
+      throw new RuntimeException("Not supported DB verdor: " + dbVendor);
+    }
+    return Triple.of(tblName, schemaFileWithTblNameChanged, db);
+  }
 
   // TODO mj:consider using generics for refactoring
   public JdbcTemplate extractNativeJdbcOps(JdbcAware inst) {
@@ -67,18 +119,32 @@ public abstract class BaseContainerCase<BEAN_TYPE> {
     this.containerType = TestConsts.CONTAINER_TYPE_JDBC;
   }
 
+  protected StfCore newStfCore() {
+    return newStfCore(null);
+  }
+
+  protected StfDelayQueueCore newStfDelayQueueCore() {
+    return (StfDelayQueueCore)newStfCore();
+  }
+
+  protected StfDelayQueueCore newStfDelayQueueCore(StfCore stfc) {
+    return (StfDelayQueueCore)stfc;
+  }
+
   protected StfCore newStfCore(Object biz) {
     if (biz instanceof JdbcAware) {
       return new StfCoreJdbc(((JdbcAware)biz).getJdbcOps(), tblName);
     }
-    return null;
+    JdbcTemplate jdbcOps = newJdbcTemplate(db);
+    return new StfCoreJdbc(new StfDefaultSpringJdbcOps(jdbcOps), tblName);
   }
 
   protected JobScanner newJobScanner(Object biz) {
     if (biz instanceof JdbcAware) {
       return new JobScannerJdbc(((JdbcAware)biz).getJdbcOps(), tblName);
     }
-    return null;
+    JdbcTemplate jdbcOps = newJdbcTemplate(db);
+    return new JobScannerJdbc(new StfDefaultSpringJdbcOps(jdbcOps), tblName);
   }
 
   protected boolean isContainerTypeJdbc() {

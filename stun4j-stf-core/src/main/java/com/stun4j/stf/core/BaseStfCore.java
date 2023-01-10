@@ -16,9 +16,11 @@
 package com.stun4j.stf.core;
 
 import static com.stun4j.stf.core.StfHelper.H;
+import static com.stun4j.stf.core.StfHelper.partialUpdateJobInfoWhenLocked;
 import static com.stun4j.stf.core.support.executor.StfInternalExecutors.newWorkerOfStfCore;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Optional;
@@ -65,14 +67,16 @@ abstract class BaseStfCore implements StfCore, StfDelayQueueCore {
 
   @Override
   public List<Stf> batchLockStfs(String jobGrp, List<Object[]> preBatchArgs) {
-    long now = System.currentTimeMillis();
     List<Stf> jobs = new ArrayList<>();
+    long lockedAt = System.currentTimeMillis();
     List<Object[]> batchArgs = preBatchArgs.stream().map(arg -> {
-      int timeoutSecs = (Integer)arg[1];
       Stf job = (Stf)arg[0];
+      int dynaTimeoutSecs = (Integer)arg[1];
       jobs.add(job);
-      arg[0] = now + timeoutSecs * 1000;
-      arg[1] = now;
+      // a shallow clone to reduce side-effect modifying preBatchArgs,also for grabbing 'dynaTimeoutSecs' again
+      arg = arg.clone();
+      arg[0] = lockedAt + dynaTimeoutSecs * 1000;
+      arg[1] = lockedAt;
       return arg;
     }).collect(Collectors.toList());
     int finalBatchSize = batchArgs.size();
@@ -82,15 +86,23 @@ abstract class BaseStfCore implements StfCore, StfDelayQueueCore {
       LOG.debug("The batch-lock image of stfs: {}", res);
     }
     if (res == null || ArrayUtils.indexOf(res, 1) < 0) {
-      return null;// TODO mj:Somewhat rude here
+      return Collections.emptyList();
     }
     res = ArrayUtils.subarray(res, 0, finalBatchSize);
     int idx = 0;
     for (ListIterator<Stf> iter = jobs.listIterator(); iter.hasNext();) {
-      iter.next();
-      if (res[idx++] != 1) {
+      Stf job = iter.next();
+      //@formatter:off
+      // not locked
+      if (res[idx] != 1) {
         iter.remove();
+      // locked
+      } else {
+        int dynaTimeoutSecs = (Integer)preBatchArgs.get(idx)[1];
+        partialUpdateJobInfoWhenLocked(job, lockedAt, dynaTimeoutSecs);
       }
+      //@formatter:on
+      idx++;
     }
     return jobs;
   }
@@ -134,8 +146,8 @@ abstract class BaseStfCore implements StfCore, StfDelayQueueCore {
 
   protected abstract void doNewStfDelay(Long delayStfId, StfCall callee, int timeoutSeconds, int delaySeconds);
 
-  protected abstract boolean doLockStf(StfMetaGroupEnum metaGrp, Long stfId, int timeoutSecs, int curRetryTimes,
-      long curTimeoutAt);
+  protected abstract long doLockStf(StfMetaGroupEnum metaGrp, Long stfId, int timeoutSeconds, int lastRetryTimes,
+      long lastTimeoutAt);
 
   protected abstract int[] doBatchLockStfs(StfMetaGroupEnum metaGrp, List<Object[]> batchArgs);
 
@@ -148,7 +160,7 @@ abstract class BaseStfCore implements StfCore, StfDelayQueueCore {
 
   protected abstract void doMarkDead(StfMetaGroupEnum metaGrp, Long stfId);
 
-  protected abstract boolean doDelayTransfer(Long delayStfId);
+  protected abstract boolean doDelayTransfer(Long stfDelayId);
 
   {
     worker = newWorkerOfStfCore();

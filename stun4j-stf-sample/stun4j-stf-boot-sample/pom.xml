@@ -11,7 +11,7 @@
 	<name>Stun4j Stf Boot Sample</name>
 
 	<properties>
-		<mybatis-plus-boot-starter.verion>3.5.2</mybatis-plus-boot-starter.verion>
+		<mybatis-plus-boot-starter.verion>3.5.3.1</mybatis-plus-boot-starter.verion>
 	</properties>
 
 	<dependencies>

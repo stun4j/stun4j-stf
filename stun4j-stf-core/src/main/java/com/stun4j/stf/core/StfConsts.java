@@ -16,7 +16,9 @@
 package com.stun4j.stf.core;
 
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 
 /** @author Jay Meng */
@@ -25,9 +27,25 @@ public interface StfConsts {
   String DFT_CORE_TBL_NAME = "stn_stf";
   String DFT_DELAY_TBL_NAME_SUFFIX = "_delay";
   String DFT_CLUSTER_MEMBER_TBL_NAME = "stn_stf_cluster_member";
-  FastDateFormat DFT_DATE_FMT = FastDateFormat.getInstance("yyyy-MM-dd HH:mm:ss.SSSZ");
+  FastDateFormat DFT_DATE_FMT = FastDateFormat.getInstance("yyyy-MM-dd HH:mm:ss");
+  FastDateFormat WITH_MS_DATE_FMT = FastDateFormat.getInstance("yyyy-MM-dd HH:mm:ss.SSS");
+  FastDateFormat WITH_MS_TZ_DATE_FMT = FastDateFormat.getInstance("yyyy-MM-dd HH:mm:ss.SSSZ");
   int DFT_MIN_JOB_TIMEOUT_SECONDS = 5;
   int DFT_JOB_TIMEOUT_SECONDS = 20;
+
+  static enum StfDbFieldEnum {
+    ID, CALLEE, ST, IS_DEAD, RETRY_TIMES, TIMEOUT_SECS, TIMEOUT_AT, CT_AT, UP_AT;
+
+    static final String LOWER_CASE_ALL_FIELDS;
+    static {
+      String[] lowerCaseEnums = Stream.of(StfDbFieldEnum.values()).map(e -> e.lowerCaseName()).toArray(String[]::new);
+      LOWER_CASE_ALL_FIELDS = StringUtils.join(lowerCaseEnums, ", ");
+    }
+
+    public String lowerCaseName() {
+      return this.name().toLowerCase();
+    }
+  }
 
   @SuppressWarnings("unused")
   static final Consumer<String> NOT_INITIALIZED_THROW = moduleId -> {

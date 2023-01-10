@@ -103,6 +103,14 @@ public class StfHelper {
     return DELAY;
   }
 
+  public static void partialUpdateJobInfoWhenLocked(Stf job, long lockedAt, int dynaTimeoutSecs) {
+    job.setUpAt(lockedAt);// use 'update-time' as 'locked-time'
+    job.setTimeoutSecs(dynaTimeoutSecs);// update to job-op's current timeout-seconds
+
+    int lastRetryTimes = job.getRetryTimes();
+    job.setRetryTimes(lastRetryTimes + 1);// update to current retry-times
+  }
+
   private Method tryGetDataSourceCloser() {
     Method dsCloser;
     try {

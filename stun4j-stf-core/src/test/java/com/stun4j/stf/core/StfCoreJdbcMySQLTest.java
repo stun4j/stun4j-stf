@@ -1,29 +1,27 @@
 package com.stun4j.stf.core;
 
+import static com.stun4j.stf.core.support.SchemaFileHelper.cleanup;
+import static com.stun4j.stf.core.utils.DataSourceUtils.DB_VENDOR_MY_SQL;
+
 import java.io.File;
 
 import org.apache.commons.lang3.tuple.Triple;
 import org.junit.AfterClass;
 import org.junit.ClassRule;
 import org.testcontainers.containers.JdbcDatabaseContainer;
-import org.testcontainers.containers.MySQLContainer;
 
-import com.stun4j.stf.core.support.SchemaFileHelper;
-import com.stun4j.stf.core.utils.DataSourceUtils;
-
-public class StfCoreJdbcMySQLTest extends BaseStfCoreCase {
+@SuppressWarnings("rawtypes")
+public class StfCoreJdbcMySQLTest extends StfCoreCase {
   @ClassRule
   public static final JdbcDatabaseContainer DB;
   static final String TBL_NAME;
   static final File SCHEMA_FILE_WITH_TBL_NAME_CHANGED;
 
   static {
-    String dbVendor = DataSourceUtils.DB_VENDOR_MY_SQL;
-    Triple<String, File, Long> rtn = SchemaFileHelper.extracted(dbVendor);
+    Triple<String, File, JdbcDatabaseContainer> rtn = determineJdbcMeta(DB_VENDOR_MY_SQL);
     TBL_NAME = rtn.getLeft();
     SCHEMA_FILE_WITH_TBL_NAME_CHANGED = rtn.getMiddle();
-    long roundId = rtn.getRight();
-    DB = new MySQLContainer("mysql:5.7").withInitScript(SchemaFileHelper.classpath(dbVendor, roundId));
+    DB = rtn.getRight();
   }
 
   public StfCoreJdbcMySQLTest() {
@@ -32,7 +30,7 @@ public class StfCoreJdbcMySQLTest extends BaseStfCoreCase {
 
   @AfterClass
   public static void afterClass() {
-    SchemaFileHelper.cleanup(SCHEMA_FILE_WITH_TBL_NAME_CHANGED);
+    cleanup(SCHEMA_FILE_WITH_TBL_NAME_CHANGED);
     DB.close();
   }
 }

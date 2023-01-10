@@ -1,50 +1,32 @@
 package com.stun4j.stf.core;
 
-import java.util.Map;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.testcontainers.containers.GenericContainer;
 
-import com.google.common.collect.Maps;
 import com.stun4j.guid.core.LocalGuid;
 import com.stun4j.guid.core.utils.Strings;
 import com.stun4j.guid.core.utils.Utils;
-import com.stun4j.stf.core.Stf;
-import com.stun4j.stf.core.StfCore;
-import com.stun4j.stf.core.StfCoreJdbc;
 import com.stun4j.stf.core.job.JobConsts;
 import com.stun4j.stf.core.job.JobScanner;
-import com.stun4j.stf.core.support.persistence.StfDefaultSpringJdbcOps;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public abstract class BaseStfCoreCase extends BaseContainerCase<StfCore> {
-  static final Map<Class<? extends BaseContainerCase>, StfCore> STF_CORE_COMPONENTS = Maps.newConcurrentMap();
+public abstract class StfCoreCase extends BaseContainerCase<StfCore> {
 
   static {
     LocalGuid.init(0, 0);
   }
 
-  @Override
-  public StfCore bizBean() {
-    return STF_CORE_COMPONENTS.computeIfAbsent(this.getClass(), (k) -> {
-      if (this.isContainerTypeJdbc()) {
-        JdbcTemplate jdbcOps = newJdbcTemplate(db);
-        return new StfCoreJdbc(new StfDefaultSpringJdbcOps(jdbcOps), tblName);
-      }
-      throw new RuntimeException("biz bean init error");
-    });
-  }
-
   @SuppressWarnings("unchecked")
   @Test
   public void _01_lockTwiceNotAllowed() {
-    StfCore stfc = bizBean();
+    StfCore stfc = newStfCore();
     JobScanner scanner = newJobScanner(stfc);
 
     int timeoutSecs = 1;// given a shortest timeout
@@ -56,15 +38,15 @@ public abstract class BaseStfCoreCase extends BaseContainerCase<StfCore> {
     long timeoutAt = stf.getTimeoutAt();
 
     String grp = JobConsts.JOB_GROUP_TIMEOUT_WAITING_RUN;
-    boolean locked = stfc.lockStf(grp, stfId, timeoutSecs, 0, timeoutAt);
-    assert locked : "the timeout job should be locked";
-    locked = stfc.lockStf(grp, stfId, timeoutSecs, 0, timeoutAt);
-    assert !locked : "the job just locked shouldn't be locked again";
+    long lockedAt = stfc.lockStf(grp, stfId, timeoutSecs, 0, timeoutAt);
+    assert lockedAt > 0 : "the timeout job should be locked";
+    lockedAt = stfc.lockStf(grp, stfId, timeoutSecs, 0, timeoutAt);
+    assert lockedAt == -1 : "the job just locked shouldn't be locked again";
   }
 
   @Test
   public void _02_lockMoreTimesNotAllowedHighConcurrently() throws InterruptedException {
-    StfCore stfc = bizBean();
+    StfCore stfc = newStfCore();
     JobScanner scanner = newJobScanner(stfc);
 
     int timeoutSecs = 1;// given a shortest timeout
@@ -86,8 +68,8 @@ public abstract class BaseStfCoreCase extends BaseContainerCase<StfCore> {
           gate.await();
           System.out
               .println(Strings.lenientFormat("Thread[%s] trying lock the job...", Thread.currentThread().getName()));
-          boolean locked = stfc.lockStf(grp, stfId, timeoutSecs, 0, timeoutAt);
-          if (locked) {
+          long lockedAt = stfc.lockStf(grp, stfId, timeoutSecs, 0, timeoutAt);
+          if (lockedAt > 0) {
             cnt.incrementAndGet();
           }
         } catch (Exception e) {
@@ -101,12 +83,18 @@ public abstract class BaseStfCoreCase extends BaseContainerCase<StfCore> {
     }
     assert cnt.get() == 1 : "exactly 1 job should be locked";
   }
+  
+  public static StfCall delegateNewStfCallee(StfCore stfc, String bizObjId, String bizMethodName,
+      @SuppressWarnings("unchecked") Pair<?, Class<?>>... typedArgs) {
+    StfCall callee = ((BaseStfCore)stfc).newCallee(bizObjId, bizMethodName, typedArgs);
+    return callee;
+  }
 
-  public BaseStfCoreCase(GenericContainer db, String tblName) {
+  public StfCoreCase(GenericContainer db, String tblName) {
     super(db, tblName);
   }
 
-  protected BaseStfCoreCase(GenericContainer db) {
+  protected StfCoreCase(GenericContainer db) {
     super(db);
   }
 

@@ -100,6 +100,7 @@
 	<Loggers>
 		<Logger name="com.stun4j.stf" level="DEBUG" includeLocation="true" additivity="false">
 			<AppenderRef ref="CONSOLE-DEBUG" />
+      <AppenderRef ref="FILE-INFO" />
 			<AppenderRef ref="FILE-DEBUG" />
 		</Logger>
 

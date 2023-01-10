@@ -1,9 +1,10 @@
-package com.stun4j.stf.core;
+package com.stun4j.stf.core.job;
 
 import static com.stun4j.stf.core.support.SchemaFileHelper.cleanup;
 import static com.stun4j.stf.core.utils.DataSourceUtils.DB_VENDOR_POSTGRE_SQL;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 
 import org.apache.commons.lang3.tuple.Triple;
 import org.junit.AfterClass;
@@ -11,7 +12,7 @@ import org.junit.ClassRule;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 
 @SuppressWarnings("rawtypes")
-public class StfCoreJdbcPostgreSQLTest extends StfCoreCase {
+public class JobRunnerJdbcPostgreSQLTest extends JobRunnerCase {
   @ClassRule
   public static final JdbcDatabaseContainer DB;
   static final String TBL_NAME;
@@ -24,7 +25,12 @@ public class StfCoreJdbcPostgreSQLTest extends StfCoreCase {
     DB = rtn.getRight();
   }
 
-  public StfCoreJdbcPostgreSQLTest() {
+  @Override
+  public void _02_delayJobTransfer() throws FileNotFoundException {
+    super._02_delayJobTransfer();
+  }
+
+  public JobRunnerJdbcPostgreSQLTest() {
     super(DB, TBL_NAME);
   }
 

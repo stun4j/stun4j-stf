@@ -15,8 +15,8 @@
  */
 package com.stun4j.stf.core.job;
 
-import static com.stun4j.stf.core.StfConsts.DFT_DATE_FMT;
 import static com.stun4j.stf.core.StfConsts.DFT_JOB_TIMEOUT_SECONDS;
+import static com.stun4j.stf.core.StfConsts.WITH_MS_DATE_FMT;
 import static com.stun4j.stf.core.StfHelper.H;
 import static com.stun4j.stf.core.StfMetaGroupEnum.CORE;
 import static com.stun4j.stf.core.job.JobConsts.generateRetryBehaviorByPattern;
@@ -25,7 +25,6 @@ import java.util.Date;
 import java.util.Map;
 import java.util.Optional;
 
-import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,114 +50,105 @@ class JobRunner {
   private final LoadingCache<Integer, Map<Integer, Integer>> cachedRetryBehavior;
   private static JobRunner _instance;
 
-  Pair<Boolean, Integer> checkWhetherTheJobCanRun(String jobGrp, Stf job, StfCore stfCore) {
-    // Determine job retry behavior
-    Map<Integer, Integer> retryBehavior = _instance.determineJobRetryBehavior(job.getTimeoutSecs());
-    int retryMaxTimes = retryBehavior.size();
-
-    // The job is declared dead if its retry-times exceeds the upper limit
-    int lastRetryTimes = job.getRetryTimes();
-    Long jobId = job.getId();
-    if (lastRetryTimes >= retryMaxTimes) {
-      StfMetaGroupEnum metaGrp = H.determineMetaGroupBy(jobGrp);
-      stfCore.markDead(metaGrp, jobId, true);
+  Pair<Boolean, Integer> checkWhetherTheJobCanRun(String jobGrp, Stf lockingJob, StfCore stfCore) {
+    int minTimeoutSecs;
+    Map<Integer, Integer> retryBehav = _instance
+        .determineJobRetryBehavior(minTimeoutSecs = lockingJob.getTimeoutSecs());
+    StfMetaGroupEnum metaGrp = H.determineMetaGroupBy(jobGrp);
+    Pair<Boolean, Integer> canRun = doCheckAndMarkJobDeadIfNecessary(metaGrp, lockingJob, stfCore, retryBehav);
+    if (!canRun.getKey()) {
       return Pair.of(false, null);
     }
+    int lastRetryTimes = lockingJob.getRetryTimes();
+    int curRetryTimes = lastRetryTimes + 1;
+    // if (false) {//TODO mj:dbl check re-implementation
     // Calculate trigger time,if the time does not arrive, no execution is performed
-    int expectedRetryTimes = lastRetryTimes == 0 ? 1 : lastRetryTimes + 1;
-    Integer nextIntervalSecondsAllowReSend = retryBehavior.get(expectedRetryTimes);
-    if (nextIntervalSecondsAllowReSend == null || job.getUpAt() <= 0) {
-      LOG.error("Wrong stf-job#{}, retrying was cancelled [expectedRetryTimes={}] |error: '{}'", jobId,
-          expectedRetryTimes, "No 'nextIntervalSecondsAllowReSend' or missing job last update-time");
-      return Pair.of(false, null);
-    }
-    Date expectedTriggerTime = DateUtils.addSeconds(new Date(job.getUpAt()), nextIntervalSecondsAllowReSend);
-    Date now = new Date();
-    if (now.compareTo(expectedTriggerTime) < 0) {
-      if (LOG.isDebugEnabled()) {
-        LOG.debug(
-            "Retring stf-job#{} cancelled, the trigger time does not arrive [curTime={}, expectedRetryTimes={}, expectedTriggerTime={}]",
-            jobId, now, expectedRetryTimes, expectedTriggerTime);
-      }
-      return Pair.of(false, null);
-    }
-    Integer expectedTimeoutIntervalSeconds = Optional.ofNullable(retryBehavior.get(expectedRetryTimes + 1))
-        .orElse(nextIntervalSecondsAllowReSend);
-    return Pair.of(true, expectedTimeoutIntervalSeconds);
-  }
-
-  static void doHandleTimeoutJob(StfMetaGroupEnum metaGrp, Stf job, StfCore stfCore) {
-    // Determine job retry behavior
-    Map<Integer, Integer> retryBehavior = _instance.determineJobRetryBehavior(job.getTimeoutSecs());
-    int retryMaxTimes = retryBehavior.size();
-    // The job is declared dead if its retry-times exceeds the upper limit
-    int lastRetryTimes = job.getRetryTimes();
-    Long jobId = job.getId();
-    if (lastRetryTimes >= retryMaxTimes) {
-      stfCore.markDead(metaGrp, jobId, false);
-      return;
-    }
-    // Calculate trigger time,if the time does not arrive, no execution is performed
-    int expectedRetryTimes = lastRetryTimes == 0 ? 1 : lastRetryTimes + 1;
-    Integer nextIntervalSecondsAllowReSend = retryBehavior.get(expectedRetryTimes);
-    // if (nextIntervalSecondsAllowReSend == null || job.getUpAt() <= 0) {//Shouldn't happen->
-    // LOG.error("Wrong stf-job#{}, retrying was cancelled [expectedRetryTimes={}] |error: '{}'",jobId,
-    // expectedRetryTimes, "No 'nextIntervalSecondsAllowReSend' or missing job last update-time");
-    // return;
+    // Integer lastNextTimeoutSecs = retryBehav.get(curRetryTimes);
+    // long lastLockedAt;
+    // if (lastNextTimeoutSecs == null || (lastLockedAt = job.getUpAt()) <= 0) {
+    // LOG.error("Wrong stf-job#{}, retrying was cancelled [curRetryTimes={}] |error: '{}'", jobId, curRetryTimes,
+    // "No 'lastNextTimeoutSecs' or missing job last update-time(locked-time)");
+    // return Pair.of(false, null);
     // }
-    // <-
-    Date expectedTriggerTime = DateUtils.addSeconds(new Date(job.getUpAt()), nextIntervalSecondsAllowReSend);
-    // if (now.compareTo(expectedTriggerTime) < 0) {//Shouldn't happen->
+    // Date curTriggerTime = DateUtils.addSeconds(new Date(lastLockedAt), lastNextTimeoutSecs);
+    // Date now = new Date();
+    // if (now.compareTo(curTriggerTime) < 0) {
     // if (LOG.isDebugEnabled()) {
     // LOG.debug(
     // "Retring stf-job#{} cancelled, the trigger time does not arrive [curTime={}, expectedRetryTimes={},
     // expectedTriggerTime={}]",
-    // jobId, now, expectedRetryTimes, expectedTriggerTime);
+    // jobId, now, curRetryTimes, curTriggerTime);
     // }
-    // return;
+    // return Pair.of(false, null);
     // }
-    // <-
-    logTriggerInformation(metaGrp, job, expectedRetryTimes, expectedTriggerTime, retryBehavior);
+    // Integer nextTimeoutSecs = Optional.ofNullable(retryBehav.get(curRetryTimes + 1)).orElse(lastNextTimeoutSecs);
+    // }
+    Integer lastTimeoutSecs = Optional.ofNullable(retryBehav.get(lastRetryTimes)).orElse(minTimeoutSecs);
+    Integer curTimeoutSecs = Optional.ofNullable(retryBehav.get(curRetryTimes)).orElse(lastTimeoutSecs);
+    return Pair.of(true, curTimeoutSecs < minTimeoutSecs ? minTimeoutSecs : curTimeoutSecs);
+  }
+
+  static void doHandleTimeoutJob(StfMetaGroupEnum metaGrp, Stf lockedJob, StfCore stfCore) {
+    Map<Integer, Integer> retryBehav = _instance.determineJobRetryBehavior(lockedJob.getTimeoutSecs());
+    Pair<Boolean, Integer> canRun = doCheckAndMarkJobDeadIfNecessary(metaGrp, lockedJob, stfCore, retryBehav);
+    if (!canRun.getKey()) {
+      return;
+    }
+
+    logTriggerInformation(metaGrp, lockedJob, retryBehav);
 
     // Retry the job
+    Long jobId = lockedJob.getId();
     String calleeInfo = null;
     Object[] methodArgs = null;
     try {
-      StfCall callee = JsonHelper.fromJson(job.getBody(), StfCall.class);
+      StfCall callee = JsonHelper.fromJson(lockedJob.getBody(), StfCall.class);
       calleeInfo = toCallStringOf(callee);
       methodArgs = callee.getArgs();
     } catch (Throwable t) {
-      // This will definitely result in an invoke error,just to increase the retry times
-      Exceptions.swallow(t, LOG, "An error occurred while parsing calleeInfo of stf-job#{}", jobId);
+      // This will definitely result in an invoke error,so fail-fast here
+      Exceptions.sneakyThrow(t, LOG, "An error occurred while pre parsing calleeInfo of stf-job#{}", jobId);
     }
-    stfCore.reForward(metaGrp, jobId, lastRetryTimes, calleeInfo, true, methodArgs);
+    stfCore.reForward(metaGrp, jobId, lockedJob.getRetryTimes(), calleeInfo, true, methodArgs);
   }
 
-  private static void logTriggerInformation(StfMetaGroupEnum metaGrp, Stf job, int expectedRetryTimes,
-      Date expectedTriggerTime, Map<Integer, Integer> retryBehavior) {
+  private static Pair<Boolean, Integer> doCheckAndMarkJobDeadIfNecessary(StfMetaGroupEnum metaGrp, Stf job,
+      StfCore stfCore, Map<Integer, Integer> retryBehav) {
+    int retryMaxTimes = retryBehav.size();
+    int lastRetryTimes = job.getRetryTimes();
+    Long jobId = job.getId();
+    if (lastRetryTimes >= retryMaxTimes) {
+      stfCore.markDead(metaGrp, jobId, true);
+      return Pair.of(false, null);
+    }
+    return Pair.of(true, null);
+  }
+
+  private static void logTriggerInformation(StfMetaGroupEnum metaGrp, Stf lockedJob, Map<Integer, Integer> retryBehav) {
+    Long jobId = lockedJob.getId();
+    int curRetryTimes = lockedJob.getRetryTimes();
+    if (LOG.isDebugEnabled()) {
+      long lockedAt = lockedJob.getUpAt();
+      Date now = new Date();
+      String title = metaGrp == CORE ? "Retring stf-job"
+          : (curRetryTimes == 1 ? "Triggering stf-delay-job" : "Retring to trigger stf-delay-job");
+      String tpl = "{}#{} [curTime={}, curRetryTimes={}, lockedTime={}, curTimeoutTime={}, lastTimeoutTime={}]";
+      LOG.debug(tpl, title, jobId, WITH_MS_DATE_FMT.format(now), metaGrp == CORE ? curRetryTimes : "n/a",
+          WITH_MS_DATE_FMT.format(lockedAt), WITH_MS_DATE_FMT.format(lockedAt + lockedJob.getTimeoutSecs() * 1000),
+          WITH_MS_DATE_FMT.format(lockedJob.getTimeoutAt()));
+      return;
+    }
     if (LOG.isInfoEnabled()) {
       if (metaGrp == CORE) {
-        LOG.info("Retring stf-job#{}", job.getId());
-      } else {
-        if (expectedRetryTimes == 1) {
-          LOG.info("Triggering stf-delay-job#{}", job.getId());
-        } else {
-          LOG.info("Retring to trigger stf-delay-job#{}", job.getId());
-        }
+        LOG.info("Retring stf-job#{}", jobId);
+        return;
       }
-    } else if (LOG.isDebugEnabled()) {
-      Date now = new Date();
-      Integer nextIntervalSecondsAllowReSend = retryBehavior.get(expectedRetryTimes + 1);
-      Date nextTriggerTime = nextIntervalSecondsAllowReSend != null
-          ? DateUtils.addSeconds(now, nextIntervalSecondsAllowReSend)
-          : null;
-      String title = metaGrp == CORE ? "Retring stf-job"
-          : (expectedRetryTimes == 1 ? "Triggering stf-delay-job" : "Retring to trigger stf-delay-job");
-      LOG.debug(
-          "{}#{} [curTime={}, expectedRetryTimes={}, expectedTriggerTime={}, lastTriggerTime={}, nextTriggerTime={}]",
-          title, job.getId(), DFT_DATE_FMT.format(now), expectedRetryTimes, DFT_DATE_FMT.format(expectedTriggerTime),
-          DFT_DATE_FMT.format(new Date(job.getUpAt())),
-          nextTriggerTime != null ? DFT_DATE_FMT.format(nextTriggerTime) : null);
+      if (curRetryTimes == 1) {
+        LOG.info("Triggering stf-delay-job#{}", jobId);
+      } else {
+        LOG.info("Retring to trigger stf-delay-job#{}", jobId);
+      }
+      return;
     }
   }
 

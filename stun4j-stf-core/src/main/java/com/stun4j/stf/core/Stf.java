@@ -30,8 +30,6 @@ import com.stun4j.stf.core.support.BaseEntity;
  */
 public class Stf extends BaseEntity<Long> {
   private Long id;
-
-  private String type;
   private String body;
   private String st;
   private String isDead;
@@ -45,10 +43,6 @@ public class Stf extends BaseEntity<Long> {
   @Override
   public Long getId() {
     return id;
-  }
-
-  public String getType() {
-    return type;
   }
 
   public String getBody() {
@@ -85,10 +79,6 @@ public class Stf extends BaseEntity<Long> {
 
   public void setId(Long id) {
     this.id = id;
-  }
-
-  public void setType(String type) {
-    this.type = type;
   }
 
   public void setBody(String body) {

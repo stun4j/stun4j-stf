@@ -19,6 +19,15 @@ import static com.google.common.base.Strings.lenientFormat;
 import static com.stun4j.stf.core.StateEnum.I;
 import static com.stun4j.stf.core.StateEnum.P;
 import static com.stun4j.stf.core.StfConsts.DFT_DELAY_TBL_NAME_SUFFIX;
+import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.CALLEE;
+import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.CT_AT;
+import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.ID;
+import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.IS_DEAD;
+import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.RETRY_TIMES;
+import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.ST;
+import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.TIMEOUT_AT;
+import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.TIMEOUT_SECS;
+import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.UP_AT;
 import static com.stun4j.stf.core.StfHelper.H;
 import static com.stun4j.stf.core.StfMetaGroupEnum.CORE;
 import static com.stun4j.stf.core.StfMetaGroupEnum.DELAY;
@@ -150,32 +159,40 @@ public class JobScannerJdbc implements JobScanner, JdbcAware {
     }
     Stream<Stf> stfs = jdbcOps.queryForStream(sql, args, (rs, arg) -> {
       Stf stf = new Stf();
-      if (!checkFields.getValue() || ArrayUtils.contains(includeFields, "id")) {
-        stf.setId(rs.getLong("id"));
+      boolean checkFlds = checkFields.getValue();
+
+      String curFld;
+      if (Boolean.valueOf(curFld = ID.lowerCaseName()) || !checkFlds || ArrayUtils.contains(includeFields, curFld)) {
+        stf.setId(rs.getLong(curFld));
       }
-      if (!checkFields.getValue() || ArrayUtils.contains(includeFields, "callee")) {
-        stf.setBody(rs.getString("callee"));
+      if (Boolean.valueOf(curFld = CALLEE.lowerCaseName()) || !checkFlds
+          || ArrayUtils.contains(includeFields, curFld)) {
+        stf.setBody(rs.getString(curFld));
       }
-      if (!checkFields.getValue() || ArrayUtils.contains(includeFields, "st")) {
-        stf.setSt(rs.getString("st"));
+      if (Boolean.valueOf(curFld = ST.lowerCaseName()) || !checkFlds || ArrayUtils.contains(includeFields, curFld)) {
+        stf.setSt(rs.getString(curFld));
       }
-      if (!checkFields.getValue() || ArrayUtils.contains(includeFields, "is_dead")) {
-        stf.setIsDead(rs.getString("is_dead"));
+      if (Boolean.valueOf(curFld = IS_DEAD.lowerCaseName()) || !checkFlds
+          || ArrayUtils.contains(includeFields, curFld)) {
+        stf.setIsDead(rs.getString(curFld));
       }
-      if (!checkFields.getValue() || ArrayUtils.contains(includeFields, "retry_times")) {
-        stf.setRetryTimes(rs.getInt("retry_times"));
+      if (Boolean.valueOf(curFld = RETRY_TIMES.lowerCaseName()) || !checkFlds
+          || ArrayUtils.contains(includeFields, curFld)) {
+        stf.setRetryTimes(rs.getInt(curFld));
       }
-      if (!checkFields.getValue() || ArrayUtils.contains(includeFields, "timeout_secs")) {
-        stf.setTimeoutSecs(rs.getInt("timeout_secs"));
+      if (Boolean.valueOf(curFld = TIMEOUT_SECS.lowerCaseName()) || !checkFlds
+          || ArrayUtils.contains(includeFields, curFld)) {
+        stf.setTimeoutSecs(rs.getInt(curFld));
       }
-      if (!checkFields.getValue() || ArrayUtils.contains(includeFields, "timeout_at")) {
-        stf.setTimeoutAt(rs.getLong("timeout_at"));
+      if (Boolean.valueOf(curFld = TIMEOUT_AT.lowerCaseName()) || !checkFlds
+          || ArrayUtils.contains(includeFields, curFld)) {
+        stf.setTimeoutAt(rs.getLong(curFld));
       }
-      if (!checkFields.getValue() || ArrayUtils.contains(includeFields, "ct_at")) {
-        stf.setCtAt(rs.getLong("ct_at"));
+      if (Boolean.valueOf(curFld = CT_AT.lowerCaseName()) || !checkFlds || ArrayUtils.contains(includeFields, curFld)) {
+        stf.setCtAt(rs.getLong(curFld));
       }
-      if (!checkFields.getValue() || ArrayUtils.contains(includeFields, "up_at")) {
-        stf.setUpAt(rs.getLong("up_at"));
+      if (Boolean.valueOf(curFld = UP_AT.lowerCaseName()) || !checkFlds || ArrayUtils.contains(includeFields, curFld)) {
+        stf.setUpAt(rs.getLong(curFld));
       }
       return stf;
     });
@@ -215,7 +232,6 @@ public class JobScannerJdbc implements JobScanner, JdbcAware {
   }
 
   @Override
-  @Deprecated
   public StfJdbcOps getJdbcOps() {
     return jdbcOps;
   }

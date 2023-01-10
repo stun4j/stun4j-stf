@@ -16,7 +16,6 @@
 package com.stun4j.stf.core;
 
 public class TestConsts {
-
   public static final String GENERATED_TBL_PREFIX = "stn_stf_";
   public static final String GENERATED_SCHEMA_FILE_SUFFIX = ".sql.rnd";
 

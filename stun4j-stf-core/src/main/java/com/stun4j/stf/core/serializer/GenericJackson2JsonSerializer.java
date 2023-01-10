@@ -19,11 +19,14 @@ import static com.stun4j.stf.core.utils.Asserts.notNull;
 import static com.stun4j.stf.core.utils.Asserts.requireNonNull;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.TimeZone;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.KotlinDetector;
 import org.springframework.util.ClassUtils;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 //import org.springframework.cache.support.NullValue;
@@ -35,10 +38,16 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.TreeNode;
+import com.fasterxml.jackson.core.json.JsonReadFeature;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectMapper.DefaultTyping;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.databind.jsontype.PolymorphicTypeValidator;
 import com.fasterxml.jackson.databind.jsontype.TypeSerializer;
 import com.fasterxml.jackson.databind.jsontype.impl.StdTypeResolverBuilder;
@@ -59,6 +68,7 @@ import com.stun4j.stf.core.support.NullValue;
  *         <li>Disable all Spring dependency,use Asserts#notNull,commons-lang3 instead</li>
  *         <li>Use Serializer instead of RedisSerializer</li>
  *         <li>Change {@code serialVersionUID}</li>
+ *         <li>Enhance Serialization/Deserialization Feature</li>
  *         </ul>
  */
 public class GenericJackson2JsonSerializer implements Serializer {
@@ -81,7 +91,19 @@ public class GenericJackson2JsonSerializer implements Serializer {
    * @see ObjectMapper#activateDefaultTyping(PolymorphicTypeValidator, DefaultTyping, As)
    */
   public GenericJackson2JsonSerializer(String classPropertyTypeName) {
-    this(new ObjectMapper());
+    //@formatter:off
+    this(JsonMapper.builder()
+        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+        .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
+        .configure(JsonReadFeature.ALLOW_UNQUOTED_FIELD_NAMES.mappedFeature(), true)
+        .configure(JsonReadFeature.ALLOW_SINGLE_QUOTES.mappedFeature(), true)
+        .configure(JsonReadFeature.ALLOW_LEADING_ZEROS_FOR_NUMBERS.mappedFeature(), true)
+        .configure(JsonReadFeature.ALLOW_UNESCAPED_CONTROL_CHARS.mappedFeature(), true)
+        .serializationInclusion(JsonInclude.Include.NON_NULL)
+        .propertyNamingStrategy(PropertyNamingStrategies.LOWER_CAMEL_CASE)
+        .enable(MapperFeature.USE_STD_BEAN_NAMING)
+        .build());
+    //@formatter:on
 
     // simply setting {@code mapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)} does not help here since we need
     // the type hint embedded for deserialization using the default typing feature.
