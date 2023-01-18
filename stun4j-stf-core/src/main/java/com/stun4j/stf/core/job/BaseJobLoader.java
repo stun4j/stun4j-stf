@@ -17,17 +17,18 @@ package com.stun4j.stf.core.job;
 
 import static com.stun4j.stf.core.StfConsts.DFT_JOB_TIMEOUT_SECONDS;
 import static com.stun4j.stf.core.StfConsts.DFT_MIN_JOB_TIMEOUT_SECONDS;
+import static com.stun4j.stf.core.job.JobConsts.ALL_JOB_GROUPS;
 import static com.stun4j.stf.core.support.executor.StfInternalExecutors.newWatcherOfJobLoading;
 import static com.stun4j.stf.core.support.executor.StfInternalExecutors.newWorkerOfJobLoading;
 
-import java.util.List;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.stun4j.stf.core.Stf;
@@ -49,11 +50,10 @@ public abstract class BaseJobLoader extends BaseLifecycle {
 
   private static final double DFT_LOAD_FACTOR = 0.2;
 
-  private final Set<String> allGrpsLoadingSignal;
   private final ConcurrentHashMap<String, JobQueue> queuesAllGrps;
 
   private final ScheduledExecutorService watcher;
-  private final ExecutorService worker;
+  private final Map<String, ExecutorService> workers;
 
   private long jobTimeoutMs;
 
@@ -81,23 +81,25 @@ public abstract class BaseJobLoader extends BaseLifecycle {
       watcher.shutdownNow();
       LOG.debug("Watcher is successfully shut down");
     } catch (Throwable e) {
-      Exceptions.swallow(e, LOG, "Unexpected error occurred while shutting down watcher");
+      Exceptions.swallow(e, LOG, "An error occurred while shutting down watcher");
     }
 
-    try {
-      worker.shutdownNow();
-      LOG.debug("Worker is successfully shut down");
-    } catch (Throwable e) {
-      Exceptions.swallow(e, LOG, "Unexpected error occurred while shutting down worker");
-    }
+    workers.forEach((grp, worker) -> {
+      try {
+        worker.shutdownNow();
+        LOG.debug("Worker is successfully shut down [grp={}]", grp);
+      } catch (Throwable e) {
+        Exceptions.swallow(e, LOG, "An error occurred while shutting down worker [grp={}]", grp);
+      }
+    });
     LOG.debug("The stf-job-loader is successfully shut down");
   }
 
   private void onSchedule() {
     StfClusterMember.sendHeartbeat();
-    for (String jobGrp : allGrpsLoadingSignal) {
+    workers.forEach((jobGrp, worker) -> {
       worker.execute(() -> doLoadJobsToQueue(jobGrp));
-    }
+    });
   }
 
   /**
@@ -106,16 +108,10 @@ public abstract class BaseJobLoader extends BaseLifecycle {
    */
   protected abstract Stream<Stf> loadJobs(String jobGrp, int loadSize);
 
-  Stf getJobFromQueue(String jobGrp) {
+  Stf getJobFromQueue(String jobGrp, boolean blocking) throws InterruptedException {
     JobQueue queue = getOrCreateQueue(jobGrp);
-    Stf job = queue.poll();
+    Stf job = blocking ? queue.take() : queue.poll();
     return job;
-  }
-
-  void signalToLoadJobs(String... grpsToLoad) {
-    for (String grpToLoad : grpsToLoad) {
-      allGrpsLoadingSignal.add(grpToLoad);
-    }
   }
 
   private void doLoadJobsToQueue(String jobGrp) {
@@ -126,28 +122,29 @@ public abstract class BaseJobLoader extends BaseLifecycle {
         return;
       }
       int needLoadSize = loadSize + queueSize;
-      try (Stream<Stf> loadedJobStream = loadJobs(jobGrp, needLoadSize)) {
-        List<Stf> loadedJobs = loadedJobStream.collect(Collectors.toList());
-        if (loadedJobs.size() == 0) {
-          return;
-        }
-        if (LOG.isDebugEnabled()) {
-          LOG.debug("Loaded and try enqueuing stf-jobs [grp={}, loaded={}, queue size before={}]", jobGrp,
-              loadedJobs.size(), queueSize);
-        }
-        for (Stf job : loadedJobs) {
-          if (!queue.offer(job)) {
+      int enqueued = 0;
+      int rejected = 0;
+      try (Stream<Stf> jobStream = loadJobs(jobGrp, needLoadSize)) {
+        for (Iterator<Stf> iter = jobStream.iterator(); iter.hasNext();) {// This way non-blocking must be ensured
+          Stf job = iter.next();
+          int res;
+          if ((res = queue.offer(job)) < 0) {
             break;
+          }
+          if (res > 0) {
+            enqueued++;
+          } else {
+            rejected++;
           }
         }
       }
       if (LOG.isDebugEnabled()) {
-        LOG.debug("The stf-jobs are enqueued [grp={}, queue size after={}]", jobGrp, queue.size());
+        LOG.debug(
+            "Loading and try enqueuing stf-jobs [grp={}, enqueued={}, rejected={}, needLoadSize={}, queue-size before/after={}/{}]",
+            jobGrp, enqueued, rejected, needLoadSize, queueSize, queue.size());
       }
     } catch (Throwable e) {
       Exceptions.swallow(e, LOG, "An error occurred while enqueuing stf-job");
-    } finally {
-      allGrpsLoadingSignal.remove(jobGrp);
     }
   }
 
@@ -167,9 +164,11 @@ public abstract class BaseJobLoader extends BaseLifecycle {
     scanFreqSeconds = DFT_SCAN_FREQ_SECONDS;
     loadFactor = DFT_LOAD_FACTOR;
 
-    allGrpsLoadingSignal = ConcurrentHashMap.newKeySet();
     queuesAllGrps = new ConcurrentHashMap<>();
-    worker = newWorkerOfJobLoading();
+    workers = Stream.of(ALL_JOB_GROUPS).reduce(new HashMap<String, ExecutorService>(), (map, grp) -> {
+      map.put(grp, newWorkerOfJobLoading(grp));
+      return map;
+    }, (a, b) -> null);
     watcher = newWatcherOfJobLoading();
   }
 

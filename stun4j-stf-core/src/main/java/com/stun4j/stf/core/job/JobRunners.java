@@ -49,7 +49,7 @@ public class JobRunners extends BaseLifecycle {
         worker.awaitTermination(30, TimeUnit.SECONDS);
         LOG.debug("Worker is successfully shut down [grp={}]", grp);
       } catch (Throwable e) {
-        Exceptions.swallow(e, LOG, "Unexpected error occurred while shutting down worker [grp={}]", grp);
+        Exceptions.swallow(e, LOG, "An error occurred while shutting down worker [grp={}]", grp);
       }
     });
   }

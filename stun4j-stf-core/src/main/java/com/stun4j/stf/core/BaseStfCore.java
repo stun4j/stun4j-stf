@@ -156,6 +156,14 @@ abstract class BaseStfCore implements StfCore, StfDelayQueueCore {
     return doMarkDone(metaGrp, stfId, false);
   }
 
+  @Override
+  public long fallbackToSingleLockStf(StfMetaGroupEnum metaGrp, Stf stf, int timeoutSeconds) {
+    Long stfId = stf.getId();
+    int lastRetryTimes = stf.getRetryTimes();
+    long lastTimeoutAt = stf.getTimeoutAt();
+    return doLockStf(metaGrp, stfId, timeoutSeconds, lastRetryTimes, lastTimeoutAt);
+  }
+
   protected abstract boolean doMarkDone(StfMetaGroupEnum metaGrp, Long stfId, boolean batch);
 
   protected abstract void doMarkDead(StfMetaGroupEnum metaGrp, Long stfId);

@@ -24,11 +24,11 @@ import static com.stun4j.stf.core.StfConsts.DFT_CORE_TBL_NAME;
 import static com.stun4j.stf.core.StfConsts.DFT_DELAY_TBL_NAME_SUFFIX;
 import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.LOWER_CASE_ALL_FIELDS;
 import static com.stun4j.stf.core.StfHelper.H;
+import static com.stun4j.stf.core.StfHelper.determinJobMetaGroup;
 import static com.stun4j.stf.core.StfMetaGroupEnum.CORE;
 import static com.stun4j.stf.core.StfMetaGroupEnum.DELAY;
 import static com.stun4j.stf.core.YesNoEnum.N;
 import static com.stun4j.stf.core.YesNoEnum.Y;
-import static com.stun4j.stf.core.job.JobConsts.KEY_FEATURE_TIMEOUT_DELAY;
 import static org.apache.commons.lang3.tuple.Pair.of;
 
 import java.util.List;
@@ -99,7 +99,7 @@ public class StfCoreJdbc extends BaseStfCore implements JdbcAware {
         H.tryCommitLaStfOnDup(LOG, stfId, coreTblName, (DuplicateKeyException)e,
             laStfDelayId -> this.fallbackToSingleMarkDone(DELAY, laStfDelayId));
       } catch (Throwable e1) {
-        Exceptions.swallow(e1, LOG, "Unexpected error occurred while auto committing stf-delay");
+        Exceptions.swallow(e1, LOG, "An error occurred while auto committing stf-delay");
       }
       return;
     }
@@ -122,7 +122,7 @@ public class StfCoreJdbc extends BaseStfCore implements JdbcAware {
     if (checkFail(stfId)) {
       return -1;
     }
-    StfMetaGroupEnum metaGrp = jobGrp.indexOf(KEY_FEATURE_TIMEOUT_DELAY) == -1 ? CORE : DELAY;
+    StfMetaGroupEnum metaGrp = determinJobMetaGroup(jobGrp);
     return doLockStf(metaGrp, stfId, timeoutSeconds, lastRetryTimes, lastTimeoutAt);
   }
 

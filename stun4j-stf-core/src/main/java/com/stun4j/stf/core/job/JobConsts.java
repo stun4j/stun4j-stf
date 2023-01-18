@@ -27,9 +27,9 @@ public abstract class JobConsts {
   public static String[] ALL_JOB_GROUPS = new String[]{JOB_GROUP_TIMEOUT_WAITING_RUN, JOB_GROUP_TIMEOUT_IN_PROGRESS,
       JOB_GROUP_TIMEOUT_DELAY_WAITING_RUN, JOB_GROUP_TIMEOUT_DELAY_IN_PROGRESS};
 
-  public static Map<Integer, Integer> generateRetryBehaviorByPattern(
+  public static Map<Integer, Integer> retryBehaviorByPattern(
       int timeoutSeconds) {/*- TODO mj:Open this block to make it configurable*/
-    Map<Integer/* retry-times current op */, Integer/* timeout-secs current op */> map = new HashMap<>();
+    Map<Integer/* current retry-times */, Integer/* current timeout-secs */> map = new HashMap<>();
     map.put(1, timeoutSeconds);
     map.put(2, timeoutSeconds);
     map.put(3, 2 * timeoutSeconds);

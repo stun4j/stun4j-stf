@@ -15,27 +15,26 @@
  */
 package com.stun4j.stf.core.support.event;
 
-import com.google.common.eventbus.EventBus;
+import com.stun4j.stf.core.Stf;
 
 /**
  * @author JayMeng
  */
-public enum StfEventBus {
-  INSTANCE;
+public class StfReceivedEvent {
+  private final Stf stf;
+  private final int curTimeoutSecs;
 
-  private final EventBus bus;
-
-  public static void registerHandler(Object... handlers) {
-    for (Object handler : handlers) {
-      INSTANCE.bus.register(handler);
-    }
+  public StfReceivedEvent(Stf stf, int curTimeoutSecs) {
+    this.stf = stf;
+    this.curTimeoutSecs = curTimeoutSecs;
   }
 
-  public static void post(Object event) {
-    INSTANCE.bus.post(event);
+  public Stf getStf() {
+    return stf;
   }
 
-  {
-    bus = new EventBus();
+  public int getCurTimeoutSecs() {
+    return curTimeoutSecs;
   }
+
 }

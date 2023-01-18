@@ -3,7 +3,7 @@
 	<Properties>
 		<Property name="append">false</Property>
 		<Property name="pattern">[%d] %p (%c{1.}) %m %n</Property>
-    <Property name="verbosePattern">[%d] %p (%c{1.}) [%t] %m%n</Property>
+		<Property name="verbosePattern">[%d] %p (%c{1.}) [%t] %m%n</Property>
 	</Properties>
 
 	<Appenders>
@@ -11,17 +11,16 @@
 			<ThresholdFilter level="INFO" />
 			<PatternLayout pattern="${pattern}" />
 		</Console>
-    <Console name="CONSOLE-DEBUG" target="SYSTEM_OUT">
-      <ThresholdFilter level="DEBUG" />
-      <PatternLayout pattern="${verbosePattern}" />
-    </Console>		
+		<Console name="CONSOLE-DEBUG" target="SYSTEM_OUT">
+			<ThresholdFilter level="DEBUG" />
+			<PatternLayout pattern="${verbosePattern}" />
+		</Console>
 	</Appenders>
 
 	<Loggers>
-    <Logger name="com.stun4j.stf.core.job.JobRunner" level="DEBUG" includeLocation="true" additivity="false">
-      <AppenderRef ref="CONSOLE-DEBUG" />
-    </Logger>
-    
+<!-- 		<Logger name="com.stun4j.stf.core" level="DEBUG" includeLocation="true" additivity="false"> -->
+<!-- 			<AppenderRef ref="CONSOLE-DEBUG" /> -->
+<!-- 		</Logger> -->
 		<Root level="INFO" includeLocation="false">
 			<AppenderRef ref="CONSOLE-INFO" />
 		</Root>

@@ -66,14 +66,14 @@ public abstract class HeartbeatHandler extends BaseLifecycle {
       watcher.shutdownNow();
       LOG.debug("Watcher is successfully shut down");
     } catch (Throwable e) {
-      Exceptions.swallow(e, LOG, "Unexpected error occurred while shutting down watcher");
+      Exceptions.swallow(e, LOG, "An error occurred while shutting down watcher");
     }
 
     try {
       worker.shutdownNow();
       LOG.debug("Worker is successfully shut down");
     } catch (Throwable e) {
-      Exceptions.swallow(e, LOG, "Unexpected error occurred while shutting down worker");
+      Exceptions.swallow(e, LOG, "An error occurred while shutting down worker");
     }
     String memberId = null;
     try {

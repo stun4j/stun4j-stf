@@ -93,6 +93,12 @@ public interface StfCore extends StfBatchable {
       }
 
       @Override
+      public long fallbackToSingleLockStf(StfMetaGroupEnum metaGrp, Stf stf, int timeoutSeconds) {
+        NOT_INITIALIZED_THROW.accept(MODULE_ID);
+        return -1;
+      }
+
+      @Override
       public int[] batchMarkDone(StfMetaGroupEnum metaGrp, List<Object[]> stfIdsInfo) {
         NOT_INITIALIZED_THROW.accept(MODULE_ID);
         return null;

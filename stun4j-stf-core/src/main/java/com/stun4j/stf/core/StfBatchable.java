@@ -24,7 +24,9 @@ import java.util.List;
 public interface StfBatchable {
   boolean fallbackToSingleMarkDone(StfMetaGroupEnum metaGrp, Long stfId);
 
+  long fallbackToSingleLockStf(StfMetaGroupEnum metaGrp, Stf stf, int timeoutSeconds);
+
   int[] batchMarkDone(StfMetaGroupEnum metaGrp, List<Object[]> stfIdsInfo);
 
-  List<Stf> batchLockStfs(String jobGrp, List<Object[]> preBatchArgs);
+  List<Stf> batchLockStfs(String jobGrp, List<Object[]> batchArgs);
 }

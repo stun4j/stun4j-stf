@@ -19,7 +19,6 @@ import static com.stun4j.stf.core.utils.executor.PoolExecutors.SILENT_DROP_POLIC
 import static com.stun4j.stf.core.utils.executor.PoolExecutors.defaultIoPrefer;
 import static com.stun4j.stf.core.utils.executor.PoolExecutors.defaultWorkStealingPool;
 import static com.stun4j.stf.core.utils.executor.PoolExecutors.newDynamicIoPrefer;
-import static com.stun4j.stf.core.utils.executor.PoolExecutors.newScheduler;
 import static com.stun4j.stf.core.utils.executor.PoolExecutors.newSingleThreadPool;
 import static com.stun4j.stf.core.utils.executor.PoolExecutors.newSingleThreadScheduler;
 
@@ -54,22 +53,18 @@ public final class StfInternalExecutors {
         false, SILENT_DROP_POLICY);
   }
 
-  public static ExecutorService newWorkerOfJobLoading() {
-    return defaultWorkStealingPool("stf-job-load-worker", true);
-  }
-
-  public static ScheduledExecutorService newWatcherOfJobManager() {
-    return newScheduler(2, "stf-job-mngr-watcher", true);// Consider we have another stf-meta-group: DELAY
-  }
-
-  public static ThreadPoolExecutor newWorkerOfJobManager(String jobGrp) {
-    return (ThreadPoolExecutor)defaultIoPrefer("stf-job-" + jobGrp + "-mngr-worker");
+  public static ExecutorService newWorkerOfJobLoading(String jobGrp) {// TODO mj:recheck this policy
+    return defaultWorkStealingPool("stf-job-" + jobGrp + "-load-worker", true);
   }
 
   public static StfExecutorService newDefaultExec(int threadKeepAliveTimeSeconds, int taskQueueSize,
       RejectedExecutionHandler rejectPolicy, boolean allowCoreThreadTimeOut) {
     return new StfExecutorService(newDynamicIoPrefer(new LinkedBlockingQueue<>(taskQueueSize),
         NamedThreadFactory.of("stf-dft-exec"), threadKeepAliveTimeSeconds, allowCoreThreadTimeOut, rejectPolicy));
+  }
+
+  public static Thread newWatcherOfJobManager(String jobGrp, Runnable runnable) {
+    return new NamedThreadFactory("stf-job-" + jobGrp + "-mngr-watcher", true).newThread(runnable);
   }
 
   private StfInternalExecutors() {

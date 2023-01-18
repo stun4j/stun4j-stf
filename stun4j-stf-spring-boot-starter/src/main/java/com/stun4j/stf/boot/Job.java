@@ -16,7 +16,7 @@
 package com.stun4j.stf.boot;
 
 import static com.stun4j.stf.core.StfConsts.DFT_JOB_TIMEOUT_SECONDS;
-import static com.stun4j.stf.core.job.JobConsts.generateRetryBehaviorByPattern;
+import static com.stun4j.stf.core.job.JobConsts.retryBehaviorByPattern;
 
 import java.util.Map;
 
@@ -28,7 +28,7 @@ import java.util.Map;
 public class Job {
   private static final Map<Integer, Integer> DFT_FIXED_JOB_RETRY_INTERVAL_SECONDS;
   static {
-    DFT_FIXED_JOB_RETRY_INTERVAL_SECONDS = generateRetryBehaviorByPattern(DFT_JOB_TIMEOUT_SECONDS);
+    DFT_FIXED_JOB_RETRY_INTERVAL_SECONDS = retryBehaviorByPattern(DFT_JOB_TIMEOUT_SECONDS);
   }
 
   /**

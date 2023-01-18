@@ -11,7 +11,7 @@ import com.stun4j.stf.sample.boot.utils.mock_data.Data;
 @RequestMapping("dlq")
 public class DelayQueueUsage {
 
-  @Autowired
+  @Autowired(required = false)
   private StfDelayQueue queue;
 
   @RequestMapping

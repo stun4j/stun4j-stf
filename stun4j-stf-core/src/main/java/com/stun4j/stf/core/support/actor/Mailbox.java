@@ -52,7 +52,7 @@ public class Mailbox<T> {
         writeIdx = 0;
       }
       availableCnt++;
-      ifEmpty.signal();
+      ifEmpty.signalAll();
       return this;
     } finally {
       lock.unlock();

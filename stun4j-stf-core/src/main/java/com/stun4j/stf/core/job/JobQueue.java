@@ -16,11 +16,13 @@
 package com.stun4j.stf.core.job;
 
 import static com.stun4j.guid.core.utils.Asserts.argument;
+import static com.stun4j.guid.core.utils.Asserts.state;
 
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -32,33 +34,48 @@ import com.stun4j.stf.core.Stf;
  */
 class JobQueue {
   private final int capacity;
-  private final Map<Long/* jobId */, Long/* jobLastUpAt */> jobsLastUpAts;
+  private final Map<Long/* jobId */, Long/* jobUpAt */> jobsUpAts;// Be treated as indexes & terms
   private final LinkedList<Stf> list;
   private final ReadWriteLock rwl;
+  private final Condition ifEmpty;
 
-  public boolean offer(Stf job) {
-    argument(job != null, "The stf-job can't be null");
-    if (list.size() >= capacity) {
-      return false;
-    }
+  public int offer(Stf job) {
+    argument(job != null && job.getId() != null, "The stf-job(and its id) can't be null");
+    long curJobUpAt;
+    state((curJobUpAt = job.getUpAt()) > 0, "The stf-job's upAt must be greater than 0");
     Lock lock;
     (lock = rwl.writeLock()).lock();
     try {
-      Long jobId = job.getId();
-      Long jobLastUpAt = job.getUpAt();
-      // if the job already exists and has been changed, log the last update time of the job and requeue it (to tail)
-      // (simply reducing its priority) TODO mj:better implementation
-      if (jobsLastUpAts.containsKey(job.getId())) {
-        Long lastUpAt = jobsLastUpAts.get(jobId);
-        if (lastUpAt != null && !lastUpAt.equals(jobLastUpAt)) {
-          remove(job);
-          list.add(job);
-        }
-      } else {
-        list.add(job);
+      if (list.size() >= capacity) {
+        return -1;
       }
-      jobsLastUpAts.put(jobId, jobLastUpAt);
-      return true;
+      Long jobId;
+      if (jobsUpAts.containsKey(jobId = job.getId())) {
+        Long existJobUpAt = jobsUpAts.get(jobId);
+        // May be the same 'term'
+        if (existJobUpAt.equals(curJobUpAt)) {
+          return 0;
+        }
+        // Try reorder term(shouldn‘t happen)
+        if (existJobUpAt.compareTo(curJobUpAt) > 0) {
+          // If the job already exists and has more recent 'term', we simply requeue it (to tail)
+          // TODO mj:Better implementation
+          // TODO mj:Priority implementation
+          Stf existJob = remove(job);
+          list.add(job);
+          if (existJob != null) {// Shouldn't happen
+            list.add(existJob);
+          }
+          jobsUpAts.put(jobId, existJobUpAt);
+          ifEmpty.signalAll();
+          return 1;
+        }
+      }
+      // Normal case: job not exists or curJobUpAt > existJobUpAt
+      list.add(job);
+      jobsUpAts.put(jobId, curJobUpAt);
+      ifEmpty.signalAll();
+      return 1;
     } finally {
       lock.unlock();
     }
@@ -68,9 +85,20 @@ class JobQueue {
     Lock lock;
     (lock = rwl.writeLock()).lock();
     try {
-      Stf job = list.pollFirst();
-      if (job == null) return null;
-      jobsLastUpAts.remove(job.getId());
+      return doPollFirst();
+    } finally {
+      lock.unlock();
+    }
+  }
+
+  public Stf take() throws InterruptedException {
+    Lock lock;
+    (lock = rwl.writeLock()).lock();
+    try {
+      Stf job;
+      while ((job = doPollFirst()) == null) {
+        ifEmpty.await();
+      }
       return job;
     } finally {
       lock.unlock();
@@ -87,23 +115,31 @@ class JobQueue {
     }
   }
 
-  private void remove(Stf theJob) {
+  private Stf doPollFirst() {
+    Stf job = list.pollFirst();
+    if (job == null) return null;
+    jobsUpAts.remove(job.getId());
+    return job;
+  }
+
+  private Stf remove(Stf theJob) {
     for (ListIterator<Stf> iter = list.listIterator(); iter.hasNext();) {
       Stf job = iter.next();
       if (job.equals(theJob)) {
         iter.remove();
-        jobsLastUpAts.remove(job.getId());
-        return;
+        jobsUpAts.remove(job.getId());
+        return job;
       }
     }
+    return null;
   }
 
   public JobQueue(int capacity) {
     argument(capacity > 0, "The stf-job-queue capacity must be greater than 0");
     this.capacity = capacity;
     this.list = new LinkedList<>();
-    this.jobsLastUpAts = new HashMap<>();
-    this.rwl = new ReentrantReadWriteLock();
+    this.jobsUpAts = new HashMap<>();
+    ifEmpty = (this.rwl = new ReentrantReadWriteLock()).writeLock().newCondition();
   }
 
 }

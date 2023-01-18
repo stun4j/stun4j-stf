@@ -184,7 +184,7 @@ public class StfTxnOps {
             H.tryCommitLaStfOnDup(LOG, laStfId, coreTblName, (DuplicateKeyException)e,
                 stfId -> StfContext.commitLastDone(stfId));// StfContext.commitLastDone
           } catch (Throwable e1) {
-            Exceptions.swallow(e1, LOG, "Unexpected error occurred while auto committing stf");
+            Exceptions.swallow(e1, LOG, "An error occurred while auto committing stf");
             // Silently move forward current transaction by swallowing any exception
           }
         }
@@ -221,7 +221,7 @@ public class StfTxnOps {
             H.tryCommitLaStfOnDup(LOG, laStfId, coreTblName, (DuplicateKeyException)e,
                 stfId -> StfContext.commitLastDone(stfId));
           } catch (Throwable e1) {
-            Exceptions.swallow(e1, LOG, "Unexpected error occurred while auto committing stf");
+            Exceptions.swallow(e1, LOG, "An error occurred while auto committing stf");
             // Silently move forward current transaction by swallowing any exception
           }
         }

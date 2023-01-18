@@ -70,7 +70,7 @@
 
 		<!-- helper -->
 		<guava.version>31.1-jre</guava.version>
-		<stun4j-guid.version>2.0.0</stun4j-guid.version>
+		<stun4j-guid.version>2.0.1-SNAPSHOT</stun4j-guid.version>
 		<config.version>1.4.2</config.version>
 
 		<!-- log -->

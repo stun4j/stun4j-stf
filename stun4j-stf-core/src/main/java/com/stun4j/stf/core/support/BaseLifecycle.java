@@ -43,7 +43,7 @@ public class BaseLifecycle implements Lifecycle {
     try {
       doStart();
     } catch (Throwable e) {
-      LOG.error("Unexpected error occurred while starting, now tring to shut down", e);
+      LOG.error("An error occurred while starting, now tring to shut down", e);
       // TODO mj:terminate current jvm in the very-beginning,instead of throwing error(support more strategy)
       shutdown();
       Exceptions.sneakyThrow(e);
@@ -59,7 +59,7 @@ public class BaseLifecycle implements Lifecycle {
     try {
       doShutdown();
     } catch (Throwable e) {
-      Exceptions.swallow(e, LOG, "Unexpected error occurred while shutting down");
+      Exceptions.swallow(e, LOG, "An error occurred while shutting down");
     }
   }
 

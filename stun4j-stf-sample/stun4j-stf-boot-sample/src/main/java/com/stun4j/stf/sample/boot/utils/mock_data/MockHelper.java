@@ -59,7 +59,7 @@ public class MockHelper {
           if (errorType == MockErrorTypeEnum.THROW_EX) {
             RuntimeException ex;
             logger.error(finalMsg,
-                ex = new RuntimeException(Optional.ofNullable(finalMsg).orElse("Unexpected error occured!")));
+                ex = new RuntimeException(Optional.ofNullable(finalMsg).orElse("An error occured!")));
             throw ex;
           } else if (errorType == MockErrorTypeEnum.SYS_EXIT) {
             String exitMsg = "Encounter an unexpected system exit!";

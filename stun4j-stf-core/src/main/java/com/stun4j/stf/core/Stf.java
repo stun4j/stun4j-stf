@@ -112,5 +112,4 @@ public class Stf extends BaseEntity<Long> {
   public void setUpAt(long upAt) {
     this.upAt = upAt;
   }
-
 }

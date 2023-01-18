@@ -97,14 +97,14 @@ public class JobScannerJdbc implements JobScanner, JdbcAware {
   }
 
   public Stream<Stf> doScanStillAlive(StfMetaGroupEnum metaGrp, StateEnum st, int limit, int pageNo,
-      String... includeFields) {/*-pageNo start with 0*/
+      String... includeFields) {// pageNo start with 0
     if (H.isDataSourceClose()) {
       H.logOnDataSourceClose(LOG, "doScanStillAlive");
       return Stream.empty();
     }
-    long now = System.currentTimeMillis();
+    long now;
     LocalGuid guid;
-    long idEnd = (guid = LocalGuid.instance()).from(now);
+    long idEnd = (guid = LocalGuid.instance()).from(now = System.currentTimeMillis());
     long idStart = guid.from(now - TimeUnit.DAYS.toMillis(includeHowManyDaysAgo));
 
     String sql;

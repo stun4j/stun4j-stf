@@ -77,7 +77,7 @@ public class AppService {
   }
 
   public void sendNotification(String reqId) {
-    if (mock.newError(this.getClass(), THROW_EX, LOG, "Notification of request#%s has timed out...", reqId)
+    if (mock.newError(this.getClass(), THROW_EX, LOG, "Notification of request#%s will be timed out...", reqId)
         .has()) {/*- Here we simply simulated multiple timeouts.You can clearly see the ladder of retry intervals. */
       return;
     }

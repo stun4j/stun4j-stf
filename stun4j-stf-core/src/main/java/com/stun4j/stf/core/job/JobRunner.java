@@ -19,7 +19,7 @@ import static com.stun4j.stf.core.StfConsts.DFT_JOB_TIMEOUT_SECONDS;
 import static com.stun4j.stf.core.StfConsts.WITH_MS_DATE_FMT;
 import static com.stun4j.stf.core.StfHelper.H;
 import static com.stun4j.stf.core.StfMetaGroupEnum.CORE;
-import static com.stun4j.stf.core.job.JobConsts.generateRetryBehaviorByPattern;
+import static com.stun4j.stf.core.job.JobConsts.retryBehaviorByPattern;
 
 import java.util.Date;
 import java.util.Map;
@@ -61,7 +61,7 @@ class JobRunner {
     }
     int lastRetryTimes = lockingJob.getRetryTimes();
     int curRetryTimes = lastRetryTimes + 1;
-    // if (false) {//TODO mj:dbl check re-implementation
+    // if (false) {//TODO mj:dbl check and the re-implementation
     // Calculate trigger time,if the time does not arrive, no execution is performed
     // Integer lastNextTimeoutSecs = retryBehav.get(curRetryTimes);
     // long lastLockedAt;
@@ -180,7 +180,7 @@ class JobRunner {
   }
 
   static {
-    DFT_FIXED_JOB_RETRY_INTERVAL_SECONDS = generateRetryBehaviorByPattern(DFT_JOB_TIMEOUT_SECONDS);
+    DFT_FIXED_JOB_RETRY_INTERVAL_SECONDS = retryBehaviorByPattern(DFT_JOB_TIMEOUT_SECONDS);
   }
 
   private JobRunner(Map<Integer, Integer> retryBehavior) {
@@ -188,7 +188,7 @@ class JobRunner {
 
     CacheLoader<Integer, Map<Integer, Integer>> loader = new CacheLoader<Integer, Map<Integer, Integer>>() {
       public Map<Integer, Integer> load(Integer timeoutSeconds) throws Exception {
-        Map<Integer, Integer> map = generateRetryBehaviorByPattern(timeoutSeconds);
+        Map<Integer, Integer> map = retryBehaviorByPattern(timeoutSeconds);
         return map;
       }
     };

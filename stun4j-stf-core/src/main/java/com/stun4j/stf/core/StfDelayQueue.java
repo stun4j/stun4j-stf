@@ -54,6 +54,7 @@ public final class StfDelayQueue {
   @SuppressWarnings("unchecked")
   public final Long offer(String taskObjId, String taskMethodName, int timeoutSeconds, int delaySeconds,
       Stream<Pair<?/* arg-value */, Class<?>/* arg-type */>> taskParams) {
+    state(core.isDelayQueueEnabled(), DLQ_DISABLE_MSG);
     // Inspired from ActionMethodChecker->
     Pair<?, Class<?>>[] taskParamsPair = taskParams.toArray(Pair[]::new);
     Class<?>[] taskMethodArgClzs = Stream.of(taskParamsPair).map(argPair -> {// re-stream:(
@@ -89,9 +90,11 @@ public final class StfDelayQueue {
 
   public StfDelayQueue(StfDelayQueueCore core) {
     this.core = requireNonNull(core, "The stf-delayqueue-core can't be null");
-    state(core.isDelayQueueEnabled(), "The stf-delayqueue is disabled > Forgot to set 'stun4j.stf.delaty-queue.enabled' to true?");
+    state(core.isDelayQueueEnabled(), DLQ_DISABLE_MSG);
     CONSTRUCTOR_CHECK_MEMO = new ConcurrentHashMap<>();
     TASK_METHOD_HEAD_MEMO = new ConcurrentHashMap<>();
   }
+
+  private static final String DLQ_DISABLE_MSG = "The stf-delayqueue is disabled > Forgot to set 'stun4j.stf.delaty-queue.enabled' to true?";
 
 }

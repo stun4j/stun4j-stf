@@ -75,7 +75,7 @@ public abstract class BaseActor<T> extends BaseLifecycle implements Actor<T> {
         mailbox.await();
         List<T> msgs;
         int drained = mailbox.drainTo(msgs = new ArrayList<>(MSGS_SIZE_LADDER[msgSizeScaleStep]),
-            1000);/*-TODO mj:to be configured*/
+            getMailBoxMaxDrainNum());
         try {
           onMsgs(msgs);
         } catch (Throwable e) {
@@ -107,6 +107,10 @@ public abstract class BaseActor<T> extends BaseLifecycle implements Actor<T> {
       }
     }
     this.msgsLastDrained = drained;
+  }
+
+  public int getMailBoxMaxDrainNum() {
+    return 1000;
   }
 
   public BaseActor(String name, int baseCapacity) {

@@ -15,33 +15,31 @@
  */
 package com.stun4j.stf.core.job;
 
-import static com.stun4j.stf.core.StfHelper.partialUpdateJobInfoWhenLocked;
+import static com.stun4j.stf.core.StfHelper.determinJobMetaGroup;
 import static com.stun4j.stf.core.StfRunModeEnum.DEFAULT;
 import static com.stun4j.stf.core.job.JobConsts.ALL_JOB_GROUPS;
 import static com.stun4j.stf.core.support.executor.StfInternalExecutors.newWatcherOfJobManager;
-import static com.stun4j.stf.core.support.executor.StfInternalExecutors.newWorkerOfJobManager;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
+import com.stun4j.guid.core.utils.Utils;
 import com.stun4j.stf.core.Stf;
 import com.stun4j.stf.core.StfCore;
 import com.stun4j.stf.core.StfDelayQueueCore;
+import com.stun4j.stf.core.StfMetaGroupEnum;
 import com.stun4j.stf.core.StfRunModeEnum;
+import com.stun4j.stf.core.cluster.Heartbeat;
 import com.stun4j.stf.core.cluster.HeartbeatHandler;
 import com.stun4j.stf.core.cluster.StfClusterMember;
 import com.stun4j.stf.core.monitor.StfMonitor;
 import com.stun4j.stf.core.support.BaseLifecycle;
 import com.stun4j.stf.core.support.event.StfEventBus;
+import com.stun4j.stf.core.support.event.StfReceivedEvent;
 import com.stun4j.stf.core.utils.Exceptions;
 
 import sun.misc.Signal;
@@ -78,13 +76,10 @@ public class JobManager extends BaseLifecycle {
   private final JobMarkActor marker;
   private JobDelayMarkActor delayMarker;
 
-  private final ScheduledExecutorService watcher;
-  private final Map<String, ThreadPoolExecutor> workers;
+  private final Map<String, Thread> watchers;
   private final boolean delayQueueEnabled;
 
   private HeartbeatHandler heartbeatHandler;
-
-  private ScheduledFuture<?> sf;
 
   private int scanFreqSeconds;
   private int handleBatchSize;
@@ -110,21 +105,12 @@ public class JobManager extends BaseLifecycle {
         StfMonitor.INSTANCE.doStart();
       }
 
-      int scanFreqSeconds;
-      sf = watcher.scheduleWithFixedDelay(() -> {
-        try {
-          if (vmResCheckEnabled) {
-            Pair<Boolean, Map<String, Object>> resRpt;
-            if ((resRpt = StfMonitor.INSTANCE.isVmResourceNotEnough()).getLeft()) {
-              LOG.warn("Handling of stf-jobs is paused due to insufficient resources > Reason: {}", resRpt.getRight());
-              return;
-            }
-          }
-          onSchedule();
-        } catch (Throwable e) {
-          Exceptions.swallow(e, LOG, "[onSchedule] An error occurred while handling stf-jobs");
+      watchers.forEach((grp, watcher) -> {
+        if (determinJobMetaGroup(grp) == StfMetaGroupEnum.DELAY && !this.delayQueueEnabled) {
+          return;
         }
-      }, scanFreqSeconds = this.scanFreqSeconds, scanFreqSeconds, TimeUnit.SECONDS);
+        watcher.start();
+      });
     }
 
     LOG.info("The stf-job-manager({} mode, dlq {}) is successfully started.", runMode.name().toLowerCase(),
@@ -135,26 +121,14 @@ public class JobManager extends BaseLifecycle {
   protected void doShutdown() {
     shutdown = true;
     // TODO mj:extract close utility...
-    try {
-      if (sf != null) {
-        sf.cancel(true);
-      }
-
-      watcher.shutdown();
-      watcher.awaitTermination(15, TimeUnit.SECONDS);
-      LOG.debug("Watcher is successfully shut down");
-    } catch (Throwable e) {
-      Exceptions.swallow(e, LOG, "Unexpected error occurred while shutting down watcher");
-    }
-    workers.forEach((grp, worker) -> {
+    watchers.forEach((grp, watcher) -> {
       try {
-        worker.shutdown();
-        worker.awaitTermination(15, TimeUnit.SECONDS);
-        LOG.debug("Worker is successfully shut down [grp={}]", grp);
+        watcher.interrupt();
       } catch (Throwable e) {
-        Exceptions.swallow(e, LOG, "Unexpected error occurred while shutting down worker [grp={}]", grp);
+        Exceptions.swallow(e, LOG, "An error occurred while shutting down watcher [grp={}]", grp);
       }
     });
+
     runners.shutdown();
     loader.shutdown();
 
@@ -176,126 +150,6 @@ public class JobManager extends BaseLifecycle {
       return lockedAt;
     }
     return lockedAt;
-  }
-
-  private void onSchedule() {
-    StfClusterMember.sendHeartbeat();
-    workers.forEach((jobGrp, worker) -> {
-      worker.execute(() -> {
-        takeJobsAndRun(jobGrp);
-        /*
-         * Batch mode was written in advance, but for now, We don't see any practical advantages in using this mode.But
-         * one disadvantage is that large batch consumes more memory
-         */
-        // batchTakeJobsAndRun(jobGrp);
-      });
-    });
-  }
-
-  private void takeJobsAndRun(String jobGrp) {
-    int batchSize = handleBatchSize;
-    int availableThreadNum = runners.getAvailablePoolSize(jobGrp);
-    int enlargedThreadNum = availableThreadNum * batchMultiplyingFactor;
-    int loop = enlargedThreadNum % batchSize == 0 ? enlargedThreadNum / batchSize : enlargedThreadNum / batchSize + 1;
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("[takeJobsAndRun] Loop:{} [availableThread={}, normalBatchSize={}, jobGrp={}]", loop,
-          availableThreadNum, batchSize, jobGrp);
-    }
-    start: for (int i = 1; i <= loop; i++) {
-      if (i == loop) {
-        batchSize = enlargedThreadNum - batchSize * (loop - 1);
-      }
-      for (int j = 0; j < batchSize; j++) {
-        Stf job = takeJob(jobGrp);
-        if (job == null) {
-          break start;
-        }
-        runners.execute(jobGrp, job);
-      }
-    }
-  }
-
-  private Stf takeJob(String jobGrp) {
-    while (!Thread.currentThread().isInterrupted() && !shutdown) {
-      Stf job = null;
-      try {
-        job = loader.getJobFromQueue(jobGrp);
-        if (job == null) return null;
-
-        Pair<Boolean, Integer> pair;
-        if (!(pair = runner.checkWhetherTheJobCanRun(jobGrp, job, stfCore))
-            .getKey()) {/*-A double check here,meanwhile,pick up the dynamic timeout because we are using a custom gradient retry mechanism*/
-          continue;
-        }
-
-        long lockedAt;
-        int dynaTimeoutSecs;
-        if ((lockedAt = lockJob(jobGrp, job.getId(), dynaTimeoutSecs = pair.getValue(), job.getRetryTimes(),
-            job.getTimeoutAt())) > 0) {
-          partialUpdateJobInfoWhenLocked(job, lockedAt, dynaTimeoutSecs);
-          return job;
-        }
-      } catch (Throwable e) {
-        Exceptions.swallow(e, LOG, "An error occurred while locking job#{}", job != null ? job.getId() : "null");
-      } finally {
-        loader.signalToLoadJobs(jobGrp);
-      }
-    }
-    return null;
-  }
-
-  @SuppressWarnings("unused")
-  private void batchTakeJobsAndRun(String jobGrp) {
-    int batchSize = handleBatchSize;
-    int availableThread = runners.getAvailablePoolSize(jobGrp);
-    availableThread *= batchMultiplyingFactor;
-    int loop = availableThread % batchSize == 0 ? availableThread / batchSize : availableThread / batchSize + 1;
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("[batchTakeJobsAndRun] Loop:{} [availableThread={}, normalBatchSize={}, jobGrp={}]", loop,
-          availableThread, batchSize, jobGrp);
-    }
-    start: for (int i = 1; i <= loop; i++) {
-      if (i == loop) {
-        batchSize = availableThread - batchSize * (loop - 1);
-      }
-
-      List<Object[]> preBatchArgs = new ArrayList<>();
-      boolean isQueueEmpty = false;
-      try {
-        for (int j = 0; j < batchSize; j++) {
-          isQueueEmpty = collectPreBatchArgs(jobGrp, preBatchArgs);
-          if (isQueueEmpty) {
-            break;
-          }
-        }
-        if (!preBatchArgs.isEmpty()) {
-          List<Stf> lockedJobs = stfCore.batchLockStfs(jobGrp, preBatchArgs);
-          for (Stf lockedJob : lockedJobs) {
-            runners.execute(jobGrp, lockedJob);
-          }
-        }
-        if (isQueueEmpty) {
-          break start;
-        }
-      } finally {
-        loader.signalToLoadJobs(jobGrp);
-      }
-    }
-  }
-
-  private boolean collectPreBatchArgs(String jobGrp, List<Object[]> preBatchArgs) {
-    while (!Thread.currentThread().isInterrupted() && !shutdown) {
-      Stf job = loader.getJobFromQueue(jobGrp);
-      if (job == null) return true;
-
-      Pair<Boolean, Integer> pair;
-      if (!(pair = runner.checkWhetherTheJobCanRun(jobGrp, job, stfCore)).getKey()) {
-        continue;
-      }
-      preBatchArgs.add(new Object[]{job, pair.getValue(), job.getId(), job.getRetryTimes(), job.getTimeoutAt()});
-      break;
-    }
-    return false;
   }
 
   private void registerGracefulShutdown() {
@@ -337,15 +191,108 @@ public class JobManager extends BaseLifecycle {
     this.loader = loader;
     this.runners = runners;
     this.runner = runners.getRunner();
-    StfEventBus.registerHandler(this.marker = new JobMarkActor(this.stfCore, 16384));// TODO mj:to be configured
+    StfEventBus.registerHandler(this.marker = new JobMarkActor(stfCore, 16384));// TODO mj:to be configured
     if (delayQueueEnabled) {
       StfEventBus.registerHandler(this.delayMarker = new JobDelayMarkActor(stfCore, 16384));
     }
-    this.workers = Stream.of(ALL_JOB_GROUPS).reduce(new HashMap<String, ThreadPoolExecutor>(), (map, grp) -> {
-      map.put(grp, newWorkerOfJobManager(grp));
-      return map;
-    }, (a, b) -> null);
-    this.watcher = newWatcherOfJobManager();
+
+    this.watchers = Stream.of(ArrayUtils.add(ALL_JOB_GROUPS, Heartbeat.class.getSimpleName()))
+        .reduce(new HashMap<String, Thread>(), (map, type) -> {
+          Runnable runnable;
+          if (type.equals(Heartbeat.class.getSimpleName())) {
+            runnable = () -> {
+              while (!Thread.currentThread().isInterrupted() && !shutdown) {
+                try {
+                  Utils.sleepSeconds(scanFreqSeconds);
+                  StfClusterMember.sendHeartbeat();
+                } catch (Throwable e) {
+                  Exceptions.swallow(e, LOG, "An error occurred while sending heartbeat");
+                }
+              }
+              LOG.info("The {} seems going through a shutdown", Thread.currentThread().getName());
+            };
+          } else {
+            String jobGrp = type;
+            if (determinJobMetaGroup(jobGrp) == StfMetaGroupEnum.DELAY && !delayQueueEnabled) {
+              return map;
+            }
+            runnable = () -> {
+              JobBatchLockAndRunActor batcher = new JobBatchLockAndRunActor(stfCore, runners, 16384, jobGrp,
+                  handleBatchSize);
+              batcher.start();// TODO mj:Cascade special #start
+
+              while (!Thread.currentThread().isInterrupted() && !shutdown) {
+                if (vmResCheckEnabled) {// FIXME mj:try-catch
+                  Pair<Boolean, Map<String, Object>> resRpt;
+                  if ((resRpt = StfMonitor.INSTANCE.isVmResourceNotEnough()).getLeft()) {
+                    LOG.warn("Handling of stf-jobs is paused due to insufficient resources > Reason: {}",
+                        resRpt.getRight());// TODO mj:log inhibition stuff
+                    Utils.sleepSeconds(scanFreqSeconds);// TODO mj:ladder sleep
+                    continue;
+                  }
+                }
+
+                // TODO mj: strategization,2 strategies: simple,adaptive batch
+                if (true) {
+                  try {
+                    Stf job = loader.getJobFromQueue(jobGrp, true);
+                    if (job == null) {// Shouldn't happen TODO mj:tiny sleep
+                      LOG.error("Unexpected null job found [jobGrp={}]", jobGrp);
+                      continue;
+                    }
+                    if (LOG.isDebugEnabled()) {
+                      LOG.debug("Got job#{} from queue", job.getId());
+                    }
+
+                    Pair<Boolean, Integer> pair;
+                    if (!(pair = runner.checkWhetherTheJobCanRun(jobGrp, job, stfCore)).getKey()) {
+                      continue;
+                    }
+                    batcher.tell(new StfReceivedEvent(job, pair.getValue()));
+                  } catch (Throwable e) {
+                    Exceptions.swallow(e, LOG, "An error occurred while handling jobs [jobGrp={}]", jobGrp);
+                  }
+                  continue;
+                }
+                // Stf job = null;
+                // try {
+                // job = loader.getJobFromQueue(jobGrp, true);
+                // if (job == null) {// Shouldn't happen TODO mj:tiny sleep
+                // LOG.error("Unexpected null job found [jobGrp={}]", jobGrp);
+                // continue;
+                // }
+                // if (LOG.isDebugEnabled()) {
+                // LOG.debug("Got job#{} from queue", job.getId());
+                // }
+                //
+                // Pair<Boolean, Integer> pair;
+                // if (!(pair = runner.checkWhetherTheJobCanRun(jobGrp, job, stfCore))
+                // .getKey()) {/*-A double check here,meanwhile,pick up the dynamic timeout because we are using a
+                // custom gradient retry mechanism*/
+                // continue;
+                // }
+                //
+                // long lockedAt;
+                // int dynaTimeoutSecs;
+                // if ((lockedAt = lockJob(jobGrp, job.getId(), dynaTimeoutSecs = pair.getValue(), job.getRetryTimes(),
+                // job.getTimeoutAt())) <= 0) {
+                // continue;
+                // }
+                // partialUpdateJobInfoWhenLocked(job, lockedAt, dynaTimeoutSecs);
+                //
+                // runners.execute(jobGrp, job);
+                // } catch (Throwable e) {
+                // Exceptions.swallow(e, LOG, "An error occurred while handling the job#{}",
+                // job != null ? job.getId() : "null");
+                // }
+              }
+              LOG.info("The {} seems going through a shutdown", Thread.currentThread().getName());
+              batcher.shutdown();
+            };
+          }
+          map.put(type, newWatcherOfJobManager(type, runnable));
+          return map;
+        }, (a, b) -> null);
   }
 
   public JobManager withHeartbeatHandler(HeartbeatHandler heartbeatHandler) {
@@ -354,6 +301,7 @@ public class JobManager extends BaseLifecycle {
     return this;
   }
 
+  @Deprecated
   public void setScanFreqSeconds(int scanFreqSeconds) {
     this.scanFreqSeconds = scanFreqSeconds < DFT_MIN_SCAN_FREQ_SECONDS ? DFT_MIN_SCAN_FREQ_SECONDS : scanFreqSeconds;
   }

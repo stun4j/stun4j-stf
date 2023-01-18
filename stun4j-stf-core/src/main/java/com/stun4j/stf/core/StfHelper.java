@@ -111,6 +111,11 @@ public class StfHelper {
     job.setRetryTimes(lastRetryTimes + 1);// update to current retry-times
   }
 
+  public static StfMetaGroupEnum determinJobMetaGroup(String jobGrp) {
+    StfMetaGroupEnum metaGrp = jobGrp.indexOf(KEY_FEATURE_TIMEOUT_DELAY) == -1 ? CORE : DELAY;
+    return metaGrp;
+  }
+
   private Method tryGetDataSourceCloser() {
     Method dsCloser;
     try {
