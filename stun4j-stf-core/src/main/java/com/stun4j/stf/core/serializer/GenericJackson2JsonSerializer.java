@@ -19,19 +19,17 @@ import static com.stun4j.stf.core.utils.Asserts.notNull;
 import static com.stun4j.stf.core.utils.Asserts.requireNonNull;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.TimeZone;
 
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.core.KotlinDetector;
-import org.springframework.util.ClassUtils;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 //import org.springframework.cache.support.NullValue;
-//import org.springframework.data.redis.serializer.RedisSerializer;
+//import org.springframework.core.KotlinDetector;
+//import org.springframework.lang.Nullable;
 //import org.springframework.util.Assert;
+//import org.springframework.util.ClassUtils;
 //import org.springframework.util.StringUtils;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
@@ -55,6 +53,8 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.SerializerFactory;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.stun4j.stf.core.support.NullValue;
+import com.stun4j.stf.core.utils.ClassUtils;
+import com.stun4j.stf.core.utils.shaded.org.springframework.core.KotlinDetector;
 
 /**
  * Generic Jackson 2-based {@link Serializer} that maps {@link Object objects} to JSON using dynamic typing.
@@ -63,9 +63,9 @@ import com.stun4j.stf.core.support.NullValue;
  * @author Mao Shuai
  * @author Jay Meng
  *         <p>
- *         From spring-data-redis:2.7.6,changes listed below
+ *         From spring-data-redis:2.7.7,changes listed below
  *         <ul>
- *         <li>Disable all Spring dependency,use Asserts#notNull,commons-lang3 instead</li>
+ *         <li>Disable all Spring dependency, disable @Nullable, use Asserts#notNull/shaded ClassUtils/commons-lang3 instead</li>
  *         <li>Use Serializer instead of RedisSerializer</li>
  *         <li>Change {@code serialVersionUID}</li>
  *         <li>Enhance Serialization/Deserialization Feature</li>
@@ -116,7 +116,6 @@ public class GenericJackson2JsonSerializer implements Serializer {
     // } else {
     // mapper.activateDefaultTyping(mapper.getPolymorphicTypeValidator(), DefaultTyping.NON_FINAL, As.PROPERTY);
     // }
-
     StdTypeResolverBuilder typer = new TypeResolverBuilder(DefaultTyping.EVERYTHING,
         mapper.getPolymorphicTypeValidator());
     typer = typer.init(JsonTypeInfo.Id.CLASS, null);
@@ -148,10 +147,10 @@ public class GenericJackson2JsonSerializer implements Serializer {
    * @since 2.2
    */
   public static void registerNullValueSerializer(ObjectMapper objectMapper, String classPropertyTypeName) {
-
     // simply setting {@code mapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)} does not help here since we need
     // the type hint embedded for deserialization using the default typing feature.
     objectMapper.registerModule(new SimpleModule().addSerializer(new NullValueSerializer(classPropertyTypeName)));
+    // TODO mj:check FAIL_ON_EMPTY_BEANS&NullValueSerializer
   }
 
   /*
@@ -160,7 +159,6 @@ public class GenericJackson2JsonSerializer implements Serializer {
    */
   @Override
   public byte[] serialize(Object source) throws SerializationException {
-
     if (source == null) {
       return SerializationUtils.EMPTY_ARRAY;
     }
@@ -216,7 +214,6 @@ public class GenericJackson2JsonSerializer implements Serializer {
      * @param classIdentifier can be {@literal null} and will be defaulted to {@code @class}.
      */
     NullValueSerializer(String classIdentifier) {// @Nullable String classIdentifier
-
       super(NullValue.class);
       this.classIdentifier = StringUtils.isNotBlank(classIdentifier) ? classIdentifier : "@class";
     }
@@ -268,7 +265,6 @@ public class GenericJackson2JsonSerializer implements Serializer {
      * actual serializers and deserializers will also ignore any attempts to enforce typing.
      */
     public boolean useForType(JavaType t) {
-
       if (t.isJavaLangObject()) {
         return true;
       }
@@ -289,7 +285,6 @@ public class GenericJackson2JsonSerializer implements Serializer {
     }
 
     private JavaType resolveArrayOrWrapper(JavaType type) {
-
       while (type.isArrayType()) {
         type = type.getContentType();
         if (type.isReferenceType()) {

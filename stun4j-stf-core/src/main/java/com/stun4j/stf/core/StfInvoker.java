@@ -24,10 +24,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.ClassUtils;
+//import org.apache.commons.lang3.ClassUtils;
 import org.apache.commons.lang3.reflect.MethodUtils;
 
 import com.stun4j.stf.core.support.JsonHelper;
+import com.stun4j.stf.core.utils.ClassUtils;
 import com.stun4j.stf.core.utils.NumberUtils;
 import com.stun4j.stf.core.utils.shaded.guava.common.primitives.Primitives;
 
@@ -68,7 +69,8 @@ abstract class StfInvoker {
               Entry<String, Object> entry = map.entrySet().iterator().next();
               String argType = entry.getKey();
               argObj = entry.getValue();
-              argClz = argTypes[i] = ClassUtils.getClass(argType);
+//              argClz = argTypes[i] = ClassUtils.getClass(argType);
+              argClz = argTypes[i] = ClassUtils.resolveClassName(argType, ClassUtils.getDefaultClassLoader());
             }
             boolean isNum = NumberUtils.isCreatable(argClz);
             if (isNum) {
