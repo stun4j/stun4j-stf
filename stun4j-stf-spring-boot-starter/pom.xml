@@ -25,12 +25,6 @@
 			<artifactId>stun4j-guid-spring-boot-starter</artifactId>
 			<version>${stun4j-guid.version}</version>
 		</dependency>
-		<!-- db -->
-		<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-jdbc</artifactId>
-			<scope>provided</scope>
-		</dependency>
 		<!-- helper -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

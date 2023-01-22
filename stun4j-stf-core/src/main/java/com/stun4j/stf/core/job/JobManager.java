@@ -80,9 +80,10 @@ public class JobManager extends BaseLifecycle {
   private final boolean delayQueueEnabled;
 
   private HeartbeatHandler heartbeatHandler;
-
-  private int scanFreqSeconds;
   private int handleBatchSize;
+  @Deprecated
+  private int scanFreqSeconds;
+  @Deprecated
   private int batchMultiplyingFactor;
 
   private boolean vmResCheckEnabled;
@@ -227,7 +228,7 @@ public class JobManager extends BaseLifecycle {
                   if ((resRpt = StfMonitor.INSTANCE.isVmResourceNotEnough()).getLeft()) {
                     LOG.warn("Handling of stf-jobs is paused due to insufficient resources > Reason: {}",
                         resRpt.getRight());// TODO mj:log inhibition stuff
-                    Utils.sleepSeconds(scanFreqSeconds);// TODO mj:ladder sleep
+                    Utils.sleepSeconds(scanFreqSeconds);// TODO mj:blocking instead
                     continue;
                   }
                 }
@@ -311,6 +312,7 @@ public class JobManager extends BaseLifecycle {
         : (handleBatchSize > DFT_MAX_HANDLE_BATCH_SIZE ? DFT_MAX_HANDLE_BATCH_SIZE : handleBatchSize);
   }
 
+  @Deprecated
   public void setBatchMultiplyingFactor(int batchMultiplyingFactor) {
     this.batchMultiplyingFactor = batchMultiplyingFactor < DFT_MIN_BATCH_MULTIPLYING_FACTOR
         ? DFT_MIN_BATCH_MULTIPLYING_FACTOR

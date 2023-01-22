@@ -24,32 +24,12 @@
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-jdbc</artifactId>
-			<scope>provided</scope>
 		</dependency>
 		<!-- core -->
 		<dependency>
 			<groupId>com.alibaba</groupId>
 			<artifactId>transmittable-thread-local</artifactId>
 			<version>${ttl.version}</version>
-		</dependency>
-		<!-- helper -->
-		<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-context</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-databind</artifactId>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.commons</groupId>
-			<artifactId>commons-lang3</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>com.google.guava</groupId>
-			<artifactId>guava</artifactId>
-			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.stun4j</groupId>
@@ -58,6 +38,25 @@
 		<dependency>
 			<groupId>com.typesafe</groupId>
 			<artifactId>config</artifactId>
+		</dependency>
+		<!-- helper -->
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.google.guava</groupId>
+			<artifactId>guava</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-context</artifactId>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<scope>provided</scope>
 		</dependency>
 		<!-- log -->
 		<dependency>
@@ -80,8 +79,8 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>mysql</groupId>
-			<artifactId>mysql-connector-java</artifactId>
+			<groupId>com.mysql</groupId>
+			<artifactId>mysql-connector-j</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
