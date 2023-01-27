@@ -61,13 +61,9 @@ public class JobManager extends BaseLifecycle {
   private static final int DFT_MIN_SCAN_FREQ_SECONDS = 3;
   private static final int DFT_SCAN_FREQ_SECONDS = 3;
 
-  private static final int DFT_MIN_HANDLE_BATCH_SIZE = 5;
+  private static final int DFT_MIN_HANDLE_BATCH_SIZE = 1;
   private static final int DFT_MAX_HANDLE_BATCH_SIZE = 3000;
   private static final int DFT_HANDLE_BATCH_SIZE = 20;
-
-  private static final int DFT_MIN_BATCH_MULTIPLYING_FACTOR = 1;
-  private static final int DFT_MAX_BATCH_MULTIPLYING_FACTOR = 64;
-  private static final int DFT_BATCH_MULTIPLYING_FACTOR = 16;
 
   private final StfCore stfCore;
   private final StfRunModeEnum runMode;
@@ -84,8 +80,6 @@ public class JobManager extends BaseLifecycle {
   private int handleBatchSize;
   @Deprecated
   private int scanFreqSeconds;
-  @Deprecated
-  private int batchMultiplyingFactor;
 
   private boolean vmResCheckEnabled;
   private volatile boolean shutdown;
@@ -183,7 +177,6 @@ public class JobManager extends BaseLifecycle {
   public JobManager(JobLoader loader, JobRunners runners) {
     this.scanFreqSeconds = DFT_SCAN_FREQ_SECONDS;
     this.handleBatchSize = DFT_HANDLE_BATCH_SIZE;
-    this.batchMultiplyingFactor = DFT_BATCH_MULTIPLYING_FACTOR;
     this.vmResCheckEnabled = true;
     StfCore stfc;
     this.stfCore = stfc = runners.getStfCore();
@@ -219,9 +212,12 @@ public class JobManager extends BaseLifecycle {
               return map;
             }
             runnable = () -> {
-              JobBatchLockAndRunActor batcher = new JobBatchLockAndRunActor(stfCore, runners, 16384, jobGrp,
-                  handleBatchSize);
-              batcher.start();// TODO mj:Cascade special #start
+              int handleBatchSize = this.handleBatchSize;
+              JobBatchLockAndRunActor batcher = null;
+              if (handleBatchSize > 1) {
+                batcher = new JobBatchLockAndRunActor(stfCore, runners, 16384, jobGrp, handleBatchSize);
+                batcher.start();// TODO mj:Cascade special #start
+              }
 
               while (!Thread.currentThread().isInterrupted() && !shutdown) {
                 if (vmResCheckEnabled) {// FIXME mj:try-catch
@@ -235,7 +231,7 @@ public class JobManager extends BaseLifecycle {
                 }
 
                 // TODO mj: strategization,2 strategies: simple,adaptive batch
-                if (false) {
+                if (batcher != null) {
                   try {
                     Stf job = loader.getJobFromQueue(jobGrp, true);
                     if (job == null) {// Shouldn't happen TODO mj:tiny sleep
@@ -288,7 +284,9 @@ public class JobManager extends BaseLifecycle {
                 }
               }
               LOG.info("The {} seems going through a shutdown", Thread.currentThread().getName());
-              batcher.shutdown();
+              if (batcher != null) {
+                batcher.shutdown();
+              }
             };
           }
           map.put(type, newWatcherOfJobManager(type, runnable));
@@ -310,14 +308,6 @@ public class JobManager extends BaseLifecycle {
   public void setHandleBatchSize(int handleBatchSize) {
     this.handleBatchSize = handleBatchSize < DFT_MIN_HANDLE_BATCH_SIZE ? DFT_MIN_HANDLE_BATCH_SIZE
         : (handleBatchSize > DFT_MAX_HANDLE_BATCH_SIZE ? DFT_MAX_HANDLE_BATCH_SIZE : handleBatchSize);
-  }
-
-  @Deprecated
-  public void setBatchMultiplyingFactor(int batchMultiplyingFactor) {
-    this.batchMultiplyingFactor = batchMultiplyingFactor < DFT_MIN_BATCH_MULTIPLYING_FACTOR
-        ? DFT_MIN_BATCH_MULTIPLYING_FACTOR
-        : (batchMultiplyingFactor > DFT_MAX_BATCH_MULTIPLYING_FACTOR ? DFT_MAX_BATCH_MULTIPLYING_FACTOR
-            : batchMultiplyingFactor);
   }
 
   public void setVmResCheckEnabled(boolean vmResCheckEnabled) {

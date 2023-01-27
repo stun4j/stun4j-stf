@@ -192,7 +192,6 @@ public class StfAutoConfigure implements BeanClassLoaderAware, ApplicationContex
     com.stun4j.stf.boot.Job.JobManager mngrCfg;
     jobMngr.setHandleBatchSize((mngrCfg = props.getJob().getManager()).getHandleBatchSize());
     jobMngr.setScanFreqSeconds(mngrCfg.getScanFreqSecs());
-    jobMngr.setBatchMultiplyingFactor(mngrCfg.getBatchMultiplyingFactor());
 
     // configure monitor->
     Monitor monCfg;

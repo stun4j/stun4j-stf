@@ -2,7 +2,7 @@
 -- Table structure for Stun4j Stf framework
 -- (Copied from stun4j-stf-core project)
 -- ----------------------------------------------
---drop table if exists stn_stf_cluster_member;
+-- drop table if exists stn_stf_cluster_member;
 create table stn_stf_cluster_member (
   id varchar(255) not null,
   ct_at bigint(20) unsigned not null,
@@ -10,7 +10,7 @@ create table stn_stf_cluster_member (
   primary key (id)
 );
 
---drop table if exists stn_stf;
+-- drop table if exists stn_stf;
 create table stn_stf (
   id bigint(20) unsigned not null,
   callee json not null,
@@ -25,7 +25,7 @@ create table stn_stf (
   key idx_ss_tat_st_isd (timeout_at, st, is_dead) using btree
 );
 
---drop table if exists stn_stf_delay;
+-- drop table if exists stn_stf_delay;
 create table stn_stf_delay (
   id bigint(20) unsigned not null,
   callee json not null,
@@ -46,7 +46,7 @@ create table stn_stf_delay (
 -- ----------------------------
 -- Table structure for the purpose do some mock
 -- ----------------------------
---drop table if exists stn_stf_sample_mock;
+-- drop table if exists stn_stf_sample_mock;
 create table stn_stf_sample_mock (
   id varchar(255) not null,
   value bigint(20) not null,
@@ -56,7 +56,7 @@ create table stn_stf_sample_mock (
 -- ----------------------------
 -- Table structure for account
 -- ----------------------------
---drop table if exists stn_stf_sample_acct;
+-- drop table if exists stn_stf_sample_acct;
 create table stn_stf_sample_acct (
   no bigint(20) unsigned not null,
   amt decimal(19,2) not null,
@@ -70,7 +70,7 @@ create table stn_stf_sample_acct (
 -- ----------------------------
 -- Table structure for request
 -- ----------------------------
---drop table if exists stn_stf_sample_req;
+-- drop table if exists stn_stf_sample_req;
 create table stn_stf_sample_req (
   id varchar(255) not null,
   body json default null,
@@ -81,7 +81,7 @@ create table stn_stf_sample_req (
 -- ----------------------------
 -- Table structure for transaction
 -- ----------------------------
---drop table if exists stn_stf_sample_tx;
+-- drop table if exists stn_stf_sample_tx;
 create table stn_stf_sample_tx (
   id bigint(20) unsigned not null,
   req_id varchar(255) not null,
@@ -96,7 +96,7 @@ create table stn_stf_sample_tx (
 -- ----------------------------
 -- Table structure for account operation
 -- ----------------------------
---drop table if exists stn_stf_sample_acct_op;
+-- drop table if exists stn_stf_sample_acct_op;
 create table stn_stf_sample_acct_op (
   id bigint(20) unsigned not null,
   acct_no bigint(20) unsigned not null,
