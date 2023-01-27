@@ -37,11 +37,6 @@ class JobBatchLockAndRunActor extends BaseActor<StfReceivedEvent> {
   private final String jobGrp;
   private final int handleBatchSize;
 
-  public static void main(String[] args) {
-    System.out.println(2 % 20);
-    System.out.println(2 / 20);
-  }
-
   @Override
   protected void onMsgs(List<StfReceivedEvent> msgs) throws InterruptedException {
     int msgSize;

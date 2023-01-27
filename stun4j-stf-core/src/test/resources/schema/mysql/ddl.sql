@@ -16,7 +16,7 @@ create table stn_stf (
   ct_at bigint(20) unsigned not null,
   up_at bigint(20) unsigned not null,
   primary key(id),
-  key idx_timeout_at (timeout_at) using btree
+  key idx_ss_tat_st_isd (timeout_at, st, is_dead) using btree
 );
 
 create table stn_stf_delay (
@@ -30,5 +30,5 @@ create table stn_stf_delay (
   ct_at bigint(20) unsigned not null,
   up_at bigint(20) unsigned not null,
   primary key(id),
-  key idx_timeout_at (timeout_at) using btree
+  key idx_ssd_tat_st_isd (timeout_at, st, is_dead) using btree
 );

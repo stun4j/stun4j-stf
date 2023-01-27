@@ -22,7 +22,7 @@ create table stn_stf (
   ct_at bigint(20) unsigned not null,
   up_at bigint(20) unsigned not null,
   primary key(id),
-  key idx_timeout_at (timeout_at) using btree
+  key idx_ss_tat_st_isd (timeout_at, st, is_dead) using btree
 );
 
 --drop table if exists stn_stf_delay;
@@ -37,7 +37,7 @@ create table stn_stf_delay (
   ct_at bigint(20) unsigned not null,
   up_at bigint(20) unsigned not null,
   primary key(id),
-  key idx_timeout_at (timeout_at) using btree
+  key idx_ssd_tat_st_isd (timeout_at, st, is_dead) using btree
 );
 
 -- -----------------------------------------------
@@ -90,7 +90,7 @@ create table stn_stf_sample_tx (
   ct_at datetime not null,
   up_at datetime not null,
   primary key (id),
-  unique key uk_req_id (req_id)
+  unique key uk_ssstx_rid (req_id)
 );
 
 -- ----------------------------
@@ -105,5 +105,5 @@ create table stn_stf_sample_acct_op (
   tx_id bigint(20) unsigned not null,
   ct_at datetime not null,
   primary key (id),
-  unique key uk_tx_id_acct_no (tx_id, acct_no)
+  unique key uk_sssaop_txid_ano (tx_id, acct_no)
 );

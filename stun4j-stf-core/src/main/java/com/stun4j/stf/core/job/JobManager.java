@@ -16,6 +16,7 @@
 package com.stun4j.stf.core.job;
 
 import static com.stun4j.stf.core.StfHelper.determinJobMetaGroup;
+import static com.stun4j.stf.core.StfHelper.partialUpdateJobInfoWhenLocked;
 import static com.stun4j.stf.core.StfRunModeEnum.DEFAULT;
 import static com.stun4j.stf.core.job.JobConsts.ALL_JOB_GROUPS;
 import static com.stun4j.stf.core.support.executor.StfInternalExecutors.newWatcherOfJobManager;
@@ -234,7 +235,7 @@ public class JobManager extends BaseLifecycle {
                 }
 
                 // TODO mj: strategization,2 strategies: simple,adaptive batch
-                if (true) {
+                if (false) {
                   try {
                     Stf job = loader.getJobFromQueue(jobGrp, true);
                     if (job == null) {// Shouldn't happen TODO mj:tiny sleep
@@ -255,37 +256,36 @@ public class JobManager extends BaseLifecycle {
                   }
                   continue;
                 }
-                // Stf job = null;
-                // try {
-                // job = loader.getJobFromQueue(jobGrp, true);
-                // if (job == null) {// Shouldn't happen TODO mj:tiny sleep
-                // LOG.error("Unexpected null job found [jobGrp={}]", jobGrp);
-                // continue;
-                // }
-                // if (LOG.isDebugEnabled()) {
-                // LOG.debug("Got job#{} from queue", job.getId());
-                // }
-                //
-                // Pair<Boolean, Integer> pair;
-                // if (!(pair = runner.checkWhetherTheJobCanRun(jobGrp, job, stfCore))
-                // .getKey()) {/*-A double check here,meanwhile,pick up the dynamic timeout because we are using a
-                // custom gradient retry mechanism*/
-                // continue;
-                // }
-                //
-                // long lockedAt;
-                // int dynaTimeoutSecs;
-                // if ((lockedAt = lockJob(jobGrp, job.getId(), dynaTimeoutSecs = pair.getValue(), job.getRetryTimes(),
-                // job.getTimeoutAt())) <= 0) {
-                // continue;
-                // }
-                // partialUpdateJobInfoWhenLocked(job, lockedAt, dynaTimeoutSecs);
-                //
-                // runners.execute(jobGrp, job);
-                // } catch (Throwable e) {
-                // Exceptions.swallow(e, LOG, "An error occurred while handling the job#{}",
-                // job != null ? job.getId() : "null");
-                // }
+                Stf job = null;
+                try {
+                  job = loader.getJobFromQueue(jobGrp, true);
+                  if (job == null) {// Shouldn't happen TODO mj:tiny sleep
+                    LOG.error("Unexpected null job found [jobGrp={}]", jobGrp);
+                    continue;
+                  }
+                  if (LOG.isDebugEnabled()) {
+                    LOG.debug("Got job#{} from queue", job.getId());
+                  }
+
+                  Pair<Boolean, Integer> pair;
+                  if (!(pair = runner.checkWhetherTheJobCanRun(jobGrp, job, stfCore)).getKey()) {/*-A double check here,meanwhile,pick up the dynamic timeout because we are using a
+                 custom gradient retry mechanism*/
+                    continue;
+                  }
+
+                  long lockedAt;
+                  int dynaTimeoutSecs;
+                  if ((lockedAt = lockJob(jobGrp, job.getId(), dynaTimeoutSecs = pair.getValue(), job.getRetryTimes(),
+                      job.getTimeoutAt())) <= 0) {
+                    continue;
+                  }
+                  partialUpdateJobInfoWhenLocked(job, lockedAt, dynaTimeoutSecs);
+
+                  runners.execute(jobGrp, job);
+                } catch (Throwable e) {
+                  Exceptions.swallow(e, LOG, "An error occurred while handling the job#{}",
+                      job != null ? job.getId() : "null");
+                }
               }
               LOG.info("The {} seems going through a shutdown", Thread.currentThread().getName());
               batcher.shutdown();

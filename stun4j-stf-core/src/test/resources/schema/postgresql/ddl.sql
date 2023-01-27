@@ -17,7 +17,7 @@ create table stn_stf (
   up_at bigint not null,
   primary key(id)
 );
-create index idx_stn_stf_timeout_at on stn_stf using btree (timeout_at);
+create index idx_ss_tat_st_isd on stn_stf using btree (timeout_at, st, is_dead);
   
 create table stn_stf_delay (
   id bigint not null,
@@ -31,4 +31,4 @@ create table stn_stf_delay (
   up_at bigint not null,
   primary key(id)
 );
-create index idx_stn_stf_delay_timeout_at on stn_stf_delay using btree (timeout_at);
+create index idx_ssd_tat_st_isd on stn_stf_delay using btree (timeout_at, st, is_dead);

@@ -15,9 +15,9 @@ create table stn_stf (
   timeout_at number(20, 0) not null,
   ct_at number(20, 0) not null,
   up_at number(20, 0) not null,
-  constraint pk_stn_stf primary key(id)
+  primary key(id)
 );
-create index idx_stn_stf_timeout_at on stn_stf(timeout_at);
+create index idx_ss_tat_st_isd on stn_stf(timeout_at, st, is_dead);
   
 create table stn_stf_delay (
   id number(20, 0) not null,
@@ -31,4 +31,4 @@ create table stn_stf_delay (
   up_at number(20, 0) not null,
   primary key(id)
 );
-create index idx_stn_stf_delay_timeout_at on stn_stf_delay(timeout_at);
+create index idx_ssd_tat_st_isd on stn_stf_delay(timeout_at, st, is_dead);

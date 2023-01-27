@@ -23,7 +23,7 @@ create table stn_stf (
   up_at bigint not null,
   primary key(id)
 );
-create index idx_stn_stf_timeout_at on stn_stf using btree (timeout_at);
+create index idx_ss_tat_st_isd on stn_stf using btree (timeout_at, st, is_dead);
 
 --drop table if exists stn_stf_delay;
 create table stn_stf_delay (
@@ -38,7 +38,7 @@ create table stn_stf_delay (
   up_at bigint not null,
   primary key(id)
 );
-create index idx_stn_stf_delay_timeout_at on stn_stf_delay using btree (timeout_at);
+create index idx_ssd_tat_st_isd on stn_stf_delay using btree (timeout_at, st, is_dead);
 
 -- -----------------------------------------------
 -- Table structure for a Simplified Business Scenario(Transfer transaction)
@@ -90,7 +90,7 @@ create table stn_stf_sample_tx (
   ct_at timestamp not null,
   up_at timestamp not null,
   primary key (id),
-  constraint uk_req_id unique (req_id)
+  constraint uk_ssstx_rid unique (req_id)
 );
 
 -- ----------------------------
@@ -105,5 +105,5 @@ create table stn_stf_sample_acct_op (
   tx_id bigint not null,
   ct_at timestamp not null,
   primary key (id),
-  constraint uk_tx_id_acct_no unique (tx_id, acct_no)
+  constraint uk_sssaop_txid_ano unique (tx_id, acct_no)
 );

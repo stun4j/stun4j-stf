@@ -23,7 +23,7 @@ create table stn_stf (
   up_at number(20, 0) not null,
   primary key(id)
 );
-create index idx_stn_stf_timeout_at on stn_stf(timeout_at);
+create index idx_ss_tat_st_isd on stn_stf(timeout_at, st, is_dead);
 
 --drop table stn_stf_delay;
 create table stn_stf_delay (
@@ -38,7 +38,7 @@ create table stn_stf_delay (
   up_at number(20, 0) not null,
   primary key(id)
 );
-create index idx_stn_stf_delay_timeout_at on stn_stf_delay(timeout_at);
+create index idx_ssd_tat_st_isd on stn_stf_delay(timeout_at, st, is_dead);
 
 -- -----------------------------------------------
 -- Table structure for a Simplified Business Scenario(Transfer transaction)
@@ -91,7 +91,7 @@ create table stn_stf_sample_tx (
   up_at date not null,
   primary key (id)
 );
-create unique index uk_stfsp_tx_req_id on stn_stf_sample_tx(req_id);
+create unique index uk_ssstx_rid on stn_stf_sample_tx(req_id);
 
 -- ----------------------------
 -- Table structure for account operation
@@ -106,4 +106,4 @@ create table stn_stf_sample_acct_op (
   ct_at date not null,
   primary key (id)
 );
-create unique index uk_stfsp_acct_op_tx_id_acct_no on stn_stf_sample_acct_op(tx_id, acct_no);
+create unique index uk_sssaop_txid_ano on stn_stf_sample_acct_op(tx_id, acct_no);
