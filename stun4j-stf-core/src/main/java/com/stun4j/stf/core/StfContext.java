@@ -15,6 +15,7 @@
  */
 package com.stun4j.stf.core;
 
+import static com.stun4j.stf.core.StfThinContext.directCommitLastDone;
 import static com.stun4j.stf.core.utils.Asserts.requireNonNull;
 import static com.stun4j.stf.core.utils.Asserts.state;
 import static org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive;
@@ -53,7 +54,7 @@ public final class StfContext {
     state(!isActualTransactionActive(), "Can't be called in an active transaction");
     Long laStfId = safeGetLaStfIdValue();
     try {
-      _core.markDone(StfMetaGroupEnum.CORE, laStfId, true);
+      directCommitLastDone(laStfId);
     } finally {
       removeTTL();
     }
@@ -83,7 +84,7 @@ public final class StfContext {
 
   static void commitLastDone(Long laStfId, boolean async) {// TODO mj:Count as build-in idempotent mechanism?
     markLastCommitted();
-    _core.markDone(StfMetaGroupEnum.CORE, laStfId, async);
+    directCommitLastDone(laStfId, async);
   }
 
   static void commitLastDead(Long laStfId) {
@@ -185,8 +186,9 @@ public final class StfContext {
 
   /** Must be called in the very beginning */
   public static void init(StfCore stfCore, StfRegistry bizReg) {
-    StfContext._core = requireNonNull(stfCore, "The stf-core can't be null");
+    StfContext._core = StfThinContext._core = requireNonNull(stfCore, "The stf-core can't be null");
     StfContext._bizReg = requireNonNull(bizReg, "The stf-biz-reg can't be null");
+
   }
 
   public static StfDelayQueueCore delayQueueCore() {

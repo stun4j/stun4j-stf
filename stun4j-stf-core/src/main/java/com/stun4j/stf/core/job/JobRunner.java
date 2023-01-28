@@ -61,28 +61,6 @@ class JobRunner {
     }
     int lastRetryTimes = lockingJob.getRetryTimes();
     int curRetryTimes = lastRetryTimes + 1;
-    // if (false) {//TODO mj:dbl check and the re-implementation
-    // Calculate trigger time,if the time does not arrive, no execution is performed
-    // Integer lastNextTimeoutSecs = retryBehav.get(curRetryTimes);
-    // long lastLockedAt;
-    // if (lastNextTimeoutSecs == null || (lastLockedAt = job.getUpAt()) <= 0) {
-    // LOG.error("Wrong stf-job#{}, retrying was cancelled [curRetryTimes={}] |error: '{}'", jobId, curRetryTimes,
-    // "No 'lastNextTimeoutSecs' or missing job last update-time(locked-time)");
-    // return Pair.of(false, null);
-    // }
-    // Date curTriggerTime = DateUtils.addSeconds(new Date(lastLockedAt), lastNextTimeoutSecs);
-    // Date now = new Date();
-    // if (now.compareTo(curTriggerTime) < 0) {
-    // if (LOG.isDebugEnabled()) {
-    // LOG.debug(
-    // "Retring stf-job#{} cancelled, the trigger time does not arrive [curTime={}, expectedRetryTimes={},
-    // expectedTriggerTime={}]",
-    // jobId, now, curRetryTimes, curTriggerTime);
-    // }
-    // return Pair.of(false, null);
-    // }
-    // Integer nextTimeoutSecs = Optional.ofNullable(retryBehav.get(curRetryTimes + 1)).orElse(lastNextTimeoutSecs);
-    // }
     Integer lastTimeoutSecs = Optional.ofNullable(retryBehav.get(lastRetryTimes)).orElse(minTimeoutSecs);
     Integer curTimeoutSecs = Optional.ofNullable(retryBehav.get(curRetryTimes)).orElse(lastTimeoutSecs);
     return Pair.of(true, curTimeoutSecs < minTimeoutSecs ? minTimeoutSecs : curTimeoutSecs);
@@ -90,10 +68,6 @@ class JobRunner {
 
   static void doHandleTimeoutJob(StfMetaGroupEnum metaGrp, Stf lockedJob, StfCore stfCore) {
     Map<Integer, Integer> retryBehav = _instance.determineJobRetryBehavior(lockedJob.getTimeoutSecs());
-    Pair<Boolean, Integer> canRun = doCheckAndMarkJobDeadIfNecessary(metaGrp, lockedJob, stfCore, retryBehav);
-    if (!canRun.getKey()) {
-      return;
-    }
 
     logTriggerInformation(metaGrp, lockedJob, retryBehav);
 

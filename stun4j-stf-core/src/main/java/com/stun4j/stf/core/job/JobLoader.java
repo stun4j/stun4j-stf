@@ -34,7 +34,7 @@ public class JobLoader extends BaseJobLoader {
   @Override
   protected Stream<Stf> loadJobs(String jobGrp, int loadSize) {
     int pageNo = StfClusterMembers.determineBlockToTakeOver();
-    switch (jobGrp) {
+    switch (jobGrp) {//TODO mj:Downgrade solution to reduce io
       case JOB_GROUP_TIMEOUT_WAITING_RUN:
         return scanner.scanTimeoutCoreJobsWaitingRun(loadSize, pageNo);
       case JOB_GROUP_TIMEOUT_IN_PROGRESS:

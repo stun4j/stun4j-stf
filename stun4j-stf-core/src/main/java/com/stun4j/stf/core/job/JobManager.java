@@ -73,7 +73,7 @@ public class JobManager extends BaseLifecycle {
   private final JobMarkActor marker;
   private JobDelayMarkActor delayMarker;
 
-  private final Map<String, Thread> watchers;
+  private Map<String, Thread> watchers;
   private final boolean delayQueueEnabled;
 
   private HeartbeatHandler heartbeatHandler;
@@ -189,6 +189,10 @@ public class JobManager extends BaseLifecycle {
     StfEventBus.registerHandler(this.marker = new JobMarkActor(stfCore, 16384));// TODO mj:to be configured
     if (delayQueueEnabled) {
       StfEventBus.registerHandler(this.delayMarker = new JobDelayMarkActor(stfCore, 16384));
+    }
+
+    if (runMode != DEFAULT) {
+      return;
     }
 
     this.watchers = Stream.of(ArrayUtils.add(ALL_JOB_GROUPS, Heartbeat.class.getSimpleName()))
