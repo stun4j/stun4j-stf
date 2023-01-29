@@ -72,7 +72,6 @@ import com.stun4j.stf.core.StfTxnOps;
 import com.stun4j.stf.core.build.StfConfig;
 import com.stun4j.stf.core.build.StfConfigs;
 import com.stun4j.stf.core.cluster.HeartbeatHandlerJdbc;
-import com.stun4j.stf.core.job.JobConsts;
 import com.stun4j.stf.core.job.JobLoader;
 import com.stun4j.stf.core.job.JobManager;
 import com.stun4j.stf.core.job.JobRunners;
@@ -146,11 +145,7 @@ public class StfAutoConfigure implements BeanClassLoaderAware, ApplicationContex
     StfJdbcOps jdbcOps = new StfDefaultSpringJdbcOps(dataSource);
     StfCore stfCore = new StfCoreJdbc(jdbcOps).withRunMode(props.getRunMode());
 
-    boolean delayQueueEnabled;
-    if (!(delayQueueEnabled = props.getDelayQueue().isEnabled())) {
-      JobConsts.ALL_JOB_GROUPS = new String[]{JobConsts.JOB_GROUP_TIMEOUT_WAITING_RUN,
-          JobConsts.JOB_GROUP_TIMEOUT_IN_PROGRESS};
-    }
+    boolean delayQueueEnabled = props.getDelayQueue().isEnabled();
     ((StfDelayQueueCore)stfCore).withDelayQueueEnabled(delayQueueEnabled);
 
     StfContext.init(stfCore, bizReg);

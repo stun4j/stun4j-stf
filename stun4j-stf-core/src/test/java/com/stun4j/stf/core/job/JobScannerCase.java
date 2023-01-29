@@ -49,45 +49,30 @@ public abstract class JobScannerCase extends BaseContainerCase<JobScanner> {
 
   @Test
   public void _01_basicConnectivity_optRtnFields() {
-    _01_06_template(true);
+    JobScanner biz = bizBean();
+    StfCore stfc = newStfCore(biz);
+    stfc.newStf("foo", "bar", 1);// given a shortest timeout
+    Utils.sleepSeconds(1);
+    try (Stream<Stf> stfs = biz.scanTimeoutCoreJobs(1)) {
+      assert stfs.count() == 1 : "should find 1 timeout job";
+    }
+
+    // Only sql programmar is tested
+    try (Stream<Stf> stfs = biz.scanTimeoutDelayJobs(1)) {
+    }
   }
 
   @Test
   public void _02_timeout_scanTimeoutJobsWaitingRun() {
-    _02_03_07_08_template(StateEnum.I, true);
+    _02_template(StateEnum.I);
   }
 
-  @SuppressWarnings("unchecked")
-  private void _01_06_template(boolean isNormal) {
-    JobScanner biz = bizBean();
-    StfCore stf = newStfCore(biz);
-
-    long theVeryBegining = System.currentTimeMillis();
-    if (isNormal) {
-      stf.newStf("foo", "bar", 1);// given a shortest timeout
-    }
-    Utils.sleepSeconds(1);
-    if (isNormal) {
-      try (Stream<Stf> stfs = biz.scanTimeoutCoreJobsWaitingRun(1)) {
-        assert stfs.count() == 1 : "should find 1 timeout job";
-      }
-    }
-
-    // Only sql programmar is tested
-    if (isNormal) {
-      try (Stream<Stf> stfs = biz.scanTimeoutCoreJobsInProgress(1)) {
-      }
-    }
-  }
-
-  private void _02_03_07_08_template(StateEnum jobType, boolean isNormal) {
+  private void _02_template(StateEnum st) {
     JobScanner biz = bizBean();
     StfCore stf = newStfCore(biz);
     // Initialize two pieces of data, both in initial state 'I'
-    if (isNormal) {
-      stf.newStf("foo", "bar");
-      stf.newStf("foo2", "bar2");
-    }
+    stf.newStf("foo", "bar");
+    stf.newStf("foo2", "bar2");
     // Change the state of 1 data item to 'P'
     Long stfId = StfContext.safeGetLaStfIdValue();
     // This changes the initial state of Stf: I->P, and the following process is the same!
@@ -100,27 +85,17 @@ public abstract class JobScannerCase extends BaseContainerCase<JobScanner> {
     JdbcTemplate jdbc = null;
     if (biz instanceof JdbcAware) {
       jdbc = extractNativeJdbcOps((JdbcAware)biz);
-      if (isNormal) {
-        obj = jdbc.queryForMap("select * from " + tblName + " where st=? limit 1", jobType.name());
-      }
+      obj = jdbc.queryForMap("select * from " + tblName + " where st=? limit 1", st.name());
     }
     // do the real test
     long now = System.currentTimeMillis();
     jdbc.update("update " + tblName + " set timeout_at = ?", now);
     Stream<Stf> stfs = null;
     try {
-      if (StateEnum.I == jobType) {
-        if (isNormal) {
-          stfs = biz.scanTimeoutCoreJobsWaitingRun(1);
-        }
-      } else {
-        if (isNormal) {
-          stfs = biz.scanTimeoutCoreJobsInProgress(1);
-        }
-      }
-      Stf[] stfArray = stfs.toArray(Stf[]::new);
-      assert stfArray.length == 1
-          && jobType.name().equals(stfArray[0].getSt()) : "should find 1 timeout job when timeout just happened";
+      stfs = biz.scanTimeoutCoreJobs(1);
+      Stf[] stfArr = stfs.toArray(Stf[]::new);
+      assert stfArr.length == 1
+          && st.name().equals(stfArr[0].getSt()) : "should find 1 timeout job when timeout just happened";
     } finally {
       if (stfs != null) {
         stfs.close();
@@ -131,15 +106,7 @@ public abstract class JobScannerCase extends BaseContainerCase<JobScanner> {
     jdbc.update("update " + tblName + " set timeout_at = ?", now + 500);// +1000?
     Stream<Stf> stfs2 = null;
     try {
-      if (StateEnum.I == jobType) {
-        if (isNormal) {
-          stfs2 = biz.scanTimeoutCoreJobsWaitingRun(1);
-        }
-      } else {
-        if (isNormal) {
-          stfs2 = biz.scanTimeoutCoreJobsInProgress(1);
-        }
-      }
+      stfs2 = biz.scanTimeoutCoreJobs(1);
       assert stfs2.count() == 0 : "should find 0 timeout job when timeout just not happened";
     } finally {
       if (stfs2 != null) {

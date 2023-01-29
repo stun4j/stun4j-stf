@@ -50,15 +50,15 @@ public abstract class BaseContainerCase<BEAN_TYPE> {
 
   public static final StfJdbcRowMapper<Stf> STF_ROW_MAPPER = (rs, arg) -> {
     Stf stf = new Stf();
-    stf.setId(rs.getLong(ID.lowerCaseName()));
-    stf.setBody(rs.getString(CALLEE.lowerCaseName()));
-    stf.setSt(rs.getString(ST.lowerCaseName()));
-    stf.setIsDead(rs.getString(IS_DEAD.lowerCaseName()));
-    stf.setRetryTimes(rs.getInt(RETRY_TIMES.lowerCaseName()));
-    stf.setTimeoutSecs(rs.getInt(TIMEOUT_SECS.lowerCaseName()));
-    stf.setTimeoutAt(rs.getLong(TIMEOUT_AT.lowerCaseName()));
-    stf.setCtAt(rs.getLong(CT_AT.lowerCaseName()));
-    stf.setUpAt(rs.getLong(UP_AT.lowerCaseName()));
+    stf.setId(rs.getLong(ID.nameLowerCase()));
+    stf.setBody(rs.getString(CALLEE.nameLowerCase()));
+    stf.setSt(rs.getString(ST.nameLowerCase()));
+    stf.setIsDead(rs.getString(IS_DEAD.nameLowerCase()));
+    stf.setRetryTimes(rs.getInt(RETRY_TIMES.nameLowerCase()));
+    stf.setTimeoutSecs(rs.getInt(TIMEOUT_SECS.nameLowerCase()));
+    stf.setTimeoutAt(rs.getLong(TIMEOUT_AT.nameLowerCase()));
+    stf.setCtAt(rs.getLong(CT_AT.nameLowerCase()));
+    stf.setUpAt(rs.getLong(UP_AT.nameLowerCase()));
     return stf;
   };
 

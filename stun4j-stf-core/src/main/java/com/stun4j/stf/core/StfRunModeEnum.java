@@ -25,5 +25,9 @@ public enum StfRunModeEnum {
    * Stf functionality is limited, typically, only write operations is supported, but does not participate in job
    * detection, execution, etc.
    */
-  CLIENT
+  CLIENT;
+
+  public String nameLowerCase() {
+    return this.name().toLowerCase();
+  }
 }

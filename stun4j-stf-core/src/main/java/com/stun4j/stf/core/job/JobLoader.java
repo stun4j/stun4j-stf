@@ -15,14 +15,10 @@
  */
 package com.stun4j.stf.core.job;
 
-import static com.stun4j.stf.core.job.JobConsts.JOB_GROUP_TIMEOUT_WAITING_RUN;
-import static com.stun4j.stf.core.job.JobConsts.JOB_GROUP_TIMEOUT_IN_PROGRESS;
-import static com.stun4j.stf.core.job.JobConsts.JOB_GROUP_TIMEOUT_DELAY_WAITING_RUN;
-import static com.stun4j.stf.core.job.JobConsts.JOB_GROUP_TIMEOUT_DELAY_IN_PROGRESS;
-
 import java.util.stream.Stream;
 
 import com.stun4j.stf.core.Stf;
+import com.stun4j.stf.core.StfMetaGroupEnum;
 import com.stun4j.stf.core.cluster.StfClusterMembers;
 
 /**
@@ -32,17 +28,14 @@ public class JobLoader extends BaseJobLoader {
   private final JobScanner scanner;
 
   @Override
-  protected Stream<Stf> loadJobs(String jobGrp, int loadSize) {
+  protected Stream<Stf> loadJobs(StfMetaGroupEnum metaGrp, int loadSize) {
     int pageNo = StfClusterMembers.determineBlockToTakeOver();
-    switch (jobGrp) {//TODO mj:Downgrade solution to reduce io
-      case JOB_GROUP_TIMEOUT_WAITING_RUN:
-        return scanner.scanTimeoutCoreJobsWaitingRun(loadSize, pageNo);
-      case JOB_GROUP_TIMEOUT_IN_PROGRESS:
-        return scanner.scanTimeoutCoreJobsInProgress(loadSize, pageNo);
-      case JOB_GROUP_TIMEOUT_DELAY_WAITING_RUN:
-        return scanner.scanTimeoutDelayJobsWaitingRun(loadSize, pageNo);
-      case JOB_GROUP_TIMEOUT_DELAY_IN_PROGRESS:
-        return scanner.scanTimeoutDelayJobsInProgress(loadSize, pageNo);
+    // TODO mj:Downgrade solution,consider the underlying FJP: StfInternalExecutors#newWorkerOfJobLoading
+    switch (metaGrp) {
+      case CORE:
+        return scanner.scanTimeoutCoreJobs(loadSize, pageNo);
+      case DELAY:
+        return scanner.scanTimeoutDelayJobs(loadSize, pageNo);
       default:
         return Stream.empty();
     }

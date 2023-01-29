@@ -18,7 +18,6 @@ package com.stun4j.stf.core.job;
 import static com.stun4j.stf.core.StfHelper.determinJobMetaGroup;
 import static com.stun4j.stf.core.StfHelper.partialUpdateJobInfoWhenLocked;
 import static com.stun4j.stf.core.StfRunModeEnum.DEFAULT;
-import static com.stun4j.stf.core.job.JobConsts.ALL_JOB_GROUPS;
 import static com.stun4j.stf.core.support.executor.StfInternalExecutors.newWatcherOfJobManager;
 
 import java.util.HashMap;
@@ -101,27 +100,27 @@ public class JobManager extends BaseLifecycle {
         StfMonitor.INSTANCE.doStart();
       }
 
-      watchers.forEach((grp, watcher) -> {
-        if (determinJobMetaGroup(grp) == StfMetaGroupEnum.DELAY && !this.delayQueueEnabled) {
+      watchers.forEach((type, watcher) -> {
+        if (determinJobMetaGroup(type) == StfMetaGroupEnum.DELAY && !this.delayQueueEnabled) {
           return;
         }
         watcher.start();
       });
     }
 
-    LOG.info("The stf-job-manager({} mode, dlq {}) is successfully started.", runMode.name().toLowerCase(),
-        this.delayQueueEnabled ? "enabled" : "disabled");
+    LOG.info("The stf-job-manager({} mode, batch {}, dlq {}) is successfully started.", runMode.nameLowerCase(),
+        this.handleBatchSize > 1 ? "enabled" : "disabled", this.delayQueueEnabled ? "enabled" : "disabled");
   }
 
   @Override
   protected void doShutdown() {
     shutdown = true;
     // TODO mj:extract close utility...
-    watchers.forEach((grp, watcher) -> {
+    watchers.forEach((type, watcher) -> {
       try {
         watcher.interrupt();
       } catch (Throwable e) {
-        Exceptions.swallow(e, LOG, "An error occurred while shutting down watcher [grp={}]", grp);
+        Exceptions.swallow(e, LOG, "An error occurred while shutting down watcher [type={}]", type);
       }
     });
 
@@ -139,10 +138,11 @@ public class JobManager extends BaseLifecycle {
     LOG.info("The stf-job-manager is successfully shut down");
   }
 
-  protected long lockJob(String jobGrp, Long jobId, int timeoutSecs, int lastRetryTimes, long lastTimeoutAt) {
+  protected long lockJob(StfMetaGroupEnum metaGrp, Long jobId, int timeoutSecs, int lastRetryTimes,
+      long lastTimeoutAt) {
     long lockedAt;
-    if ((lockedAt = stfCore.lockStf(jobGrp, jobId, timeoutSecs, lastRetryTimes, lastTimeoutAt)) == -1) {
-      LOG.warn("Lock job#{} failed.It may be running [jobGrp={}]", jobId, jobGrp);
+    if ((lockedAt = stfCore.lockStf(metaGrp, jobId, timeoutSecs, lastRetryTimes, lastTimeoutAt)) == -1) {
+      LOG.warn("Lock job#{} failed. It may be running [metaGrp={}]", jobId, metaGrp);
       return lockedAt;
     }
     return lockedAt;
@@ -194,11 +194,10 @@ public class JobManager extends BaseLifecycle {
     if (runMode != DEFAULT) {
       return;
     }
-
-    this.watchers = Stream.of(ArrayUtils.add(ALL_JOB_GROUPS, Heartbeat.class.getSimpleName()))
+    this.watchers = Stream.of(ArrayUtils.add(StfMetaGroupEnum.namesLowerCase(), Heartbeat.typeNameLowerCase()))
         .reduce(new HashMap<String, Thread>(), (map, type) -> {
           Runnable runnable;
-          if (type.equals(Heartbeat.class.getSimpleName())) {
+          if (type.equals(Heartbeat.typeNameLowerCase())) {
             runnable = () -> {
               while (!Thread.currentThread().isInterrupted() && !shutdown) {
                 try {
@@ -211,15 +210,15 @@ public class JobManager extends BaseLifecycle {
               LOG.info("The {} seems going through a shutdown", Thread.currentThread().getName());
             };
           } else {
-            String jobGrp = type;
-            if (determinJobMetaGroup(jobGrp) == StfMetaGroupEnum.DELAY && !delayQueueEnabled) {
+            StfMetaGroupEnum metaGrp = StfMetaGroupEnum.valueOf(type.toUpperCase());
+            if (metaGrp == StfMetaGroupEnum.DELAY && !delayQueueEnabled) {
               return map;
             }
             runnable = () -> {
               int handleBatchSize = this.handleBatchSize;
               JobBatchLockAndRunActor batcher = null;
               if (handleBatchSize > 1) {
-                batcher = new JobBatchLockAndRunActor(stfCore, runners, 16384, jobGrp, handleBatchSize);
+                batcher = new JobBatchLockAndRunActor(stfCore, runners, 16384, metaGrp, handleBatchSize);
                 batcher.start();// TODO mj:Cascade special #start
               }
 
@@ -229,7 +228,7 @@ public class JobManager extends BaseLifecycle {
                   if ((resRpt = StfMonitor.INSTANCE.isVmResourceNotEnough()).getLeft()) {
                     LOG.warn("Handling of stf-jobs is paused due to insufficient resources > Reason: {}",
                         resRpt.getRight());// TODO mj:log inhibition stuff
-                    Utils.sleepSeconds(scanFreqSeconds);// TODO mj:blocking instead
+                    Utils.sleepSeconds(scanFreqSeconds);// TODO mj:spin-blocking instead
                     continue;
                   }
                 }
@@ -237,9 +236,9 @@ public class JobManager extends BaseLifecycle {
                 // TODO mj: strategization,2 strategies: simple,adaptive batch
                 if (batcher != null) {
                   try {
-                    Stf job = loader.getJobFromQueue(jobGrp, true);
+                    Stf job = loader.getJobFromQueue(metaGrp, true);
                     if (job == null) {// Shouldn't happen TODO mj:tiny sleep
-                      LOG.error("Unexpected null job found [jobGrp={}]", jobGrp);
+                      LOG.error("Unexpected null job found [metaGrp={}]", metaGrp);
                       continue;
                     }
                     if (LOG.isDebugEnabled()) {
@@ -247,20 +246,20 @@ public class JobManager extends BaseLifecycle {
                     }
 
                     Pair<Boolean, Integer> pair;
-                    if (!(pair = runner.checkWhetherTheJobCanRun(jobGrp, job, stfCore)).getKey()) {
+                    if (!(pair = runner.checkWhetherTheJobCanRun(metaGrp, job, stfCore)).getKey()) {
                       continue;
                     }
                     batcher.tell(new StfReceivedEvent(job, pair.getValue()));
                   } catch (Throwable e) {
-                    Exceptions.swallow(e, LOG, "An error occurred while handling jobs [jobGrp={}]", jobGrp);
+                    Exceptions.swallow(e, LOG, "An error occurred while handling jobs [metaGrp={}]", metaGrp);
                   }
                   continue;
                 }
                 Stf job = null;
                 try {
-                  job = loader.getJobFromQueue(jobGrp, true);
+                  job = loader.getJobFromQueue(metaGrp, true);
                   if (job == null) {// Shouldn't happen TODO mj:tiny sleep
-                    LOG.error("Unexpected null job found [jobGrp={}]", jobGrp);
+                    LOG.error("Unexpected null job found [metaGrp={}]", metaGrp);
                     continue;
                   }
                   if (LOG.isDebugEnabled()) {
@@ -268,20 +267,20 @@ public class JobManager extends BaseLifecycle {
                   }
 
                   Pair<Boolean, Integer> pair;
-                  if (!(pair = runner.checkWhetherTheJobCanRun(jobGrp, job, stfCore)).getKey()) {/*-A double check here,meanwhile,pick up the dynamic timeout because we are using a
+                  if (!(pair = runner.checkWhetherTheJobCanRun(metaGrp, job, stfCore)).getKey()) {/*-A double check here,meanwhile,pick up the dynamic timeout because we are using a
                  custom gradient retry mechanism*/
                     continue;
                   }
 
                   long lockedAt;
                   int dynaTimeoutSecs;
-                  if ((lockedAt = lockJob(jobGrp, job.getId(), dynaTimeoutSecs = pair.getValue(), job.getRetryTimes(),
+                  if ((lockedAt = lockJob(metaGrp, job.getId(), dynaTimeoutSecs = pair.getValue(), job.getRetryTimes(),
                       job.getTimeoutAt())) <= 0) {
                     continue;
                   }
                   partialUpdateJobInfoWhenLocked(job, lockedAt, dynaTimeoutSecs);
 
-                  runners.execute(jobGrp, job);
+                  runners.execute(metaGrp, job);
                 } catch (Throwable e) {
                   Exceptions.swallow(e, LOG, "An error occurred while handling the job#{}",
                       job != null ? job.getId() : "null");

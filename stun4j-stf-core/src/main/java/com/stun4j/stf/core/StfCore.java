@@ -36,7 +36,7 @@ public interface StfCore extends StfBatchable {
     return newStf(bizObjId, bizMethodName, null, typedArgs);
   }
 
-  long lockStf(String jobGrp, Long stfId, int timeoutSeconds, int lastRetryTimes, long lastTimeoutAt);
+  long lockStf(StfMetaGroupEnum metaGrp, Long stfId, int timeoutSeconds, int lastRetryTimes, long lastTimeoutAt);
 
   void markDone(StfMetaGroupEnum metaGrp, Long stfId, boolean async);
 
@@ -65,7 +65,8 @@ public interface StfCore extends StfBatchable {
       }
 
       @Override
-      public long lockStf(String jobGrp, Long stfId, int timeoutSeconds, int lastRetryTimes, long lastTimeoutAt) {
+      public long lockStf(StfMetaGroupEnum metaGrp, Long stfId, int timeoutSeconds, int lastRetryTimes,
+          long lastTimeoutAt) {
         NOT_INITIALIZED_THROW.accept(MODULE_ID);
         return -1;
       }
@@ -87,7 +88,7 @@ public interface StfCore extends StfBatchable {
       }
 
       @Override
-      public List<Stf> batchLockStfs(String jobGrp, List<Object[]> preBatchArgs) {
+      public List<Stf> batchLockStfs(StfMetaGroupEnum metaGrp, List<Object[]> preBatchArgs) {
         NOT_INITIALIZED_THROW.accept(MODULE_ID);
         return null;
       }

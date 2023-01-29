@@ -36,7 +36,7 @@ public class Job {
    * <p>
    * Default:
    * <ul>
-   * <li>1: 0</li>
+   * <li>1: 20</li>
    * <li>2: 20</li>
    * <li>3: 40</li>
    * <li>4: 60</li>

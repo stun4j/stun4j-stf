@@ -51,7 +51,11 @@ public final class PoolExecutors {
   }
 
   public static ExecutorService defaultWorkStealingPool(String prefix, boolean daemon) {
-    return newWorkStealingPool(Runtime.getRuntime().availableProcessors(), prefix, daemon, null);
+    return defaultWorkStealingPool(Runtime.getRuntime().availableProcessors(), prefix, daemon);
+  }
+
+  public static ExecutorService defaultWorkStealingPool(int parallelism, String prefix, boolean daemon) {
+    return newWorkStealingPool(parallelism, prefix, daemon, null);
   }
 
   public static ExecutorService newDynamicIoPrefer(BlockingQueue<Runnable> queue, ThreadFactory threadFactory,

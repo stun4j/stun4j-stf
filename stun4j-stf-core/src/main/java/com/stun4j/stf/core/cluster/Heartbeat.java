@@ -20,4 +20,8 @@ package com.stun4j.stf.core.cluster;
  */
 public enum Heartbeat {
   SIGNAL;
+
+  public static String typeNameLowerCase() {
+    return Heartbeat.class.getSimpleName().toLowerCase();
+  }
 }

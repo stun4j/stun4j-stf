@@ -34,7 +34,7 @@ class JobDelayMarkActor extends BaseJobBatchMarkActor {
   }
 
   JobDelayMarkActor(StfBatchable stfCore, int baseCapacity) {
-    super("stf-delay-job-mark-actor", baseCapacity, stfCore);
+    super("stf-grp-" + StfMetaGroupEnum.DELAY.nameLowerCase() + "-job-mark-actor", baseCapacity, stfCore);
   }
 
   @Override

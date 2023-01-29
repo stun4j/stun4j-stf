@@ -17,7 +17,6 @@ package com.stun4j.stf.core.job;
 
 import static com.stun4j.stf.core.StfConsts.DFT_JOB_TIMEOUT_SECONDS;
 import static com.stun4j.stf.core.StfConsts.DFT_MIN_JOB_TIMEOUT_SECONDS;
-import static com.stun4j.stf.core.job.JobConsts.ALL_JOB_GROUPS;
 import static com.stun4j.stf.core.support.executor.StfInternalExecutors.newWatcherOfJobLoading;
 import static com.stun4j.stf.core.support.executor.StfInternalExecutors.newWorkerOfJobLoading;
 
@@ -32,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import com.stun4j.stf.core.Stf;
+import com.stun4j.stf.core.StfMetaGroupEnum;
 import com.stun4j.stf.core.cluster.StfClusterMember;
 import com.stun4j.stf.core.support.BaseLifecycle;
 import com.stun4j.stf.core.utils.Exceptions;
@@ -50,10 +50,11 @@ public abstract class BaseJobLoader extends BaseLifecycle {
 
   private static final double DFT_LOAD_FACTOR = 0.2;
 
-  private final ConcurrentHashMap<String, JobQueue> queuesAllGrps;
+  private final ConcurrentHashMap<StfMetaGroupEnum, JobQueue> queuesAllMetaGrps;
 
   private final ScheduledExecutorService watcher;
-  private final Map<String, ExecutorService> workers;
+
+  private final Map<StfMetaGroupEnum, ExecutorService> workers;
 
   private long jobTimeoutMs;
 
@@ -65,7 +66,7 @@ public abstract class BaseJobLoader extends BaseLifecycle {
   @Override
   public void doStart() {
     int scanFreqSeconds;
-    sf = watcher.scheduleWithFixedDelay(() -> {
+    sf = watcher.scheduleWithFixedDelay(() -> {// TODO mj:raw thread instead
       onSchedule();
     }, scanFreqSeconds = this.scanFreqSeconds, scanFreqSeconds, TimeUnit.SECONDS);
 
@@ -84,12 +85,12 @@ public abstract class BaseJobLoader extends BaseLifecycle {
       Exceptions.swallow(e, LOG, "An error occurred while shutting down watcher");
     }
 
-    workers.forEach((grp, worker) -> {
+    workers.forEach((metaGrp, worker) -> {
       try {
         worker.shutdownNow();
-        LOG.debug("Worker is successfully shut down [grp={}]", grp);
+        LOG.debug("Worker is successfully shut down [metaGrp={}]", metaGrp);
       } catch (Throwable e) {
-        Exceptions.swallow(e, LOG, "An error occurred while shutting down worker [grp={}]", grp);
+        Exceptions.swallow(e, LOG, "An error occurred while shutting down worker [metaGrp={}]", metaGrp);
       }
     });
     LOG.debug("The stf-job-loader is successfully shut down");
@@ -97,8 +98,8 @@ public abstract class BaseJobLoader extends BaseLifecycle {
 
   private void onSchedule() {
     StfClusterMember.sendHeartbeat();
-    workers.forEach((jobGrp, worker) -> {
-      worker.execute(() -> doLoadJobsToQueue(jobGrp));
+    workers.forEach((metaGrp, worker) -> {
+      worker.execute(() -> doLoadJobsToQueue(metaGrp));
     });
   }
 
@@ -106,17 +107,17 @@ public abstract class BaseJobLoader extends BaseLifecycle {
    * @return the result Stream, containing stf objects, needing to be closed once fully processed (e.g. through a
    *         try-with-resources clause)
    */
-  protected abstract Stream<Stf> loadJobs(String jobGrp, int loadSize);
+  protected abstract Stream<Stf> loadJobs(StfMetaGroupEnum metaGrp, int loadSize);
 
-  Stf getJobFromQueue(String jobGrp, boolean blocking) throws InterruptedException {
-    JobQueue queue = getOrCreateQueue(jobGrp);
+  Stf getJobFromQueue(StfMetaGroupEnum metaGrp, boolean blocking) throws InterruptedException {
+    JobQueue queue = getOrCreateQueue(metaGrp);
     Stf job = blocking ? queue.take() : queue.poll();
     return job;
   }
 
-  private void doLoadJobsToQueue(String jobGrp) {
+  private void doLoadJobsToQueue(StfMetaGroupEnum metaGrp) {
     try {
-      JobQueue queue = getOrCreateQueue(jobGrp);
+      JobQueue queue = getOrCreateQueue(metaGrp);
       int queueSize = queue.size();
       if (!isAtLowWaterMark(queueSize)) {
         return;
@@ -124,7 +125,7 @@ public abstract class BaseJobLoader extends BaseLifecycle {
       int needLoadSize = loadSize + queueSize;
       int enqueued = 0;
       int rejected = 0;
-      try (Stream<Stf> jobStream = loadJobs(jobGrp, needLoadSize)) {
+      try (Stream<Stf> jobStream = loadJobs(metaGrp, needLoadSize)) {
         for (Iterator<Stf> iter = jobStream.iterator(); iter.hasNext();) {// This way non-blocking must be ensured
           Stf job = iter.next();
           int res;
@@ -140,16 +141,16 @@ public abstract class BaseJobLoader extends BaseLifecycle {
       }
       if (LOG.isDebugEnabled()) {
         LOG.debug(
-            "Loading and try enqueuing stf-jobs [grp={}, enqueued={}, rejected={}, needLoadSize={}, queue-size before/after={}/{}]",
-            jobGrp, enqueued, rejected, needLoadSize, queueSize, queue.size());
+            "Loading and try enqueuing stf-jobs [metaGrp={}, enqueued={}, rejected={}, needLoadSize={}, queue-size before/after={}/{}]",
+            metaGrp, enqueued, rejected, needLoadSize, queueSize, queue.size());
       }
     } catch (Throwable e) {
       Exceptions.swallow(e, LOG, "An error occurred while enqueuing stf-job");
     }
   }
 
-  private JobQueue getOrCreateQueue(String jobGrp) {
-    JobQueue queue = queuesAllGrps.computeIfAbsent(jobGrp, k -> new JobQueue(loadSize));
+  private JobQueue getOrCreateQueue(StfMetaGroupEnum metaGrp) {
+    JobQueue queue = queuesAllMetaGrps.computeIfAbsent(metaGrp, k -> new JobQueue(loadSize));
     return queue;
   }
 
@@ -164,9 +165,9 @@ public abstract class BaseJobLoader extends BaseLifecycle {
     scanFreqSeconds = DFT_SCAN_FREQ_SECONDS;
     loadFactor = DFT_LOAD_FACTOR;
 
-    queuesAllGrps = new ConcurrentHashMap<>();
-    workers = Stream.of(ALL_JOB_GROUPS).reduce(new HashMap<String, ExecutorService>(), (map, grp) -> {
-      map.put(grp, newWorkerOfJobLoading(grp));
+    queuesAllMetaGrps = new ConcurrentHashMap<>();
+    workers = StfMetaGroupEnum.stream().reduce(new HashMap<StfMetaGroupEnum, ExecutorService>(), (map, metaGrp) -> {
+      map.put(metaGrp, newWorkerOfJobLoading(metaGrp));
       return map;
     }, (a, b) -> null);
     watcher = newWatcherOfJobLoading();

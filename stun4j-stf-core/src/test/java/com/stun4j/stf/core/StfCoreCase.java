@@ -13,7 +13,6 @@ import org.testcontainers.containers.GenericContainer;
 import com.stun4j.guid.core.LocalGuid;
 import com.stun4j.guid.core.utils.Strings;
 import com.stun4j.guid.core.utils.Utils;
-import com.stun4j.stf.core.job.JobConsts;
 import com.stun4j.stf.core.job.JobScanner;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -33,14 +32,15 @@ public abstract class StfCoreCase extends BaseContainerCase<StfCore> {
     Long stfId = stfc.newStf("foo", "bar", timeoutSecs);
     Utils.sleepSeconds(timeoutSecs);
 
-    Stream<Stf> stfs = scanner.scanTimeoutCoreJobsWaitingRun(1);
+    Stream<Stf> stfs = scanner.scanTimeoutCoreJobs(1);
     Stf stf = stfs.findFirst().get();
     long timeoutAt = stf.getTimeoutAt();
 
-    String grp = JobConsts.JOB_GROUP_TIMEOUT_WAITING_RUN;
-    long lockedAt = stfc.lockStf(grp, stfId, timeoutSecs, 0, timeoutAt);
+    // String grp = JobConsts.JOB_GROUP_TIMEOUT_WAITING_RUN;
+    StfMetaGroupEnum metaGrp = StfMetaGroupEnum.CORE;
+    long lockedAt = stfc.lockStf(metaGrp, stfId, timeoutSecs, 0, timeoutAt);
     assert lockedAt > 0 : "the timeout job should be locked";
-    lockedAt = stfc.lockStf(grp, stfId, timeoutSecs, 0, timeoutAt);
+    lockedAt = stfc.lockStf(metaGrp, stfId, timeoutSecs, 0, timeoutAt);
     assert lockedAt == -1 : "the job just locked shouldn't be locked again";
   }
 
@@ -53,11 +53,12 @@ public abstract class StfCoreCase extends BaseContainerCase<StfCore> {
     Long stfId = stfc.newStf("foo", "bar", timeoutSecs);
     Utils.sleepSeconds(timeoutSecs);
 
-    Stream<Stf> stfs = scanner.scanTimeoutCoreJobsWaitingRun(1);
+    Stream<Stf> stfs = scanner.scanTimeoutCoreJobs(2).filter(job->job.getId().equals(stfId));
     Stf stf = stfs.findFirst().get();
     long timeoutAt = stf.getTimeoutAt();
 
-    String grp = JobConsts.JOB_GROUP_TIMEOUT_WAITING_RUN;
+    // String grp = JobConsts.JOB_GROUP_TIMEOUT_WAITING_RUN;
+    StfMetaGroupEnum metaGrp = StfMetaGroupEnum.CORE;
     int n = 50;
     AtomicInteger cnt = new AtomicInteger();
     CyclicBarrier gate = new CyclicBarrier(n);
@@ -68,7 +69,7 @@ public abstract class StfCoreCase extends BaseContainerCase<StfCore> {
           gate.await();
           System.out
               .println(Strings.lenientFormat("Thread[%s] trying lock the job...", Thread.currentThread().getName()));
-          long lockedAt = stfc.lockStf(grp, stfId, timeoutSecs, 0, timeoutAt);
+          long lockedAt = stfc.lockStf(metaGrp, stfId, timeoutSecs, 0, timeoutAt);
           if (lockedAt > 0) {
             cnt.incrementAndGet();
           }
@@ -83,7 +84,7 @@ public abstract class StfCoreCase extends BaseContainerCase<StfCore> {
     }
     assert cnt.get() == 1 : "exactly 1 job should be locked";
   }
-  
+
   public static StfCall delegateNewStfCallee(StfCore stfc, String bizObjId, String bizMethodName,
       @SuppressWarnings("unchecked") Pair<?, Class<?>>... typedArgs) {
     StfCall callee = ((BaseStfCore)stfc).newCallee(bizObjId, bizMethodName, typedArgs);

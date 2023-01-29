@@ -15,7 +15,6 @@
  */
 package com.stun4j.stf.core.job;
 
-import static com.stun4j.stf.core.StfHelper.determinJobMetaGroup;
 import static com.stun4j.stf.core.StfHelper.partialUpdateJobInfoWhenLocked;
 
 import java.util.ArrayList;
@@ -34,7 +33,7 @@ import com.stun4j.stf.core.support.event.StfReceivedEvent;
 class JobBatchLockAndRunActor extends BaseActor<StfReceivedEvent> {
   private final StfBatchable core;
   private final JobRunners runners;
-  private final String jobGrp;
+  private final StfMetaGroupEnum metaGrp;
   private final int handleBatchSize;
 
   @Override
@@ -44,20 +43,19 @@ class JobBatchLockAndRunActor extends BaseActor<StfReceivedEvent> {
       StfReceivedEvent eve = msgs.get(0);
       Stf job = eve.getStf();
       int curTimeoutSecs = eve.getCurTimeoutSecs();
-      StfMetaGroupEnum metaGrp = determinJobMetaGroup(jobGrp);
 
       long lockedAt;
       if ((lockedAt = core.fallbackToSingleLockStf(metaGrp, job, curTimeoutSecs)) <= 0) {
         return;
       }
       partialUpdateJobInfoWhenLocked(job, lockedAt, curTimeoutSecs);
-      runners.execute(jobGrp, job);
+      runners.execute(metaGrp, job);
       return;
     }
     int batchSize;
     int loop = msgSize % (batchSize = determineHandleBatchSize()) == 0 ? msgSize / batchSize : msgSize / batchSize + 1;
     if (LOG.isDebugEnabled()) {
-      LOG.debug("[onMsgs] Loop:{} [msgSize={}, batchSize={}, jobGrp={}]", loop, msgSize, batchSize, jobGrp);
+      LOG.debug("[onMsgs] Loop:{} [msgSize={}, batchSize={}, metaGrp={}]", loop, msgSize, batchSize, metaGrp);
     }
     Iterator<StfReceivedEvent> iter = msgs.iterator();
     for (int i = 1; i <= loop; i++) {
@@ -72,9 +70,9 @@ class JobBatchLockAndRunActor extends BaseActor<StfReceivedEvent> {
         Integer curTimeoutSecs = eve.getCurTimeoutSecs();
         batchArgs.add(new Object[]{job, curTimeoutSecs, job.getId(), job.getRetryTimes(), job.getTimeoutAt()});
       }
-      List<Stf> lockedJobs = core.batchLockStfs(jobGrp, batchArgs);
+      List<Stf> lockedJobs = core.batchLockStfs(metaGrp, batchArgs);
       for (Stf lockedJob : lockedJobs) {
-        runners.execute(jobGrp, lockedJob);
+        runners.execute(metaGrp, lockedJob);
       }
     }
   }
@@ -96,11 +94,12 @@ class JobBatchLockAndRunActor extends BaseActor<StfReceivedEvent> {
     return super.getMailBoxMaxDrainNum();
   }
 
-  JobBatchLockAndRunActor(StfBatchable core, JobRunners runners, int baseCapacity, String jobGrp, int handleBatchSize) {
-    super("stf-job-batch-lockrun-actor", baseCapacity);
+  JobBatchLockAndRunActor(StfBatchable core, JobRunners runners, int baseCapacity, StfMetaGroupEnum metaGrp,
+      int handleBatchSize) {
+    super("stf-grp-" + metaGrp.nameLowerCase() + "-job-batch-lockrun-actor", baseCapacity);
     this.core = core;
     this.runners = runners;
-    this.jobGrp = jobGrp;
+    this.metaGrp = metaGrp;
     this.handleBatchSize = handleBatchSize;
   }
 

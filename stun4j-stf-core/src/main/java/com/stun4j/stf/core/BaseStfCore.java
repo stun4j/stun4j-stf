@@ -15,7 +15,6 @@
  */
 package com.stun4j.stf.core;
 
-import static com.stun4j.stf.core.StfHelper.H;
 import static com.stun4j.stf.core.StfHelper.partialUpdateJobInfoWhenLocked;
 import static com.stun4j.stf.core.support.executor.StfInternalExecutors.newWorkerOfStfCore;
 
@@ -66,7 +65,7 @@ abstract class BaseStfCore implements StfCore, StfDelayQueueCore {
   }
 
   @Override
-  public List<Stf> batchLockStfs(String jobGrp, List<Object[]> preBatchArgs) {
+  public List<Stf> batchLockStfs(StfMetaGroupEnum metaGrp, List<Object[]> preBatchArgs) {
     List<Stf> jobs = new ArrayList<>();
     long lockedAt = System.currentTimeMillis();
     List<Object[]> batchArgs = preBatchArgs.stream().map(arg -> {
@@ -80,7 +79,6 @@ abstract class BaseStfCore implements StfCore, StfDelayQueueCore {
       return arg;
     }).collect(Collectors.toList());
     int finalBatchSize = batchArgs.size();
-    StfMetaGroupEnum metaGrp = H.determineMetaGroupBy(jobGrp);
     int[] res = doBatchLockStfs(metaGrp, batchArgs);
     if (LOG.isDebugEnabled()) {
       LOG.debug("The batch-lock image of stfs: {}", res);

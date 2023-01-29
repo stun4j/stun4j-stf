@@ -22,9 +22,8 @@ import static com.stun4j.stf.core.StateEnum.P;
 import static com.stun4j.stf.core.StateEnum.S;
 import static com.stun4j.stf.core.StfConsts.DFT_CORE_TBL_NAME;
 import static com.stun4j.stf.core.StfConsts.DFT_DELAY_TBL_NAME_SUFFIX;
-import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.LOWER_CASE_ALL_FIELDS;
+import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.ALL_FIELD_NAMES_LOWER_CASE;
 import static com.stun4j.stf.core.StfHelper.H;
-import static com.stun4j.stf.core.StfHelper.determinJobMetaGroup;
 import static com.stun4j.stf.core.StfMetaGroupEnum.CORE;
 import static com.stun4j.stf.core.StfMetaGroupEnum.DELAY;
 import static com.stun4j.stf.core.YesNoEnum.N;
@@ -118,11 +117,11 @@ public class StfCoreJdbc extends BaseStfCore implements JdbcAware {
   };
 
   @Override
-  public long lockStf(String jobGrp, Long stfId, int timeoutSeconds, int lastRetryTimes, long lastTimeoutAt) {
+  public long lockStf(StfMetaGroupEnum metaGrp, Long stfId, int timeoutSeconds, int lastRetryTimes,
+      long lastTimeoutAt) {
     if (checkFail(stfId)) {
       return -1;
     }
-    StfMetaGroupEnum metaGrp = determinJobMetaGroup(jobGrp);
     return doLockStf(metaGrp, stfId, timeoutSeconds, lastRetryTimes, lastTimeoutAt);
   }
 
@@ -237,8 +236,8 @@ public class StfCoreJdbc extends BaseStfCore implements JdbcAware {
     String delayTblName = (this.coreTblName = coreTblName) + DFT_DELAY_TBL_NAME_SUFFIX;
 
     String initSqlTpl = "insert into %s (%s) values(?, ?, '%s', '%s', %s, ?, ?, ?, ?)";
-    INIT_SQL = lenientFormat(initSqlTpl, coreTblName, LOWER_CASE_ALL_FIELDS, I.name(), N.name(), 0);
-    INIT_DELAY_SQL = lenientFormat(initSqlTpl, delayTblName, LOWER_CASE_ALL_FIELDS, I.name(), N.name(), 0);
+    INIT_SQL = lenientFormat(initSqlTpl, coreTblName, ALL_FIELD_NAMES_LOWER_CASE, I.name(), N.name(), 0);
+    INIT_DELAY_SQL = lenientFormat(initSqlTpl, delayTblName, ALL_FIELD_NAMES_LOWER_CASE, I.name(), N.name(), 0);
 
     String lockSqlTpl = "update %s set st = '%s', retry_times = retry_times + 1, timeout_at = ?, up_at = ? where id = ? and retry_times = ? and timeout_at = ? and st in ('%s', '%s')";
     LOCK_SQL = lenientFormat(lockSqlTpl, coreTblName, P.name(), I.name(), P.name());
@@ -252,8 +251,9 @@ public class StfCoreJdbc extends BaseStfCore implements JdbcAware {
     MARK_DEAD_SQL = lenientFormat(markDeadSqlTpl, coreTblName, Y.name(), S.name());
     MARK_DEAD_DELAY_SQL = lenientFormat(markDeadSqlTpl, delayTblName, Y.name(), S.name());
 
+    //TODO mj:modificaton on sql for the purpose ds separation
     String delayTransSqlTpl = "insert into %s (%s) select id, callee, '%s', '%s', %s, timeout_secs, ? + timeout_secs * 1000, ?, ? from %s where id = ? and st = '%s'";
-    DELAY_TRANSFER_SQL = lenientFormat(delayTransSqlTpl, coreTblName, LOWER_CASE_ALL_FIELDS, I.name(), N.name(), 0,
+    DELAY_TRANSFER_SQL = lenientFormat(delayTransSqlTpl, coreTblName, ALL_FIELD_NAMES_LOWER_CASE, I.name(), N.name(), 0,
         delayTblName, P.name());
   }
 

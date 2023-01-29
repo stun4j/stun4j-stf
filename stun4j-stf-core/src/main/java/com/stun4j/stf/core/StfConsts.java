@@ -36,13 +36,13 @@ public interface StfConsts {
   static enum StfDbFieldEnum {
     ID, CALLEE, ST, IS_DEAD, RETRY_TIMES, TIMEOUT_SECS, TIMEOUT_AT, CT_AT, UP_AT;
 
-    static final String LOWER_CASE_ALL_FIELDS;
+    static final String ALL_FIELD_NAMES_LOWER_CASE;
     static {
-      String[] lowerCaseEnums = Stream.of(StfDbFieldEnum.values()).map(e -> e.lowerCaseName()).toArray(String[]::new);
-      LOWER_CASE_ALL_FIELDS = StringUtils.join(lowerCaseEnums, ", ");
+      String[] namesLowerCase = Stream.of(StfDbFieldEnum.values()).map(e -> e.nameLowerCase()).toArray(String[]::new);
+      ALL_FIELD_NAMES_LOWER_CASE = StringUtils.join(namesLowerCase, ", ");
     }
 
-    public String lowerCaseName() {
+    public String nameLowerCase() {
       return this.name().toLowerCase();
     }
   }

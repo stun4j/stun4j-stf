@@ -16,9 +16,6 @@
 package com.stun4j.stf.core;
 
 import static com.google.common.base.Strings.lenientFormat;
-import static com.stun4j.stf.core.StfMetaGroupEnum.CORE;
-import static com.stun4j.stf.core.StfMetaGroupEnum.DELAY;
-import static com.stun4j.stf.core.job.JobConsts.KEY_FEATURE_TIMEOUT_DELAY;
 
 import java.lang.reflect.Method;
 import java.sql.SQLIntegrityConstraintViolationException;
@@ -26,6 +23,7 @@ import java.util.function.Consumer;
 
 import javax.sql.DataSource;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.reflect.MethodUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
@@ -96,13 +94,6 @@ public class StfHelper {
     logger.debug("[{}] The dataSource has been closed and the operation{}is cancelled.", title, msgTpl);
   }
 
-  public StfMetaGroupEnum determineMetaGroupBy(String jobGroup) {
-    if (jobGroup.indexOf(KEY_FEATURE_TIMEOUT_DELAY) == -1) {
-      return CORE;
-    }
-    return DELAY;
-  }
-
   public static void partialUpdateJobInfoWhenLocked(Stf job, long lockedAt, int dynaTimeoutSecs) {
     job.setUpAt(lockedAt);// use 'update-time' as 'locked-time'
     job.setTimeoutSecs(dynaTimeoutSecs);// update to job-op's current timeout-seconds
@@ -111,9 +102,15 @@ public class StfHelper {
     job.setRetryTimes(lastRetryTimes + 1);// update to current retry-times
   }
 
-  public static StfMetaGroupEnum determinJobMetaGroup(String jobGrp) {
-    StfMetaGroupEnum metaGrp = jobGrp.indexOf(KEY_FEATURE_TIMEOUT_DELAY) == -1 ? CORE : DELAY;
-    return metaGrp;
+  public static StfMetaGroupEnum determinJobMetaGroup(String type) {
+    int idx;
+    if ((idx = ArrayUtils.indexOf(StfMetaGroupEnum.namesLowerCase(), type)) == StfMetaGroupEnum.CORE.ordinal()) {
+      return StfMetaGroupEnum.CORE;
+    }
+    if (idx == StfMetaGroupEnum.DELAY.ordinal()) {
+      return StfMetaGroupEnum.DELAY;
+    }
+    return null;
   }
 
   private Method tryGetDataSourceCloser() {

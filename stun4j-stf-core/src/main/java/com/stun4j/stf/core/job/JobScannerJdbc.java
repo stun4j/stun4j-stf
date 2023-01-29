@@ -35,17 +35,16 @@ import static com.stun4j.stf.core.YesNoEnum.N;
 import static com.stun4j.stf.core.utils.DataSourceUtils.DB_VENDOR_MY_SQL;
 import static com.stun4j.stf.core.utils.DataSourceUtils.DB_VENDOR_ORACLE;
 import static com.stun4j.stf.core.utils.DataSourceUtils.DB_VENDOR_POSTGRE_SQL;
+import static org.apache.commons.lang3.ArrayUtils.contains;
 
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.stun4j.stf.core.StateEnum;
 import com.stun4j.stf.core.Stf;
 import com.stun4j.stf.core.StfConsts;
 import com.stun4j.stf.core.StfMetaGroupEnum;
@@ -74,28 +73,16 @@ public class JobScannerJdbc implements JobScanner, JdbcAware {
 
   private int includeHowManyDaysAgo;
 
-  @Override
-  public Stream<Stf> scanTimeoutCoreJobsWaitingRun(int limit, int pageNo) {
-    return doScanStillAlive(CORE, I, limit, pageNo);
+  public Stream<Stf> scanTimeoutCoreJobs(int limit, int pageNo) {
+    return doScanStillAlive(CORE, limit, pageNo);
   }
 
-  @Override
-  public Stream<Stf> scanTimeoutCoreJobsInProgress(int limit, int pageNo) {
-    return doScanStillAlive(CORE, P, limit, pageNo);
+  public Stream<Stf> scanTimeoutDelayJobs(int limit, int pageNo) {
+    return doScanStillAlive(DELAY, limit, pageNo);
   }
 
-  @Override
-  public Stream<Stf> scanTimeoutDelayJobsWaitingRun(int limit, int pageNo) {
-    return doScanStillAlive(DELAY, I, limit, pageNo);
-  }
-
-  @Override
-  public Stream<Stf> scanTimeoutDelayJobsInProgress(int limit, int pageNo) {
-    return doScanStillAlive(DELAY, P, limit, pageNo);
-  }
-
-  public Stream<Stf> doScanStillAlive(StfMetaGroupEnum metaGrp, StateEnum st, int limit, int pageNo,
-      String... includeFields) {// pageNo start with 0
+  public Stream<Stf> doScanStillAlive(StfMetaGroupEnum metaGrp, int limit, int pageNo,
+      String... includeFields) {/*- pageNo start with 0*/
     if (H.isDataSourceClose()) {
       H.logOnDataSourceClose(LOG, "doScanStillAlive");
       return Stream.empty();
@@ -126,10 +113,10 @@ public class JobScannerJdbc implements JobScanner, JdbcAware {
     long startAt = endAt - TimeUnit.DAYS.toMillis(includeHowManyDaysAgo);
     if (pageNo <= 0) {
       if (!DB_VENDOR_ORACLE.equals(dbVendor)) {
-        args = new Object[]{startAt, endAt, st.name(), N.name(), limit};
+        args = new Object[]{startAt, endAt, I.name(), P.name(), N.name(), limit};
       } else {
         int lastPageRowNum;
-        args = new Object[]{startAt, endAt, st.name(), N.name(), (lastPageRowNum = pageNo * limit) + limit,
+        args = new Object[]{startAt, endAt, I.name(), P.name(), N.name(), (lastPageRowNum = pageNo * limit) + limit,
             lastPageRowNum};
       }
     } else {
@@ -143,15 +130,15 @@ public class JobScannerJdbc implements JobScanner, JdbcAware {
         } else {
           sql = lenientFormat("%slimit %s offset %s", preSql, limit, pageNo * limit);
         }
-        args = new Object[]{startAt, endAt, st.name(), N.name()};
+        args = new Object[]{startAt, endAt, I.name(), P.name(), N.name()};
       } else {
         int lastPageRowNum;
-        args = new Object[]{startAt, endAt, st.name(), N.name(), (lastPageRowNum = pageNo * limit) + limit,
+        args = new Object[]{startAt, endAt, I.name(), P.name(), N.name(), (lastPageRowNum = pageNo * limit) + limit,
             lastPageRowNum};
       }
     }
 
-    MutableBoolean checkFields = new MutableBoolean(false);
+    MutableBoolean checkFlds = new MutableBoolean(false);
     if (includeFields != null && includeFields.length > 0) {
       if (!DB_VENDOR_ORACLE.equals(dbVendor)) {
         String[] includeFldsWithPrefix = Stream.of(includeFields).map(fld -> "a." + fld).toArray(String[]::new);
@@ -163,43 +150,38 @@ public class JobScannerJdbc implements JobScanner, JdbcAware {
         sql = sql.substring(lastStarIdx + 1);
         sql = preSql + StringUtils.join(includeFields, ",") + sql;
       }
-      checkFields.setValue(true);
+      checkFlds.setValue(true);
     }
     Stream<Stf> stfs = jdbcOps.queryForStream(sql, args, (rs, arg) -> {
       Stf stf = new Stf();
-      boolean checkFlds = checkFields.getValue();
+      boolean chkFlds = checkFlds.getValue();
 
       String curFld;
-      if (Boolean.valueOf(curFld = ID.lowerCaseName()) || !checkFlds || ArrayUtils.contains(includeFields, curFld)) {
+      if (Boolean.valueOf(curFld = ID.nameLowerCase()) || !chkFlds || contains(includeFields, curFld)) {
         stf.setId(rs.getLong(curFld));
       }
-      if (Boolean.valueOf(curFld = CALLEE.lowerCaseName()) || !checkFlds
-          || ArrayUtils.contains(includeFields, curFld)) {
+      if (Boolean.valueOf(curFld = CALLEE.nameLowerCase()) || !chkFlds || contains(includeFields, curFld)) {
         stf.setBody(rs.getString(curFld));
       }
-      if (Boolean.valueOf(curFld = ST.lowerCaseName()) || !checkFlds || ArrayUtils.contains(includeFields, curFld)) {
+      if (Boolean.valueOf(curFld = ST.nameLowerCase()) || !chkFlds || contains(includeFields, curFld)) {
         stf.setSt(rs.getString(curFld));
       }
-      if (Boolean.valueOf(curFld = IS_DEAD.lowerCaseName()) || !checkFlds
-          || ArrayUtils.contains(includeFields, curFld)) {
+      if (Boolean.valueOf(curFld = IS_DEAD.nameLowerCase()) || !chkFlds || contains(includeFields, curFld)) {
         stf.setIsDead(rs.getString(curFld));
       }
-      if (Boolean.valueOf(curFld = RETRY_TIMES.lowerCaseName()) || !checkFlds
-          || ArrayUtils.contains(includeFields, curFld)) {
+      if (Boolean.valueOf(curFld = RETRY_TIMES.nameLowerCase()) || !chkFlds || contains(includeFields, curFld)) {
         stf.setRetryTimes(rs.getInt(curFld));
       }
-      if (Boolean.valueOf(curFld = TIMEOUT_SECS.lowerCaseName()) || !checkFlds
-          || ArrayUtils.contains(includeFields, curFld)) {
+      if (Boolean.valueOf(curFld = TIMEOUT_SECS.nameLowerCase()) || !chkFlds || contains(includeFields, curFld)) {
         stf.setTimeoutSecs(rs.getInt(curFld));
       }
-      if (Boolean.valueOf(curFld = TIMEOUT_AT.lowerCaseName()) || !checkFlds
-          || ArrayUtils.contains(includeFields, curFld)) {
+      if (Boolean.valueOf(curFld = TIMEOUT_AT.nameLowerCase()) || !chkFlds || contains(includeFields, curFld)) {
         stf.setTimeoutAt(rs.getLong(curFld));
       }
-      if (Boolean.valueOf(curFld = CT_AT.lowerCaseName()) || !checkFlds || ArrayUtils.contains(includeFields, curFld)) {
+      if (Boolean.valueOf(curFld = CT_AT.nameLowerCase()) || !chkFlds || contains(includeFields, curFld)) {
         stf.setCtAt(rs.getLong(curFld));
       }
-      if (Boolean.valueOf(curFld = UP_AT.lowerCaseName()) || !checkFlds || ArrayUtils.contains(includeFields, curFld)) {
+      if (Boolean.valueOf(curFld = UP_AT.nameLowerCase()) || !chkFlds || contains(includeFields, curFld)) {
         stf.setUpAt(rs.getLong(curFld));
       }
       return stf;
@@ -215,7 +197,7 @@ public class JobScannerJdbc implements JobScanner, JdbcAware {
     this.jdbcOps = jdbcOps;
     this.includeHowManyDaysAgo = DFT_INCLUDE_HOW_MANY_DAYS_AGO;
 
-    String mainSqlTpl = "select a.* from %s a inner join (select id from %s where timeout_at between ? and ? and st = ? and is_dead = ?%s) b on a.id = b.id";
+    String mainSqlTpl = "select a.* from %s a inner join (select id from %s where timeout_at between ? and ? and st in (?, ?) and is_dead = ?%s) b on a.id = b.id";
     String orderSqlTpl = " order by %stimeout_at, %sid";// To get certain order
     Stream.of(tblName, tblName + DFT_DELAY_TBL_NAME_SUFFIX).forEach(tbl -> {
       String mysql = lenientFormat(mainSqlTpl, tbl, tbl, lenientFormat(orderSqlTpl + " limit ?", "", ""));

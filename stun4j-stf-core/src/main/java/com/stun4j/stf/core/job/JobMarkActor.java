@@ -34,7 +34,7 @@ class JobMarkActor extends BaseJobBatchMarkActor {
   }
 
   JobMarkActor(StfBatchable stfCore, int baseCapacity) {
-    super("stf-job-mark-actor", baseCapacity, stfCore);
+    super("stf-grp-" + StfMetaGroupEnum.CORE.nameLowerCase() + "-job-mark-actor", baseCapacity, stfCore);
   }
 
   @Override

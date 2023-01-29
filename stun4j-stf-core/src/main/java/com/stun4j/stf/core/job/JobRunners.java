@@ -15,30 +15,23 @@
  */
 package com.stun4j.stf.core.job;
 
-import static com.stun4j.stf.core.StfMetaGroupEnum.CORE;
-import static com.stun4j.stf.core.StfMetaGroupEnum.DELAY;
-import static com.stun4j.stf.core.job.JobConsts.ALL_JOB_GROUPS;
-import static com.stun4j.stf.core.job.JobConsts.JOB_GROUP_TIMEOUT_DELAY_IN_PROGRESS;
-import static com.stun4j.stf.core.job.JobConsts.JOB_GROUP_TIMEOUT_DELAY_WAITING_RUN;
-import static com.stun4j.stf.core.job.JobConsts.JOB_GROUP_TIMEOUT_IN_PROGRESS;
-import static com.stun4j.stf.core.job.JobConsts.JOB_GROUP_TIMEOUT_WAITING_RUN;
 import static com.stun4j.stf.core.support.executor.StfInternalExecutors.newWorkerOfJobRunner;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
 
 import com.stun4j.stf.core.Stf;
 import com.stun4j.stf.core.StfCore;
+import com.stun4j.stf.core.StfMetaGroupEnum;
 import com.stun4j.stf.core.support.BaseLifecycle;
 import com.stun4j.stf.core.utils.Exceptions;
 
 /** @author Jay Meng */
 public class JobRunners extends BaseLifecycle {
   private final StfCore stfCore;
-  private final Map<String, ThreadPoolExecutor> workers;
+  private final Map<StfMetaGroupEnum, ThreadPoolExecutor> workers;
   private final JobRunner runner;
 
   @Override
@@ -54,32 +47,19 @@ public class JobRunners extends BaseLifecycle {
     });
   }
 
-  public void execute(String jobGrp, Stf job) {
-    workers.get(jobGrp).execute(() -> {
+  public void execute(StfMetaGroupEnum metaGrp, Stf job) {
+    workers.get(metaGrp).execute(() -> {
       Long jobId = job.getId();
       try {
-        switch (jobGrp) {
-          case JOB_GROUP_TIMEOUT_WAITING_RUN:
-          case JOB_GROUP_TIMEOUT_IN_PROGRESS:
-            JobRunner.doHandleTimeoutJob(CORE, job, stfCore);
-            break;
-
-          case JOB_GROUP_TIMEOUT_DELAY_WAITING_RUN:
-          case JOB_GROUP_TIMEOUT_DELAY_IN_PROGRESS:
-            JobRunner.doHandleTimeoutJob(DELAY, job, stfCore);
-            break;
-
-          default:
-            break;
-        }
+        JobRunner.doHandleTimeoutJob(metaGrp, job, stfCore);
       } catch (Throwable e) {
-        Exceptions.swallow(e, LOG, "An error occurred while handing stf-job#{} [grp={}]", jobId, jobGrp);
+        Exceptions.swallow(e, LOG, "An error occurred while handing stf-job#{} [metaGrp={}]", jobId, metaGrp);
       }
     });
   }
 
-  public int getAvailablePoolSize(String jobGrp) {
-    return workers.get(jobGrp).getMaximumPoolSize() - workers.get(jobGrp).getActiveCount();
+  public int getAvailablePoolSize(StfMetaGroupEnum metaGrp) {
+    return workers.get(metaGrp).getMaximumPoolSize() - workers.get(metaGrp).getActiveCount();
   }
 
   public JobRunners(StfCore stfCore) {
@@ -89,8 +69,8 @@ public class JobRunners extends BaseLifecycle {
   public JobRunners(StfCore stfCore, Map<Integer, Integer> retryBehavior) {
     this.stfCore = stfCore;
     this.runner = JobRunner.init(retryBehavior);
-    this.workers = Stream.of(ALL_JOB_GROUPS).reduce(new HashMap<>(), (map, grp) -> {
-      map.put(grp, newWorkerOfJobRunner(grp));
+    this.workers = StfMetaGroupEnum.stream().reduce(new HashMap<>(), (map, metaGrp) -> {
+      map.put(metaGrp, newWorkerOfJobRunner(metaGrp));
       return map;
     }, (a, b) -> null);
   }

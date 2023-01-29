@@ -28,6 +28,7 @@ import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 
+import com.stun4j.stf.core.StfMetaGroupEnum;
 import com.stun4j.stf.core.utils.executor.NamedThreadFactory;
 
 /** @author Jay Meng */
@@ -36,8 +37,8 @@ public final class StfInternalExecutors {
     return (ThreadPoolExecutor)defaultIoPrefer("stf-core-worker");
   }
 
-  public static ThreadPoolExecutor newWorkerOfJobRunner(String jobGrp) {
-    return (ThreadPoolExecutor)defaultIoPrefer("stf-job-" + jobGrp + "-runner");
+  public static ThreadPoolExecutor newWorkerOfJobRunner(StfMetaGroupEnum metaGrp) {
+    return (ThreadPoolExecutor)defaultIoPrefer("stf-grp-" + metaGrp.nameLowerCase() + "-job-runner");
   }
 
   public static ScheduledExecutorService newWatcherOfJobLoading() {
@@ -53,8 +54,10 @@ public final class StfInternalExecutors {
         false, SILENT_DROP_POLICY);
   }
 
-  public static ExecutorService newWorkerOfJobLoading(String jobGrp) {// TODO mj:recheck this policy
-    return defaultWorkStealingPool("stf-job-" + jobGrp + "-load-worker", true);
+  public static ExecutorService newWorkerOfJobLoading(StfMetaGroupEnum metaGrp) {
+    // TODO mj:recheck this policy,for the purpose fulfill&little-bit-overload?
+    return defaultWorkStealingPool(Math.min(Runtime.getRuntime().availableProcessors(), 16),
+        "stf-grp-" + metaGrp.nameLowerCase() + "-job-load-worker", true);
   }
 
   public static StfExecutorService newDefaultExec(int threadKeepAliveTimeSeconds, int taskQueueSize,
@@ -63,8 +66,8 @@ public final class StfInternalExecutors {
         NamedThreadFactory.of("stf-dft-exec"), threadKeepAliveTimeSeconds, allowCoreThreadTimeOut, rejectPolicy));
   }
 
-  public static Thread newWatcherOfJobManager(String jobGrp, Runnable runnable) {
-    return new NamedThreadFactory("stf-job-" + jobGrp + "-mngr-watcher", true).newThread(runnable);
+  public static Thread newWatcherOfJobManager(String type, Runnable runnable) {
+    return new NamedThreadFactory("stf-type-" + type + "-mngr-watcher", true).newThread(runnable);
   }
 
   private StfInternalExecutors() {

@@ -28,5 +28,5 @@ public interface StfBatchable {
 
   int[] batchMarkDone(StfMetaGroupEnum metaGrp, List<Object[]> stfIdsInfo);
 
-  List<Stf> batchLockStfs(String jobGrp, List<Object[]> batchArgs);
+  List<Stf> batchLockStfs(StfMetaGroupEnum metaGrp, List<Object[]> batchArgs);
 }

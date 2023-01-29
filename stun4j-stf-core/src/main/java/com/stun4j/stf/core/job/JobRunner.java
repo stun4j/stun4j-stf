@@ -17,7 +17,6 @@ package com.stun4j.stf.core.job;
 
 import static com.stun4j.stf.core.StfConsts.DFT_JOB_TIMEOUT_SECONDS;
 import static com.stun4j.stf.core.StfConsts.WITH_MS_DATE_FMT;
-import static com.stun4j.stf.core.StfHelper.H;
 import static com.stun4j.stf.core.StfMetaGroupEnum.CORE;
 import static com.stun4j.stf.core.job.JobConsts.retryBehaviorByPattern;
 
@@ -50,11 +49,10 @@ class JobRunner {
   private final LoadingCache<Integer, Map<Integer, Integer>> cachedRetryBehavior;
   private static JobRunner _instance;
 
-  Pair<Boolean, Integer> checkWhetherTheJobCanRun(String jobGrp, Stf lockingJob, StfCore stfCore) {
+  Pair<Boolean, Integer> checkWhetherTheJobCanRun(StfMetaGroupEnum metaGrp, Stf lockingJob, StfCore stfCore) {
     int minTimeoutSecs;
     Map<Integer, Integer> retryBehav = _instance
         .determineJobRetryBehavior(minTimeoutSecs = lockingJob.getTimeoutSecs());
-    StfMetaGroupEnum metaGrp = H.determineMetaGroupBy(jobGrp);
     Pair<Boolean, Integer> canRun = doCheckAndMarkJobDeadIfNecessary(metaGrp, lockingJob, stfCore, retryBehav);
     if (!canRun.getKey()) {
       return Pair.of(false, null);
@@ -92,6 +90,8 @@ class JobRunner {
     int lastRetryTimes = job.getRetryTimes();
     Long jobId = job.getId();
     if (lastRetryTimes >= retryMaxTimes) {
+      LOG.info("Exceeded retryMaxTimes, now marking the job#{} dead [lastRetryTimes={}, retryMaxTimes={}]", jobId,
+          lastRetryTimes, retryMaxTimes);
       stfCore.markDead(metaGrp, jobId, true);
       return Pair.of(false, null);
     }

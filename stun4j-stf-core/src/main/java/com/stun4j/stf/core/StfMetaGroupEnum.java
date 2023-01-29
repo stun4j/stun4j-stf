@@ -15,9 +15,23 @@
  */
 package com.stun4j.stf.core;
 
+import java.util.stream.Stream;
+
 /**
  * @author Jay Meng
  */
 public enum StfMetaGroupEnum {
-  CORE, DELAY
+  CORE, DELAY;
+
+  public static Stream<StfMetaGroupEnum> stream() {
+    return Stream.of(StfMetaGroupEnum.values());
+  }
+
+  public static String[] namesLowerCase() {
+    return stream().map(e -> e.name().toLowerCase()).toArray(String[]::new);
+  }
+
+  public String nameLowerCase() {
+    return this.name().toLowerCase();
+  }
 }

@@ -24,6 +24,16 @@ public class StfCoreJdbcMySQLTest extends StfCoreCase {
     DB = rtn.getRight();
   }
 
+  @Override
+  public void _01_lockTwiceNotAllowed() {
+    super._01_lockTwiceNotAllowed();
+  }
+
+  @Override
+  public void _02_lockMoreTimesNotAllowedHighConcurrently() throws InterruptedException {
+    super._02_lockMoreTimesNotAllowedHighConcurrently();
+  }
+
   public StfCoreJdbcMySQLTest() {
     super(DB, TBL_NAME);
   }
