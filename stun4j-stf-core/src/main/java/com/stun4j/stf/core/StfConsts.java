@@ -34,7 +34,7 @@ public interface StfConsts {
   int DFT_JOB_TIMEOUT_SECONDS = 20;
 
   static enum StfDbFieldEnum {
-    ID, CALLEE, ST, IS_DEAD, RETRY_TIMES, TIMEOUT_SECS, TIMEOUT_AT, CT_AT, UP_AT;
+    ID, CALLEE, CALLEE_BYTES, ST, IS_DEAD, RETRY_TIMES, TIMEOUT_SECS, TIMEOUT_AT, CT_AT, UP_AT;
 
     static final String ALL_FIELD_NAMES_LOWER_CASE;
     static {

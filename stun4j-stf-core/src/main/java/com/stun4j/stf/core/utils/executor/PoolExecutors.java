@@ -45,8 +45,12 @@ public final class PoolExecutors {
   public static final RejectedExecutionHandler SILENT_DROP_POLICY = new DiscardPolicy();
   public static final RejectedExecutionHandler SILENT_DROP_OLDEST_POLICY = new DiscardOldestPolicy();
 
+  public static ExecutorService defaultCpuPrefer(String prefix) {
+    return newCpuPrefer(new LinkedBlockingQueue<>(1024), NamedThreadFactory.of(prefix), 60, true, BACK_PRESSURE_POLICY);
+  }
+
   public static ExecutorService defaultIoPrefer(String prefix) {
-    return newDynamicIoPrefer(new LinkedBlockingQueue<>(1024), NamedThreadFactory.of(prefix), 60, true,
+    return newIoPrefer(new LinkedBlockingQueue<>(1024), NamedThreadFactory.of(prefix), 60, true,
         BACK_PRESSURE_POLICY);
   }
 
@@ -58,7 +62,16 @@ public final class PoolExecutors {
     return newWorkStealingPool(parallelism, prefix, daemon, null);
   }
 
-  public static ExecutorService newDynamicIoPrefer(BlockingQueue<Runnable> queue, ThreadFactory threadFactory,
+  public static ExecutorService newCpuPrefer(BlockingQueue<Runnable> queue, ThreadFactory threadFactory,
+      int keepAliveTimeSeconds, boolean allowCoreThreadTimeOut, RejectedExecutionHandler reject) {
+    int fixedPoolSize;
+    ThreadPoolExecutor exec = new ThreadPoolExecutor(fixedPoolSize = ThreadPoolUtils.cpuIntensivePoolSize(),
+        fixedPoolSize, keepAliveTimeSeconds, TimeUnit.SECONDS, queue, threadFactory, reject);
+    exec.allowCoreThreadTimeOut(allowCoreThreadTimeOut);
+    return exec;
+  }
+
+  public static ExecutorService newIoPrefer(BlockingQueue<Runnable> queue, ThreadFactory threadFactory,
       int keepAliveTimeSeconds, boolean allowCoreThreadTimeOut, RejectedExecutionHandler reject) {
     ThreadPoolExecutor exec = new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors(),
         Math.min(ThreadPoolUtils.ioIntensivePoolSize(), 64), keepAliveTimeSeconds, TimeUnit.SECONDS, queue,

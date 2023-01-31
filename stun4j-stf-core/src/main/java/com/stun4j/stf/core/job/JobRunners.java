@@ -72,7 +72,7 @@ public class JobRunners extends BaseLifecycle {
     this.workers = StfMetaGroupEnum.stream().reduce(new HashMap<>(), (map, metaGrp) -> {
       map.put(metaGrp, newWorkerOfJobRunner(metaGrp));
       return map;
-    }, (a, b) -> null);
+    }, (a, b) -> null);// TODO mj:abstraction to hide last piece shit
   }
 
   public StfCore getStfCore() {

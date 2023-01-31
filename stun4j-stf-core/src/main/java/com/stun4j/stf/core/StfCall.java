@@ -15,10 +15,16 @@
  */
 package com.stun4j.stf.core;
 
+import static com.stun4j.stf.core.support.JsonHelper.NO_TYPING_SERIALIZER;
+import static com.stun4j.stf.core.support.JsonHelper.toJson;
 import static com.stun4j.stf.core.utils.Asserts.state;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 
+import org.apache.commons.lang3.tuple.Pair;
+
+import com.stun4j.stf.core.support.CompressAlgorithmEnum;
 import com.stun4j.stf.core.utils.shaded.guava.common.primitives.Primitives;
 
 /**
@@ -35,6 +41,10 @@ public class StfCall {
 
   // private int timeoutSecs;
 
+  private boolean bytes = false;
+  private byte compAlgo = CompressAlgorithmEnum.NONE.value();// FIXME mj:to be configured
+  private Integer zstdOriSize;
+
   public static StfCall of(String type, String bizObjId, String method) {
     return new StfCall(type, bizObjId, method, null);
   }
@@ -49,6 +59,39 @@ public class StfCall {
 
   public static StfCall of(String type, String bizObjId, String method, int argsLength) {
     return new StfCall(type, bizObjId, method, new Object[argsLength]);
+  }
+
+  public Pair<String, Object[]> toInvokeMeta() {
+    // String type = this.type;
+    // String bizObjId = this.getBizObjId();
+    // String method = this.getMethod();
+    StringBuilder builder = new StringBuilder(this.type).append(":").append(this.bizObjId).append(".")
+        .append(this.method);
+    String invokeInfo = builder.toString();
+    return Pair.of(invokeInfo, this.args);
+  }
+
+  public Pair<String, byte[]> toBytesIfNecessary() {
+    CompressAlgorithmEnum algo;
+    Pair<Integer, byte[]> bytesInfo = toJson(this, algo = CompressAlgorithmEnum.valueOf(compAlgo));
+    byte[] rtnBytes = bytesInfo.getValue();
+    switch (algo) {
+      case NONE:
+        if (bytes) {
+          String meta = toJson(NO_TYPING_SERIALIZER, new StfCall(algo).enableBytes());
+          return Pair.of(meta, rtnBytes);
+        }
+        String callStr = new String(rtnBytes, StandardCharsets.UTF_8);
+        return Pair.of(callStr, null);
+      default:
+        StfCall call = new StfCall(algo)
+            .enableBytes();/*- force bytes-format to be enabled when using any compress algorithm*/
+        if (algo == CompressAlgorithmEnum.ZSTD) {
+          call.withZstdOriSize(bytesInfo.getKey());
+        }
+        String meta = toJson(NO_TYPING_SERIALIZER, call);
+        return Pair.of(meta, rtnBytes);
+    }
   }
 
   public StfCall withPrimitiveArg(int argIdx, Object argValue, Class<?> primitiveClz) {
@@ -84,11 +127,33 @@ public class StfCall {
     return this;
   }
 
+  public StfCall enableBytes() {
+    bytes = true;
+    return this;
+  }
+
+  public StfCall enableCompress() {
+    return enableCompress(CompressAlgorithmEnum.ZSTD);
+  }
+
+  public StfCall enableCompress(CompressAlgorithmEnum compAlgo) {
+    this.compAlgo = compAlgo.value();
+    if (compAlgo != CompressAlgorithmEnum.NONE) {
+      this.enableBytes();// force bytes-format to be enabled when using any compress algorithm
+    }
+    return this;
+  }
+
   private StfCall(String type, String bizObjId, String method, Object[] args) {
     this.type = type;
     this.bizObjId = bizObjId;
     this.method = method;
     this.args = args;
+  }
+
+  private StfCall(CompressAlgorithmEnum compAlgo) {
+    this();
+    this.enableCompress(compAlgo);
   }
 
   StfCall() {
@@ -109,6 +174,23 @@ public class StfCall {
 
   public Object[] getArgs() {
     return args;
+  }
+
+  public byte getCompAlgo() {
+    return compAlgo;
+  }
+
+  public boolean isBytes() {
+    return bytes;
+  }
+
+  public Integer getZstdOriSize() {
+    return zstdOriSize;
+  }
+
+  public StfCall withZstdOriSize(Integer zstdOriSize) {
+    this.zstdOriSize = zstdOriSize;
+    return this;
   }
 
 }

@@ -37,7 +37,7 @@ import com.stun4j.stf.core.utils.shaded.guava.common.primitives.Primitives;
  * @author Jay Meng
  */
 abstract class StfInvoker {
-  private final static Pattern PATTERN = Pattern.compile("(injvm):(\\w+)\\.(\\w+)");
+  final static Pattern PATTERN = Pattern.compile("(injvm):(\\w+)\\.(\\w+)");
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   static void invoke(Long stfId, String calleeInfo, Object... calleeMethodArgs) throws Exception {

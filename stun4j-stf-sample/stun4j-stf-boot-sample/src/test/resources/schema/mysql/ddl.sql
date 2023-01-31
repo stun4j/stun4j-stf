@@ -14,6 +14,7 @@ create table stn_stf_cluster_member (
 create table stn_stf (
   id bigint(20) unsigned not null,
   callee json not null,
+  callee_bytes blob,
   st varchar(2) not null,
   is_dead char(1) not null,
   retry_times tinyint(3) unsigned not null,
@@ -29,6 +30,7 @@ create table stn_stf (
 create table stn_stf_delay (
   id bigint(20) unsigned not null,
   callee json not null,
+  callee_bytes blob,
   st varchar(2) not null,
   is_dead char(1) not null,
   retry_times tinyint(3) unsigned not null,

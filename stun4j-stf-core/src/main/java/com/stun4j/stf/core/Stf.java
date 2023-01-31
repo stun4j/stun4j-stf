@@ -16,7 +16,21 @@
  */
 package com.stun4j.stf.core;
 
+import static com.stun4j.stf.core.support.JsonHelper.NO_TYPING_SERIALIZER;
+import static com.stun4j.stf.core.support.JsonHelper.fromJson;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Optional;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xerial.snappy.Snappy;
+
+import com.github.luben.zstd.Zstd;
 import com.stun4j.stf.core.support.BaseEntity;
+import com.stun4j.stf.core.support.CompressAlgorithmEnum;
+import com.stun4j.stf.core.utils.Asserts;
+import com.stun4j.stf.core.utils.Exceptions;
 
 /**
  * State transition
@@ -28,9 +42,11 @@ import com.stun4j.stf.core.support.BaseEntity;
  * </ul>
  * @author Jay Meng
  */
-public class Stf extends BaseEntity<Long> {
+public class Stf extends BaseEntity<Long> implements Cloneable {
+  private static final Logger LOG = LoggerFactory.getLogger(Stf.class);
   private Long id;
   private String body;
+  private byte[] bodyBytes;
   private String st;
   private String isDead;
   private int retryTimes;
@@ -40,6 +56,35 @@ public class Stf extends BaseEntity<Long> {
   private long ctAt;
   private long upAt;
 
+  public Stf evalBody() {
+    // Uncompress and replace body if necessary
+    String bodyOrMeta = Asserts.requireNonNull(this.body, "The stf-body can't be null");
+    byte[] bodyBytes;
+    if ((bodyBytes = this.bodyBytes) == null) {
+      return this;
+    }
+    try {
+      StfCall meta = fromJson(NO_TYPING_SERIALIZER, bodyOrMeta, StfCall.class);
+      CompressAlgorithmEnum compAlgo = CompressAlgorithmEnum.valueOf(meta.getCompAlgo());
+      switch (compAlgo) {
+        case ZSTD:
+          int oriSize = Optional.ofNullable(meta.getZstdOriSize()).orElse(65536);
+          bodyBytes = Zstd.decompress(bodyBytes, oriSize);
+          break;
+        case SNAPPY:
+          bodyBytes = Snappy.uncompress(bodyBytes);
+          break;
+        default:
+          break;
+      }
+      Stf copy = (Stf)this.clone();// a safe copy
+      copy.setBody(new String(bodyBytes, StandardCharsets.UTF_8));// NONE or bytesEnabled
+      return copy;
+    } catch (Throwable e) {
+      throw Exceptions.sneakyThrow(e, LOG, "An error occured while evaling stf-body [bodyMeta={}]", bodyOrMeta);
+    }
+  }
+
   @Override
   public Long getId() {
     return id;
@@ -47,6 +92,10 @@ public class Stf extends BaseEntity<Long> {
 
   public String getBody() {
     return body;
+  }
+
+  public byte[] getBodyBytes() {
+    return bodyBytes;
   }
 
   public String getSt() {
@@ -83,6 +132,10 @@ public class Stf extends BaseEntity<Long> {
 
   public void setBody(String body) {
     this.body = body;
+  }
+
+  public void setBodyBytes(byte[] bodyBytes) {
+    this.bodyBytes = bodyBytes;
   }
 
   public void setSt(String st) {

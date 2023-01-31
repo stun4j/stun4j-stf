@@ -20,6 +20,7 @@ import static com.stun4j.stf.core.StateEnum.I;
 import static com.stun4j.stf.core.StateEnum.P;
 import static com.stun4j.stf.core.StfConsts.DFT_DELAY_TBL_NAME_SUFFIX;
 import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.CALLEE;
+import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.CALLEE_BYTES;
 import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.CT_AT;
 import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.ID;
 import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.IS_DEAD;
@@ -38,10 +39,10 @@ import static com.stun4j.stf.core.utils.DataSourceUtils.DB_VENDOR_POSTGRE_SQL;
 import static org.apache.commons.lang3.ArrayUtils.contains;
 
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,6 +50,7 @@ import com.stun4j.stf.core.Stf;
 import com.stun4j.stf.core.StfConsts;
 import com.stun4j.stf.core.StfMetaGroupEnum;
 import com.stun4j.stf.core.spi.StfJdbcOps;
+import com.stun4j.stf.core.spi.StfJdbcOps.StfJdbcRowMapper;
 import com.stun4j.stf.core.support.JdbcAware;
 
 /**
@@ -138,7 +140,7 @@ public class JobScannerJdbc implements JobScanner, JdbcAware {
       }
     }
 
-    MutableBoolean checkFlds = new MutableBoolean(false);
+    boolean checkFlds = false;
     if (includeFields != null && includeFields.length > 0) {
       if (!DB_VENDOR_ORACLE.equals(dbVendor)) {
         String[] includeFldsWithPrefix = Stream.of(includeFields).map(fld -> "a." + fld).toArray(String[]::new);
@@ -150,44 +152,50 @@ public class JobScannerJdbc implements JobScanner, JdbcAware {
         sql = sql.substring(lastStarIdx + 1);
         sql = preSql + StringUtils.join(includeFields, ",") + sql;
       }
-      checkFlds.setValue(true);
+      checkFlds = true;
     }
-    Stream<Stf> stfs = jdbcOps.queryForStream(sql, args, (rs, arg) -> {
+    Stream<Stf> stfs = jdbcOps.queryForStream(sql, args, STF_ROW_MAPPER_FN.apply(checkFlds, includeFields));
+    return stfs;
+  }
+
+  static final BiFunction<Boolean, String[], StfJdbcRowMapper<Stf>> STF_ROW_MAPPER_FN = (chkFlds, includeFlds) -> {
+    return (rs, arg) -> {
       Stf stf = new Stf();
-      boolean chkFlds = checkFlds.getValue();
 
       String curFld;
-      if (Boolean.valueOf(curFld = ID.nameLowerCase()) || !chkFlds || contains(includeFields, curFld)) {
+      if (Boolean.parseBoolean(curFld = ID.nameLowerCase()) || !chkFlds || contains(includeFlds, curFld)) {
         stf.setId(rs.getLong(curFld));
       }
-      if (Boolean.valueOf(curFld = CALLEE.nameLowerCase()) || !chkFlds || contains(includeFields, curFld)) {
+      if (Boolean.parseBoolean(curFld = CALLEE.nameLowerCase()) || !chkFlds || contains(includeFlds, curFld)) {
         stf.setBody(rs.getString(curFld));
       }
-      if (Boolean.valueOf(curFld = ST.nameLowerCase()) || !chkFlds || contains(includeFields, curFld)) {
+      if (Boolean.parseBoolean(curFld = CALLEE_BYTES.nameLowerCase()) || !chkFlds || contains(includeFlds, curFld)) {
+        stf.setBodyBytes(rs.getBytes(curFld));
+      }
+      if (Boolean.parseBoolean(curFld = ST.nameLowerCase()) || !chkFlds || contains(includeFlds, curFld)) {
         stf.setSt(rs.getString(curFld));
       }
-      if (Boolean.valueOf(curFld = IS_DEAD.nameLowerCase()) || !chkFlds || contains(includeFields, curFld)) {
+      if (Boolean.parseBoolean(curFld = IS_DEAD.nameLowerCase()) || !chkFlds || contains(includeFlds, curFld)) {
         stf.setIsDead(rs.getString(curFld));
       }
-      if (Boolean.valueOf(curFld = RETRY_TIMES.nameLowerCase()) || !chkFlds || contains(includeFields, curFld)) {
+      if (Boolean.parseBoolean(curFld = RETRY_TIMES.nameLowerCase()) || !chkFlds || contains(includeFlds, curFld)) {
         stf.setRetryTimes(rs.getInt(curFld));
       }
-      if (Boolean.valueOf(curFld = TIMEOUT_SECS.nameLowerCase()) || !chkFlds || contains(includeFields, curFld)) {
+      if (Boolean.parseBoolean(curFld = TIMEOUT_SECS.nameLowerCase()) || !chkFlds || contains(includeFlds, curFld)) {
         stf.setTimeoutSecs(rs.getInt(curFld));
       }
-      if (Boolean.valueOf(curFld = TIMEOUT_AT.nameLowerCase()) || !chkFlds || contains(includeFields, curFld)) {
+      if (Boolean.parseBoolean(curFld = TIMEOUT_AT.nameLowerCase()) || !chkFlds || contains(includeFlds, curFld)) {
         stf.setTimeoutAt(rs.getLong(curFld));
       }
-      if (Boolean.valueOf(curFld = CT_AT.nameLowerCase()) || !chkFlds || contains(includeFields, curFld)) {
+      if (Boolean.parseBoolean(curFld = CT_AT.nameLowerCase()) || !chkFlds || contains(includeFlds, curFld)) {
         stf.setCtAt(rs.getLong(curFld));
       }
-      if (Boolean.valueOf(curFld = UP_AT.nameLowerCase()) || !chkFlds || contains(includeFields, curFld)) {
+      if (Boolean.parseBoolean(curFld = UP_AT.nameLowerCase()) || !chkFlds || contains(includeFlds, curFld)) {
         stf.setUpAt(rs.getLong(curFld));
       }
       return stf;
-    });
-    return stfs;
-  }
+    };
+  };
 
   public static JobScanner of(StfJdbcOps jdbcOps) {
     return new JobScannerJdbc(jdbcOps, StfConsts.DFT_CORE_TBL_NAME);
@@ -205,7 +213,7 @@ public class JobScannerJdbc implements JobScanner, JdbcAware {
       String postgres = (mainSqlNoLimit = lenientFormat(mainSqlTpl, tbl, tbl, ""))
           + lenientFormat(orderSqlTpl + " limit ?", "a.", "a.");// To get certain order on PG
       String mainSqlNoLimitNoJoin = mainSqlNoLimit
-          .substring(mainSqlNoLimit.indexOf("(") + 1, mainSqlNoLimit.indexOf(")"))
+          .substring(mainSqlNoLimit.indexOf("(") + 1, mainSqlNoLimit.lastIndexOf(")"))
           .replaceFirst("select id", "select *");
       String oracle = lenientFormat(
           "select * from (select t_temp.*, rownum rn from (%s) t_temp where rownum <= ?) where rn > ?%s",

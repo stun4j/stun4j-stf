@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.stream.Stream;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -29,6 +30,7 @@ import com.stun4j.stf.core.StfDelayQueueCore;
 import com.stun4j.stf.core.StfMetaGroupEnum;
 import com.stun4j.stf.core.YesNoEnum;
 import com.stun4j.stf.core.spi.StfJdbcOps;
+import com.stun4j.stf.core.spi.StfJdbcOps.StfJdbcRowMapper;
 import com.stun4j.stf.core.support.registry.StfDefaultPOJORegistry;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -37,6 +39,9 @@ public abstract class JobRunnerCase extends BaseContainerCase<JobRunner> {
   static {
     LocalGuid.init(0, 0);
   }
+
+  public static final StfJdbcRowMapper<Stf> STF_ROW_MAPPER = JobScannerJdbc.STF_ROW_MAPPER_FN.apply(false,
+      ArrayUtils.EMPTY_STRING_ARRAY);
 
   @Test
   public void _01_jobMaxRetryTillDead() {
@@ -104,12 +109,12 @@ public abstract class JobRunnerCase extends BaseContainerCase<JobRunner> {
     int timeoutSecs = 2;
     int delaySecs = 3;
     // found delay-job need to be triggered
-    Long stfDelayId = sftDlqc.newStfDelay(callee, timeoutSecs, delaySecs);
+    Long stfId = sftDlqc.newDelayStf(callee, timeoutSecs, delaySecs);
     assert !jobsc.scanTimeoutDelayJobs(1).findFirst().isPresent() : "new delay-job shouldn't being get transferred";
     Utils.sleepSeconds(delaySecs);// mock delay
 
     Stf delayJob = jobsc.scanTimeoutDelayJobs(1).findFirst().get();
-    assert stfDelayId.equals(delayJob.getId()) : "should find 1 delay-job need to be triggered";
+    assert stfId.equals(delayJob.getId()) : "should find 1 delay-job need to be triggered";
 
     // delay-job got successfully locked
     Map<Integer, Integer> retryBehav = customeRetryBehavior(timeoutSecs);
@@ -117,14 +122,14 @@ public abstract class JobRunnerCase extends BaseContainerCase<JobRunner> {
     // String jobGrp = JobConsts.JOB_GROUP_TIMEOUT_DELAY_WAITING_RUN;
     StfMetaGroupEnum metaGrp = StfMetaGroupEnum.DELAY;
     int curRetryTimes = 1;
-    Pair<Integer, Long> lockedInfo = mockCheckAndLock(jobr, retryBehav, stfc, jobsc, stfDelayId, delayJob, metaGrp,
+    Pair<Integer, Long> lockedInfo = mockCheckAndLock(jobr, retryBehav, stfc, jobsc, stfId, delayJob, metaGrp,
         curRetryTimes);
     int lockedDelayJobTimeoutSecs = lockedInfo.getLeft();
     long delayJobLockedAt = lockedInfo.getRight();
 
     StfJdbcOps jdbcOps = ((JobScannerJdbc)jobsc).getJdbcOps();
     String sql = "select * from " + this.tblName + StfConsts.DFT_DELAY_TBL_NAME_SUFFIX + " where id = ?";
-    Stream<Stf> stfDls = jdbcOps.queryForStream(sql, new Object[]{stfDelayId}, STF_ROW_MAPPER);
+    Stream<Stf> stfDls = jdbcOps.queryForStream(sql, new Object[]{stfId}, STF_ROW_MAPPER);
     Stf lockedDelayJob = stfDls.findFirst().get();
     //@formatter:off
     assert StateEnum.P == StateEnum.valueOf(lockedDelayJob.getSt()) : "locked delay-job's status should be 'P";//TODO mj: move to '#mockCheckAndLock'
@@ -160,7 +165,7 @@ public abstract class JobRunnerCase extends BaseContainerCase<JobRunner> {
       assert times == 1 : "mocked delay-callee '" + mockBizObjId + "#toString' shoule be invoked";
     }
     sql = "select * from " + this.tblName + " where id = ?";
-    Stream<Stf> stfs = jdbcOps.queryForStream(sql, new Object[]{stfDelayId}, STF_ROW_MAPPER);
+    Stream<Stf> stfs = jdbcOps.queryForStream(sql, new Object[]{stfId}, STF_ROW_MAPPER);
     Stf transAndTriggeredJob = stfs.findFirst().get();
     assert StateEnum.I == StateEnum
         .valueOf(transAndTriggeredJob.getSt()) : "transferred delay-job(became a stf)'s init-status should be 'I";
@@ -169,7 +174,7 @@ public abstract class JobRunnerCase extends BaseContainerCase<JobRunner> {
     // key timeline assert
     long transferredAt = transAndTriggeredJob.getCtAt();
     assert delayJobLockedAt < transferredAt : "delayJobLockedAt < transferredAt(the corresponding stf's ctAt)";
-    System.out.printf("stfDelayId:%s\n delayJobLockedTime: %s\n transferredTime:    %s\n", stfDelayId,
+    System.out.printf("stfId:%s\n delayJobLockedTime: %s\n transferredTime:    %s\n", stfId,
         StfConsts.WITH_MS_DATE_FMT.format(delayJobLockedAt), StfConsts.WITH_MS_DATE_FMT.format(transferredAt));
 
   }

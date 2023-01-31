@@ -15,7 +15,10 @@
  */
 package com.stun4j.stf.core;
 
+import static com.stun4j.stf.core.StfHelper.H;
 import static com.stun4j.stf.core.StfHelper.partialUpdateJobInfoWhenLocked;
+import static com.stun4j.stf.core.StfMetaGroupEnum.CORE;
+import static com.stun4j.stf.core.StfMetaGroupEnum.DELAY;
 import static com.stun4j.stf.core.support.executor.StfInternalExecutors.newWorkerOfStfCore;
 
 import java.util.ArrayList;
@@ -30,10 +33,17 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DuplicateKeyException;
 
 import com.stun4j.guid.core.LocalGuid;
 import com.stun4j.stf.core.build.StfConfigs;
+import com.stun4j.stf.core.support.CompressAlgorithmEnum;
 import com.stun4j.stf.core.utils.Exceptions;
+import com.stun4j.stf.core.utils.consumers.BaseConsumer;
+import com.stun4j.stf.core.utils.consumers.PairConsumer;
+import com.stun4j.stf.core.utils.consumers.QuadruConsumer;
+import com.stun4j.stf.core.utils.consumers.SextuConsumer;
+import com.stun4j.stf.core.utils.consumers.TriConsumer;
 import com.stun4j.stf.core.utils.shaded.guava.common.primitives.Primitives;
 
 /**
@@ -45,6 +55,11 @@ abstract class BaseStfCore implements StfCore, StfDelayQueueCore {
   protected final ExecutorService worker;
   private StfRunModeEnum runMode;
   private boolean delayQueueEnabled;
+
+  protected final SextuConsumer<Pair<StfMetaGroupEnum, Long>, Stf, StfCall, Boolean, Boolean, BaseConsumer<StfMetaGroupEnum>> coreFn;
+  protected final QuadruConsumer<StfMetaGroupEnum, Long/*-TODO mj:Bad design just to distinguish it from another generic 'tri'*/, Stf, StfCall/*- bad design just for the special pre-eval purpose */> forward;
+  protected final TriConsumer<StfMetaGroupEnum, Long, Boolean> markDone;
+  protected final PairConsumer<StfMetaGroupEnum, Long> markDead;
 
   @Override
   public Long newStf(String bizObjId, String bizMethodName, Integer timeoutSeconds,
@@ -58,10 +73,11 @@ abstract class BaseStfCore implements StfCore, StfDelayQueueCore {
   }
 
   @Override
-  public Long newStfDelay(StfCall callee, int timeoutSeconds, int delaySeconds) {
-    Long stfDelayId;
-    doNewStfDelay(stfDelayId = LocalGuid.instance().next(), callee, timeoutSeconds, delaySeconds);
-    return stfDelayId;
+  public Long newDelayStf(StfCall callee, int timeoutSeconds, int delaySeconds) {
+    Long stfId;
+    callee.enableCompress();// FIXME mj:for test only
+    doNewDelayStf(stfId = LocalGuid.instance().next(), callee, timeoutSeconds, delaySeconds);
+    return stfId;
   }
 
   @Override
@@ -132,17 +148,20 @@ abstract class BaseStfCore implements StfCore, StfDelayQueueCore {
     return false;
   }
 
-  protected void invokeCall(Long stfId, String callInfo, Object... callMethodArgs) {
+  protected void invokeCall(Long stfId, StfCall callee) {
     try {
-      StfInvoker.invoke(stfId, callInfo, callMethodArgs);
+      Pair<String, Object[]> invokeMeta = callee.toInvokeMeta();
+      String calleeSvcUri = invokeMeta.getKey();
+      Object[] calleeMethodArgs = invokeMeta.getValue();
+      StfInvoker.invoke(stfId, calleeSvcUri, calleeMethodArgs);
     } catch (Throwable e) {
       Exceptions.sneakyThrow(e, LOG, "An error occurred while invoking stf#{}", stfId);
     }
   }
 
-  protected abstract void doNewStf(Long newStfId, StfCall callee, int timeoutSeconds);
+  protected abstract void doNewStf(Long stfId, StfCall callee, int timeoutSeconds);
 
-  protected abstract void doNewStfDelay(Long delayStfId, StfCall callee, int timeoutSeconds, int delaySeconds);
+  protected abstract void doNewDelayStf(Long stfId, StfCall callee, int timeoutSeconds, int delaySeconds);
 
   protected abstract long doLockStf(StfMetaGroupEnum metaGrp, Long stfId, int timeoutSeconds, int lastRetryTimes,
       long lastTimeoutAt);
@@ -166,10 +185,73 @@ abstract class BaseStfCore implements StfCore, StfDelayQueueCore {
 
   protected abstract void doMarkDead(StfMetaGroupEnum metaGrp, Long stfId);
 
-  protected abstract boolean doDelayTransfer(Long stfDelayId);
+  protected abstract boolean doDelayTransfer(Stf lockedDelayStf, StfCall delayCalleePreEval);
+
+  protected abstract String getCoreTblName();
+
+  private void invokeConsumer(Pair<StfMetaGroupEnum, Long> stfMeta, Stf stf, StfCall callee, boolean batch,
+      BaseConsumer<StfMetaGroupEnum> bizFn) {
+    StfMetaGroupEnum metaGrp = stfMeta.getLeft();
+    Long stfId = stfMeta.getRight();
+    if (bizFn instanceof PairConsumer) {
+      ((PairConsumer<StfMetaGroupEnum, Long>)bizFn).accept(metaGrp, stfId);
+    } else if (bizFn instanceof TriConsumer) {
+      ((TriConsumer<StfMetaGroupEnum, Long, Boolean>)bizFn).accept(metaGrp, stfId, batch);
+    } else if (bizFn instanceof QuadruConsumer) {
+      ((QuadruConsumer<StfMetaGroupEnum, Long, Stf, StfCall>)bizFn).accept(metaGrp, stfId, stf, callee);
+    }
+  }
 
   {
     worker = newWorkerOfStfCore();
+
+    coreFn = (stfMeta, stf, callee, async, batch, bizFn) -> {
+      Long stfId = stfMeta.getRight();
+      if (checkFail(stfId)) {
+        return;
+      }
+      if (!async) {
+        invokeConsumer(stfMeta, stf, callee, false,
+            bizFn);/*- This 'false' is somewhat weird,meaning that ‘Sync calls’ must also be non-batch */
+        return;
+      }
+      worker.execute(() -> invokeConsumer(stfMeta, stf, callee, batch, bizFn));
+    };/*-TODO mj:Move to other place,not jdbc semantic*/
+
+    forward = (metaGrp, stfId, lockedStf, calleePreEval) -> {
+      if (metaGrp == CORE) {
+        // Invoke callee to actually retry the job
+        invokeCall(stfId, calleePreEval);
+        return;
+      }
+      try {
+        if (!doDelayTransfer(lockedStf, calleePreEval)) {
+          return;
+        }
+      } catch (DuplicateKeyException e) {// Shouldn't happen
+        try {
+          H.tryCommitLaStfOnDup(LOG, stfId, getCoreTblName(), (DuplicateKeyException)e,
+              laStfId -> this.fallbackToSingleMarkDone(DELAY, laStfId));
+        } catch (Throwable e1) {
+          Exceptions.swallow(e1, LOG, "An error occurred while auto committing stf-delay");
+        }
+        return;
+      }
+      this.markDone(DELAY, stfId, true);// Stf internally using Stf itself:)
+
+      // Immediate trigger the invoke(this is not retry)
+      invokeCall(stfId, calleePreEval);
+    };
+
+    markDone = (metaGrp, stfId, batch) -> {
+      if (!doMarkDone(metaGrp, stfId, batch)) {
+        LOG.error("The stf#{} can't be marked done", stfId);
+      }
+    };
+
+    markDead = (metaGrp, stfId) -> {
+      doMarkDead(metaGrp, stfId);
+    };
   }
 
   @Override

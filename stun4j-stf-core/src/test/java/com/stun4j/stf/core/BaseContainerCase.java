@@ -23,44 +23,20 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.MySQLContainer;
+import org.testcontainers.containers.OracleContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 import com.stun4j.stf.core.job.JobScanner;
 import com.stun4j.stf.core.job.JobScannerJdbc;
-import com.stun4j.stf.core.spi.StfJdbcOps.StfJdbcRowMapper;
 import com.stun4j.stf.core.support.JdbcAware;
 import com.stun4j.stf.core.support.SchemaFileHelper;
 import com.stun4j.stf.core.support.persistence.StfDefaultSpringJdbcOps;
-
-import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.CALLEE;
-import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.CT_AT;
-import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.ID;
-import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.IS_DEAD;
-import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.RETRY_TIMES;
-import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.ST;
-import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.TIMEOUT_AT;
-import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.TIMEOUT_SECS;
-import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.UP_AT;
 import com.stun4j.stf.core.utils.DataSourceUtils;
 
 public abstract class BaseContainerCase<BEAN_TYPE> {
   protected final GenericContainer db;
   protected final String tblName;
   protected final byte containerType;
-
-  public static final StfJdbcRowMapper<Stf> STF_ROW_MAPPER = (rs, arg) -> {
-    Stf stf = new Stf();
-    stf.setId(rs.getLong(ID.nameLowerCase()));
-    stf.setBody(rs.getString(CALLEE.nameLowerCase()));
-    stf.setSt(rs.getString(ST.nameLowerCase()));
-    stf.setIsDead(rs.getString(IS_DEAD.nameLowerCase()));
-    stf.setRetryTimes(rs.getInt(RETRY_TIMES.nameLowerCase()));
-    stf.setTimeoutSecs(rs.getInt(TIMEOUT_SECS.nameLowerCase()));
-    stf.setTimeoutAt(rs.getLong(TIMEOUT_AT.nameLowerCase()));
-    stf.setCtAt(rs.getLong(CT_AT.nameLowerCase()));
-    stf.setUpAt(rs.getLong(UP_AT.nameLowerCase()));
-    return stf;
-  };
 
   /** Focus on core biz bean assemble */
   public BEAN_TYPE bizBean() {
@@ -78,7 +54,18 @@ public abstract class BaseContainerCase<BEAN_TYPE> {
       db = new MySQLContainer("mysql:5.7").withInitScript(SchemaFileHelper.classpath(dbVendor, roundId));
     } else if (DataSourceUtils.DB_VENDOR_POSTGRE_SQL.equals(dbVendor)) {
       db = new PostgreSQLContainer("postgres").withInitScript(SchemaFileHelper.classpath(dbVendor, roundId));
-    } else {
+    }
+    // else if (DataSourceUtils.DB_VENDOR_ORACLE.equals(dbVendor)) {
+    // // gvenzl/oracle-xe:11(not work on my mac)
+    // // gvenzl/oracle-xe:11-slim-faststart(not work on my mac)
+    // // gvenzl/oracle-xe:21-slim-faststart(not work on my mac)
+    // // oracleinanutshell/oracle-xe-11g(not work under recent testcontainers)
+    // db = new OracleContainer("gvenzl/oracle-xe:11")
+    // .withInitScript(SchemaFileHelper.classpath(dbVendor, roundId)).withPrivilegedMode(true)
+    // .withDatabaseName("testDB").withUsername("testUser").withPassword("testPassword")
+    // .withConnectTimeoutSeconds(300).withStartupTimeoutSeconds(300).withStartupAttempts(300);
+    // }
+    else {
       throw new RuntimeException("Not supported DB verdor: " + dbVendor);
     }
     return Triple.of(tblName, schemaFileWithTblNameChanged, db);

@@ -38,12 +38,11 @@ public interface StfCore extends StfBatchable {
 
   long lockStf(StfMetaGroupEnum metaGrp, Long stfId, int timeoutSeconds, int lastRetryTimes, long lastTimeoutAt);
 
+  void forward(StfMetaGroupEnum metaGrp, Stf lockedStf, StfCall calleePreEval, boolean async);
+
   void markDone(StfMetaGroupEnum metaGrp, Long stfId, boolean async);
 
   void markDead(StfMetaGroupEnum metaGrp, Long stfId, boolean async);
-
-  void reForward(StfMetaGroupEnum metaGrp, Long stfId, int lastRetryTimes, String calleeInfo, boolean async,
-      Object... calleeMethodArgs);
 
   StfRunModeEnum getRunMode();
 
@@ -72,18 +71,17 @@ public interface StfCore extends StfBatchable {
       }
 
       @Override
+      public void forward(StfMetaGroupEnum metaGrp, Stf lockedStf, StfCall callee, boolean async) {
+        NOT_INITIALIZED_THROW.accept(MODULE_ID);
+      }
+
+      @Override
       public void markDone(StfMetaGroupEnum metaGrp, Long stfId, boolean async) {
         NOT_INITIALIZED_THROW.accept(MODULE_ID);
       }
 
       @Override
       public void markDead(StfMetaGroupEnum metaGrp, Long stfId, boolean async) {
-        NOT_INITIALIZED_THROW.accept(MODULE_ID);
-      }
-
-      @Override
-      public void reForward(StfMetaGroupEnum metaGrp, Long stfId, int lastRetryTimes, String calleeInfo, boolean async,
-          Object... calleeMethodArgs) {
         NOT_INITIALIZED_THROW.accept(MODULE_ID);
       }
 

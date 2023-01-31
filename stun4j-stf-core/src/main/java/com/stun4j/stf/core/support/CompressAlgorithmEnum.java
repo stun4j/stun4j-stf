@@ -13,22 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.stun4j.stf.core.serializer;
+package com.stun4j.stf.core.support;
 
-/** @author Jay Meng */
-public interface Serializer {
-  byte[] serialize(Object t) throws SerializationException;
+import java.util.stream.Stream;
 
-  Object deserialize(byte[] bytes) throws SerializationException;
+/**
+ * @author Jay Meng
+ */
+public enum CompressAlgorithmEnum {
+  NONE((byte)-1), ZSTD((byte)0), SNAPPY((byte)1);
 
-  <T> T deserialize(byte[] bytes, Class<T> type) throws SerializationException;
+  private final byte algorithm;
 
-  static Serializer json() {
-    return json(true);
+  private CompressAlgorithmEnum(byte algorithm) {
+    this.algorithm = algorithm;
   }
 
-  static Serializer json(boolean typeSaved) {
-    GenericJackson2JsonSerializer ser = new GenericJackson2JsonSerializer();
-    return typeSaved ? ser : ser.copyOfNoTypeSaved();
+  public byte value() {
+    return algorithm;
   }
+
+  public static Stream<CompressAlgorithmEnum> stream() {
+    return Stream.of(CompressAlgorithmEnum.values());
+  }
+
+  public static CompressAlgorithmEnum valueOf(byte algorithm) {
+    return stream().filter(a -> a.value() == algorithm).findFirst().orElse(NONE);
+  }
+
 }

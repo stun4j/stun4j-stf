@@ -36,7 +36,6 @@ import com.stun4j.stf.core.StfCall;
 import com.stun4j.stf.core.StfCore;
 import com.stun4j.stf.core.StfMetaGroupEnum;
 import com.stun4j.stf.core.support.JsonHelper;
-import com.stun4j.stf.core.utils.Exceptions;
 
 /**
  * @author Jay Meng
@@ -69,19 +68,10 @@ class JobRunner {
 
     logTriggerInformation(metaGrp, lockedJob, retryBehav);
 
-    // Retry the job
-    Long jobId = lockedJob.getId();
-    String calleeInfo = null;
-    Object[] methodArgs = null;
-    try {
-      StfCall callee = JsonHelper.fromJson(lockedJob.getBody(), StfCall.class);
-      calleeInfo = toCallStringOf(callee);
-      methodArgs = callee.getArgs();
-    } catch (Throwable t) {
-      // This will definitely result in an invoke error,so fail-fast here
-      Exceptions.sneakyThrow(t, LOG, "An error occurred while pre parsing calleeInfo of stf-job#{}", jobId);
-    }
-    stfCore.reForward(metaGrp, jobId, lockedJob.getRetryTimes(), calleeInfo, true, methodArgs);
+    StfCall callee = JsonHelper.fromJson(lockedJob.evalBody().getBody(), StfCall.class);
+
+    stfCore.forward(metaGrp, lockedJob, callee,
+        true);/*-TODO mj:1.consider set to false 2.or we will have redundant threadpool 3.or we extract cpu-related jobs here(current choice)*/
   }
 
   private static Pair<Boolean, Integer> doCheckAndMarkJobDeadIfNecessary(StfMetaGroupEnum metaGrp, Stf job,
@@ -124,16 +114,6 @@ class JobRunner {
       }
       return;
     }
-  }
-
-  private static String toCallStringOf(StfCall call) {
-    String type = call.getType();
-    String bizObjId = call.getBizObjId();
-    String method = call.getMethod();
-    StringBuilder builder = new StringBuilder(type);
-    builder.append(":").append(bizObjId).append(".").append(method);
-    String calleeInfo = builder.toString();
-    return calleeInfo;
   }
 
   synchronized static JobRunner init(Map<Integer, Integer> retryBehavior) {

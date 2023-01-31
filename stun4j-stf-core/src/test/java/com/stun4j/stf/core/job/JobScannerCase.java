@@ -69,10 +69,10 @@ public abstract class JobScannerCase extends BaseContainerCase<JobScanner> {
 
   private void _02_template(StateEnum st) {
     JobScanner biz = bizBean();
-    StfCore stf = newStfCore(biz);
+    StfCore stfc = newStfCore(biz);
     // Initialize two pieces of data, both in initial state 'I'
-    stf.newStf("foo", "bar");
-    stf.newStf("foo2", "bar2");
+    stfc.newStf("foo", "bar");
+    stfc.newStf("foo2", "bar2");
     // Change the state of 1 data item to 'P'
     Long stfId = StfContext.safeGetLaStfIdValue();
     // This changes the initial state of Stf: I->P, and the following process is the same!

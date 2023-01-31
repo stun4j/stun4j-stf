@@ -15,14 +15,21 @@
  */
 package com.stun4j.stf.core.utils;
 
+/**
+ * @author Jay Meng
+ */
 public abstract class ThreadPoolUtils {
+  public static int cpuIntensivePoolSize() {
+    return poolSize(0.1);
+  }
+
   public static int ioIntensivePoolSize() {
     return poolSize(0.9);
   }
 
-  public static int poolSize(double blockingCoefficient) {
+  public static int poolSize(double blockingFactor) {
     int numOfCore = Runtime.getRuntime().availableProcessors();
-    int poolSize = (int)(numOfCore / (1 - blockingCoefficient));
+    int poolSize = (int)(numOfCore / (1 - blockingFactor));
     return poolSize;
   }
 }

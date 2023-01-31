@@ -65,7 +65,8 @@ import com.stun4j.stf.core.utils.shaded.org.springframework.core.KotlinDetector;
  *         <p>
  *         From spring-data-redis:2.7.7,changes listed below
  *         <ul>
- *         <li>Disable all Spring dependency, disable @Nullable, use Asserts#notNull/shaded ClassUtils/commons-lang3 instead</li>
+ *         <li>Disable all Spring dependency, disable @Nullable, use Asserts#notNull/shaded ClassUtils/commons-lang3
+ *         instead</li>
  *         <li>Use Serializer instead of RedisSerializer</li>
  *         <li>Change {@code serialVersionUID}</li>
  *         <li>Enhance Serialization/Deserialization Feature</li>
@@ -126,6 +127,10 @@ public class GenericJackson2JsonSerializer implements Serializer {
     }
     mapper.setDefaultTyping(typer);
     // <-
+  }
+
+  public GenericJackson2JsonSerializer copyOfNoTypeSaved() {
+    return new GenericJackson2JsonSerializer(mapper.copy().deactivateDefaultTyping());
   }
 
   /**

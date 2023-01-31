@@ -16,9 +16,10 @@
 package com.stun4j.stf.core.support.executor;
 
 import static com.stun4j.stf.core.utils.executor.PoolExecutors.SILENT_DROP_POLICY;
+import static com.stun4j.stf.core.utils.executor.PoolExecutors.defaultCpuPrefer;
 import static com.stun4j.stf.core.utils.executor.PoolExecutors.defaultIoPrefer;
 import static com.stun4j.stf.core.utils.executor.PoolExecutors.defaultWorkStealingPool;
-import static com.stun4j.stf.core.utils.executor.PoolExecutors.newDynamicIoPrefer;
+import static com.stun4j.stf.core.utils.executor.PoolExecutors.newIoPrefer;
 import static com.stun4j.stf.core.utils.executor.PoolExecutors.newSingleThreadPool;
 import static com.stun4j.stf.core.utils.executor.PoolExecutors.newSingleThreadScheduler;
 
@@ -33,12 +34,12 @@ import com.stun4j.stf.core.utils.executor.NamedThreadFactory;
 
 /** @author Jay Meng */
 public final class StfInternalExecutors {
-  public static ThreadPoolExecutor newWorkerOfStfCore() {
-    return (ThreadPoolExecutor)defaultIoPrefer("stf-core-worker");
+  public static ThreadPoolExecutor newWorkerOfJobRunner(StfMetaGroupEnum metaGrp) {
+    return (ThreadPoolExecutor)defaultCpuPrefer("stf-grp-" + metaGrp.nameLowerCase() + "-job-runner");
   }
 
-  public static ThreadPoolExecutor newWorkerOfJobRunner(StfMetaGroupEnum metaGrp) {
-    return (ThreadPoolExecutor)defaultIoPrefer("stf-grp-" + metaGrp.nameLowerCase() + "-job-runner");
+  public static ThreadPoolExecutor newWorkerOfStfCore() {
+    return (ThreadPoolExecutor)defaultIoPrefer("stf-core-worker");
   }
 
   public static ScheduledExecutorService newWatcherOfJobLoading() {
@@ -62,7 +63,7 @@ public final class StfInternalExecutors {
 
   public static StfExecutorService newDefaultExec(int threadKeepAliveTimeSeconds, int taskQueueSize,
       RejectedExecutionHandler rejectPolicy, boolean allowCoreThreadTimeOut) {
-    return new StfExecutorService(newDynamicIoPrefer(new LinkedBlockingQueue<>(taskQueueSize),
+    return new StfExecutorService(newIoPrefer(new LinkedBlockingQueue<>(taskQueueSize),
         NamedThreadFactory.of("stf-dft-exec"), threadKeepAliveTimeSeconds, allowCoreThreadTimeOut, rejectPolicy));
   }
 

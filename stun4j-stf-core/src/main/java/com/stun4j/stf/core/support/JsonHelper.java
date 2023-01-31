@@ -17,11 +17,17 @@ package com.stun4j.stf.core.support;
 
 import java.nio.charset.StandardCharsets;
 
+import org.apache.commons.lang3.tuple.Pair;
+import org.xerial.snappy.Snappy;
+
+import com.github.luben.zstd.Zstd;
 import com.stun4j.stf.core.serializer.Serializer;
+import com.stun4j.stf.core.utils.Exceptions;
 
 /** @author Jay Meng */
 public abstract class JsonHelper {
   private static final Serializer DFT_SERIALIZER = Serializer.json();
+  public static final Serializer NO_TYPING_SERIALIZER = Serializer.json(false);
 
   public static String toJson(Object obj) {
     return toJson(DFT_SERIALIZER, obj);
@@ -29,6 +35,26 @@ public abstract class JsonHelper {
 
   public static String toJson(Serializer serializer, Object obj) {
     return new String(serializer.serialize(obj), StandardCharsets.UTF_8);
+  }
+
+  public static Pair<Integer, byte[]> toJson(Object obj, CompressAlgorithmEnum compAlgo) {
+    return toJson(DFT_SERIALIZER, obj, compAlgo);
+  }
+
+  public static Pair<Integer, byte[]> toJson(Serializer serializer, Object obj, CompressAlgorithmEnum compAlgo) {
+    try {
+      byte[] raw = serializer.serialize(obj);
+      switch (compAlgo) {
+        case ZSTD:
+          return Pair.of(raw.length, Zstd.compress(raw));// TODO mj:lvl
+        case SNAPPY:
+          return Pair.of(raw.length, Snappy.compress(raw));
+        default:
+          return Pair.of(null, raw);
+      }
+    } catch (Throwable e) {
+      throw Exceptions.sneakyThrow(e);
+    }
   }
 
   public static <T> T fromJson(String json, Class<T> type) {

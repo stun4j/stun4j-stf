@@ -81,11 +81,11 @@ public final class StfDelayQueue {
     // <-
 
     StfCall callee = ((BaseStfCore)core).newCallee(taskObjId, taskMethodName, taskParamsPair);
-    Long stfDelayId = core.newStfDelay(callee, timeoutSeconds, delaySeconds);
+    Long stfId = core.newDelayStf(callee, timeoutSeconds, delaySeconds);
     if (LOG.isInfoEnabled()) {
-      LOG.info("The stf-delay-job#{} is successfully scheduled.", stfDelayId);
+      LOG.info("The stf-delay-job#{} is successfully scheduled.", stfId);
     }
-    return stfDelayId;
+    return stfId;
   }
 
   public StfDelayQueue(StfDelayQueueCore core) {
