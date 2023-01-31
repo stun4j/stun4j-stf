@@ -17,9 +17,9 @@ package com.stun4j.stf.core.build;
 
 import static com.google.common.base.Strings.lenientFormat;
 import static com.stun4j.stf.core.StfConsts.DFT_JOB_TIMEOUT_SECONDS;
-import static com.stun4j.stf.core.build.BuildingBlockEnum.ARGS;
-import static com.stun4j.stf.core.build.BuildingBlockEnum.OID;
-import static com.stun4j.stf.core.build.BuildingBlockEnum.TIMEOUT;
+import static com.stun4j.stf.core.build.BuildingBlock.ARGS;
+import static com.stun4j.stf.core.build.BuildingBlock.OID;
+import static com.stun4j.stf.core.build.BuildingBlock.TIMEOUT;
 import static com.stun4j.stf.core.utils.Asserts.argument;
 import static com.stun4j.stf.core.utils.Asserts.requireNonNull;
 import static com.stun4j.stf.core.utils.Asserts.state;

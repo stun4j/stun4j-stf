@@ -34,15 +34,17 @@ public final class SystemLoad extends BaseLifecycle {
   private static final int TIME_WINDOW_SECONDS = 60;
   public static final SystemLoad INSTANCE;
 
-  private float highFactor = 0.8f;
   private final OperatingSystemMXBean os;
   private final int processorCnt;
+
+  private final Thread worker;
+
+  private float highFactor = 0.8f;
 
   private double lastWindowSecondsTotal;
   private double lastWindowSecondsAvg;
 
   private int elapsedSeconds;
-  private final Thread worker;
   private volatile boolean shutdown;
 
   @Override

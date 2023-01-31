@@ -16,23 +16,23 @@
 package com.stun4j.stf.core;
 
 import static com.google.common.base.Strings.lenientFormat;
-import static com.stun4j.stf.core.StateEnum.F;
-import static com.stun4j.stf.core.StateEnum.I;
-import static com.stun4j.stf.core.StateEnum.P;
-import static com.stun4j.stf.core.StateEnum.S;
+import static com.stun4j.stf.core.State.F;
+import static com.stun4j.stf.core.State.I;
+import static com.stun4j.stf.core.State.P;
+import static com.stun4j.stf.core.State.S;
 import static com.stun4j.stf.core.StfConsts.DFT_CORE_TBL_NAME;
 import static com.stun4j.stf.core.StfConsts.DFT_DELAY_TBL_NAME_SUFFIX;
-import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.ALL_FIELD_NAMES_LOWER_CASE;
-import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.CALLEE_BYTES;
+import static com.stun4j.stf.core.StfConsts.StfDbField.ALL_FIELD_NAMES_LOWER_CASE;
+import static com.stun4j.stf.core.StfConsts.StfDbField.CALLEE_BYTES;
 import static com.stun4j.stf.core.StfHelper.H;
-import static com.stun4j.stf.core.StfMetaGroupEnum.CORE;
-import static com.stun4j.stf.core.YesNoEnum.N;
-import static com.stun4j.stf.core.YesNoEnum.Y;
+import static com.stun4j.stf.core.StfMetaGroup.CORE;
+import static com.stun4j.stf.core.YesNo.N;
+import static com.stun4j.stf.core.YesNo.Y;
+import static org.apache.commons.lang3.RegExUtils.removeFirst;
 import static org.apache.commons.lang3.tuple.Pair.of;
 
 import java.util.List;
 
-import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
 import com.stun4j.stf.core.spi.StfJdbcOps;
@@ -59,12 +59,12 @@ public class StfCoreJdbc extends BaseStfCore implements JdbcAware {
 
   private final String DELAY_TRANSFER_FULL_SQL;
 
-  private String coreTblName;
-
   private final StfJdbcOps jdbcOps;
 
+  private String coreTblName;
+
   @Override
-  public long lockStf(StfMetaGroupEnum metaGrp, Long stfId, int timeoutSecs, int lastRetryTimes, long lastTimeoutAt) {
+  public long lockStf(StfMetaGroup metaGrp, Long stfId, int timeoutSecs, int lastRetryTimes, long lastTimeoutAt) {
     if (checkFail(stfId)) {
       return -1;
     }
@@ -72,17 +72,17 @@ public class StfCoreJdbc extends BaseStfCore implements JdbcAware {
   }
 
   @Override
-  public void markDone(StfMetaGroupEnum metaGrp, Long stfId, boolean async) {
+  public void markDone(StfMetaGroup metaGrp, Long stfId, boolean async) {
     coreFn.accept(Pair.of(metaGrp, stfId), null, null, async, true, markDone);
   }
 
   @Override
-  public void markDead(StfMetaGroupEnum metaGrp, Long stfId, boolean async) {
+  public void markDead(StfMetaGroup metaGrp, Long stfId, boolean async) {
     coreFn.accept(Pair.of(metaGrp, stfId), null, null, async, false, markDead);
   }
 
   @Override
-  public void forward(StfMetaGroupEnum metaGrp, Stf lockedStf, StfCall calleePreEval, boolean async) {
+  public void forward(StfMetaGroup metaGrp, Stf lockedStf, StfCall calleePreEval, boolean async) {
     coreFn.accept(Pair.of(metaGrp, lockedStf.getId()), lockedStf, calleePreEval, async, false, forward);
   }
 
@@ -123,7 +123,7 @@ public class StfCoreJdbc extends BaseStfCore implements JdbcAware {
   }
 
   @Override
-  protected long doLockStf(StfMetaGroupEnum metaGrp, Long stfId, int timeoutSecs, int lastRetryTimes,
+  protected long doLockStf(StfMetaGroup metaGrp, Long stfId, int timeoutSecs, int lastRetryTimes,
       long lastTimeoutAt) {
     if (H.isDataSourceClose()) {
       H.logOnDataSourceClose(LOG, "doLockStf", of("stf", stfId));
@@ -136,7 +136,7 @@ public class StfCoreJdbc extends BaseStfCore implements JdbcAware {
   }
 
   @Override
-  protected int[] doBatchLockStfs(StfMetaGroupEnum metaGrp, List<Object[]> batchArgs) {
+  protected int[] doBatchLockStfs(StfMetaGroup metaGrp, List<Object[]> batchArgs) {
     if (H.isDataSourceClose()) {
       H.logOnDataSourceClose(LOG, "doBatchLockStfs");
       return null;
@@ -146,7 +146,7 @@ public class StfCoreJdbc extends BaseStfCore implements JdbcAware {
   }
 
   @Override
-  protected boolean doMarkDone(StfMetaGroupEnum metaGrp, Long stfId, boolean batch) {
+  protected boolean doMarkDone(StfMetaGroup metaGrp, Long stfId, boolean batch) {
     if (H.isDataSourceClose()) {
       H.logOnDataSourceClose(LOG, "doMarkDone", of("stf", stfId));
       return false;
@@ -160,7 +160,7 @@ public class StfCoreJdbc extends BaseStfCore implements JdbcAware {
   }
 
   @Override
-  public int[] batchMarkDone(StfMetaGroupEnum metaGrp, List<Object[]> stfIdsInfo) {
+  public int[] batchMarkDone(StfMetaGroup metaGrp, List<Object[]> stfIdsInfo) {
     if (H.isDataSourceClose()) {
       H.logOnDataSourceClose(LOG, "batchMarkDone");
       return null;
@@ -170,7 +170,7 @@ public class StfCoreJdbc extends BaseStfCore implements JdbcAware {
   }
 
   @Override
-  protected void doMarkDead(StfMetaGroupEnum metaGrp, Long stfId) {
+  protected void doMarkDead(StfMetaGroup metaGrp, Long stfId) {
     if (H.isDataSourceClose()) {
       H.logOnDataSourceClose(LOG, "doMarkDead", of("stf", stfId));
       return;
@@ -204,11 +204,10 @@ public class StfCoreJdbc extends BaseStfCore implements JdbcAware {
 
     String initSqlTpl = "insert into %s (%s) values (?, ?, ?, '%s', '%s', %s, ?, ?, ?, ?)";
     INIT_SQL_FULL = lenientFormat(initSqlTpl, coreTblName, ALL_FIELD_NAMES_LOWER_CASE, I.name(), N.name(), 0);
-    INIT_SQL_NO_CALLEE_BYTES = RegExUtils
-        .removeFirst(RegExUtils.removeFirst(INIT_SQL_FULL, ", " + CALLEE_BYTES.nameLowerCase()), ", \\?");
+    String calleeBytesFldSeg = ", " + CALLEE_BYTES.nameLowerCase();
+    INIT_SQL_NO_CALLEE_BYTES = removeFirst(removeFirst(INIT_SQL_FULL, calleeBytesFldSeg), ", \\?");
     INIT_DELAY_SQL_FULL = lenientFormat(initSqlTpl, delayTblName, ALL_FIELD_NAMES_LOWER_CASE, I.name(), N.name(), 0);
-    INIT_DELAY_SQL_NO_CALLEE_BYTES = RegExUtils
-        .removeFirst(RegExUtils.removeFirst(INIT_DELAY_SQL_FULL, ", " + CALLEE_BYTES.nameLowerCase()), ", \\?");
+    INIT_DELAY_SQL_NO_CALLEE_BYTES = removeFirst(removeFirst(INIT_DELAY_SQL_FULL, calleeBytesFldSeg), ", \\?");
 
     String lockSqlTpl = "update %s set st = '%s', retry_times = retry_times + 1, timeout_at = ?, up_at = ? where id = ? and retry_times = ? and timeout_at = ? and st in ('%s', '%s')";
     LOCK_SQL = lenientFormat(lockSqlTpl, coreTblName, P.name(), I.name(), P.name());

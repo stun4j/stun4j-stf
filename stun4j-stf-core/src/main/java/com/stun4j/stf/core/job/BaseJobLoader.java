@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import com.stun4j.stf.core.Stf;
-import com.stun4j.stf.core.StfMetaGroupEnum;
+import com.stun4j.stf.core.StfMetaGroup;
 import com.stun4j.stf.core.cluster.StfClusterMember;
 import com.stun4j.stf.core.support.BaseLifecycle;
 import com.stun4j.stf.core.utils.Exceptions;
@@ -50,11 +50,11 @@ public abstract class BaseJobLoader extends BaseLifecycle {
 
   private static final double DFT_LOAD_FACTOR = 0.2;
 
-  private final ConcurrentHashMap<StfMetaGroupEnum, JobQueue> queuesAllMetaGrps;
+  private final ConcurrentHashMap<StfMetaGroup, JobQueue> queuesAllMetaGrps;
 
   private final ScheduledExecutorService watcher;
 
-  private final Map<StfMetaGroupEnum, ExecutorService> workers;
+  private final Map<StfMetaGroup, ExecutorService> workers;
 
   private long jobTimeoutMs;
 
@@ -107,15 +107,15 @@ public abstract class BaseJobLoader extends BaseLifecycle {
    * @return the result Stream, containing stf objects, needing to be closed once fully processed (e.g. through a
    *         try-with-resources clause)
    */
-  protected abstract Stream<Stf> loadJobs(StfMetaGroupEnum metaGrp, int loadSize);
+  protected abstract Stream<Stf> loadJobs(StfMetaGroup metaGrp, int loadSize);
 
-  Stf getJobFromQueue(StfMetaGroupEnum metaGrp, boolean blocking) throws InterruptedException {
+  Stf getJobFromQueue(StfMetaGroup metaGrp, boolean blocking) throws InterruptedException {
     JobQueue queue = getOrCreateQueue(metaGrp);
     Stf job = blocking ? queue.take() : queue.poll();
     return job;
   }
 
-  private void doLoadJobsToQueue(StfMetaGroupEnum metaGrp) {
+  private void doLoadJobsToQueue(StfMetaGroup metaGrp) {
     try {
       JobQueue queue = getOrCreateQueue(metaGrp);
       int queueSize = queue.size();
@@ -149,7 +149,7 @@ public abstract class BaseJobLoader extends BaseLifecycle {
     }
   }
 
-  private JobQueue getOrCreateQueue(StfMetaGroupEnum metaGrp) {
+  private JobQueue getOrCreateQueue(StfMetaGroup metaGrp) {
     JobQueue queue = queuesAllMetaGrps.computeIfAbsent(metaGrp, k -> new JobQueue(loadSize));
     return queue;
   }
@@ -166,7 +166,7 @@ public abstract class BaseJobLoader extends BaseLifecycle {
     loadFactor = DFT_LOAD_FACTOR;
 
     queuesAllMetaGrps = new ConcurrentHashMap<>();
-    workers = StfMetaGroupEnum.stream().reduce(new HashMap<StfMetaGroupEnum, ExecutorService>(), (map, metaGrp) -> {
+    workers = StfMetaGroup.stream().reduce(new HashMap<StfMetaGroup, ExecutorService>(), (map, metaGrp) -> {
       map.put(metaGrp, newWorkerOfJobLoading(metaGrp));
       return map;
     }, (a, b) -> null);
@@ -182,12 +182,12 @@ public abstract class BaseJobLoader extends BaseLifecycle {
         : (loadSize > DFT_MAX_LOAD_SIZE ? DFT_MAX_LOAD_SIZE : loadSize);
   }
 
-  public void setScanFreqSeconds(int scanFreqSeconds) {
-    this.scanFreqSeconds = scanFreqSeconds < DFT_MIN_SCAN_FREQ_SECONDS ? DFT_MIN_SCAN_FREQ_SECONDS : scanFreqSeconds;
+  public void setScanFreqSeconds(int scanFreqSecs) {
+    this.scanFreqSeconds = scanFreqSecs < DFT_MIN_SCAN_FREQ_SECONDS ? DFT_MIN_SCAN_FREQ_SECONDS : scanFreqSecs;
   }
 
-  public void setJobTimeoutSeconds(int jobTimeoutSeconds) {
-    this.jobTimeoutMs = jobTimeoutSeconds < DFT_MIN_JOB_TIMEOUT_SECONDS ? DFT_MIN_JOB_TIMEOUT_SECONDS * 1000
-        : jobTimeoutSeconds * 1000;
+  public void setJobTimeoutSeconds(int jobTimeoutSecs) {
+    this.jobTimeoutMs = jobTimeoutSecs < DFT_MIN_JOB_TIMEOUT_SECONDS ? DFT_MIN_JOB_TIMEOUT_SECONDS * 1000
+        : jobTimeoutSecs * 1000;
   }
 }

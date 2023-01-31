@@ -29,9 +29,10 @@ import org.apache.commons.lang3.tuple.Triple;
 public enum JvmMemory {
   INSTANCE;
 
+  private final MemoryMXBean MEM_BASIC;
+
   private float highFactor = 0.85f;
   private boolean includeNonHeap;
-  private final MemoryMXBean MEM_BASIC;
 
   public MemoryUsage getHeapUsage() {
     return MEM_BASIC.getHeapMemoryUsage();

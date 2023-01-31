@@ -20,12 +20,12 @@ import java.util.stream.Stream;
 /**
  * @author Jay Meng
  */
-public enum CompressAlgorithmEnum {
+public enum CompressAlgorithm {
   NONE((byte)-1), ZSTD((byte)0), SNAPPY((byte)1);
 
   private final byte algorithm;
 
-  private CompressAlgorithmEnum(byte algorithm) {
+  private CompressAlgorithm(byte algorithm) {
     this.algorithm = algorithm;
   }
 
@@ -33,11 +33,11 @@ public enum CompressAlgorithmEnum {
     return algorithm;
   }
 
-  public static Stream<CompressAlgorithmEnum> stream() {
-    return Stream.of(CompressAlgorithmEnum.values());
+  public static Stream<CompressAlgorithm> stream() {
+    return Stream.of(CompressAlgorithm.values());
   }
 
-  public static CompressAlgorithmEnum valueOf(byte algorithm) {
+  public static CompressAlgorithm valueOf(byte algorithm) {
     return stream().filter(a -> a.value() == algorithm).findFirst().orElse(NONE);
   }
 

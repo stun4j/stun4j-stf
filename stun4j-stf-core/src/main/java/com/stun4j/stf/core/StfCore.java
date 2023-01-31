@@ -26,91 +26,91 @@ import org.apache.commons.lang3.tuple.Pair;
  * @author JayMeng
  */
 public interface StfCore extends StfBatchable {
-  StfCore withRunMode(StfRunModeEnum runMode);
+  StfCore withRunMode(StfRunMode runMode);
 
   @SuppressWarnings("unchecked")
-  Long newStf(String bizObjId, String bizMethodName, Integer timeoutSeconds, Pair<?, Class<?>>... typedArgs);
+  Long newStf(String bizObjId, String bizMethodName, Integer timeoutSecs, Pair<?, Class<?>>... typedArgs);
 
   @SuppressWarnings("unchecked")
   default Long newStf(String bizObjId, String bizMethodName, Pair<?, Class<?>>... typedArgs) {
     return newStf(bizObjId, bizMethodName, null, typedArgs);
   }
 
-  long lockStf(StfMetaGroupEnum metaGrp, Long stfId, int timeoutSeconds, int lastRetryTimes, long lastTimeoutAt);
+  long lockStf(StfMetaGroup metaGrp, Long stfId, int timeoutSecs, int lastRetryTimes, long lastTimeoutAt);
 
-  void forward(StfMetaGroupEnum metaGrp, Stf lockedStf, StfCall calleePreEval, boolean async);
+  void forward(StfMetaGroup metaGrp, Stf lockedStf, StfCall calleePreEval, boolean async);
 
-  void markDone(StfMetaGroupEnum metaGrp, Long stfId, boolean async);
+  void markDone(StfMetaGroup metaGrp, Long stfId, boolean async);
 
-  void markDead(StfMetaGroupEnum metaGrp, Long stfId, boolean async);
+  void markDead(StfMetaGroup metaGrp, Long stfId, boolean async);
 
-  StfRunModeEnum getRunMode();
+  StfRunMode getRunMode();
 
   static StfCore empty() {
     return new StfCore() {
       static final String MODULE_ID = "stf-core";
 
-      public StfCore withRunMode(StfRunModeEnum runMode) {
+      public StfCore withRunMode(StfRunMode runMode) {
         NOT_INITIALIZED_THROW.accept(MODULE_ID);
         return null;
       }
 
       @SuppressWarnings("unchecked")
       @Override
-      public Long newStf(String bizObjId, String bizMethodName, Integer timeoutSeconds,
+      public Long newStf(String bizObjId, String bizMethodName, Integer timeoutSecs,
           Pair<?, Class<?>>... typedArgs) {
         NOT_INITIALIZED_THROW.accept(MODULE_ID);
         return null;
       }
 
       @Override
-      public long lockStf(StfMetaGroupEnum metaGrp, Long stfId, int timeoutSeconds, int lastRetryTimes,
+      public long lockStf(StfMetaGroup metaGrp, Long stfId, int timeoutSecs, int lastRetryTimes,
           long lastTimeoutAt) {
         NOT_INITIALIZED_THROW.accept(MODULE_ID);
         return -1;
       }
 
       @Override
-      public void forward(StfMetaGroupEnum metaGrp, Stf lockedStf, StfCall callee, boolean async) {
+      public void forward(StfMetaGroup metaGrp, Stf lockedStf, StfCall callee, boolean async) {
         NOT_INITIALIZED_THROW.accept(MODULE_ID);
       }
 
       @Override
-      public void markDone(StfMetaGroupEnum metaGrp, Long stfId, boolean async) {
+      public void markDone(StfMetaGroup metaGrp, Long stfId, boolean async) {
         NOT_INITIALIZED_THROW.accept(MODULE_ID);
       }
 
       @Override
-      public void markDead(StfMetaGroupEnum metaGrp, Long stfId, boolean async) {
+      public void markDead(StfMetaGroup metaGrp, Long stfId, boolean async) {
         NOT_INITIALIZED_THROW.accept(MODULE_ID);
       }
 
       @Override
-      public List<Stf> batchLockStfs(StfMetaGroupEnum metaGrp, List<Object[]> preBatchArgs) {
+      public List<Stf> batchLockStfs(StfMetaGroup metaGrp, List<Object[]> preBatchArgs) {
         NOT_INITIALIZED_THROW.accept(MODULE_ID);
         return null;
       }
 
       @Override
-      public long fallbackToSingleLockStf(StfMetaGroupEnum metaGrp, Stf stf, int timeoutSeconds) {
+      public long fallbackToSingleLockStf(StfMetaGroup metaGrp, Stf stf, int timeoutSecs) {
         NOT_INITIALIZED_THROW.accept(MODULE_ID);
         return -1;
       }
 
       @Override
-      public int[] batchMarkDone(StfMetaGroupEnum metaGrp, List<Object[]> stfIdsInfo) {
+      public int[] batchMarkDone(StfMetaGroup metaGrp, List<Object[]> stfIdsInfo) {
         NOT_INITIALIZED_THROW.accept(MODULE_ID);
         return null;
       }
 
       @Override
-      public boolean fallbackToSingleMarkDone(StfMetaGroupEnum metaGrp, Long stfId) {
+      public boolean fallbackToSingleMarkDone(StfMetaGroup metaGrp, Long stfId) {
         NOT_INITIALIZED_THROW.accept(MODULE_ID);
         return false;
       }
 
       @Override
-      public StfRunModeEnum getRunMode() {
+      public StfRunMode getRunMode() {
         NOT_INITIALIZED_THROW.accept(MODULE_ID);
         return null;
       }

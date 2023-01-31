@@ -23,7 +23,7 @@ import java.util.List;
 
 import com.stun4j.stf.core.Stf;
 import com.stun4j.stf.core.StfBatchable;
-import com.stun4j.stf.core.StfMetaGroupEnum;
+import com.stun4j.stf.core.StfMetaGroup;
 import com.stun4j.stf.core.support.actor.BaseActor;
 import com.stun4j.stf.core.support.event.StfReceivedEvent;
 
@@ -33,7 +33,7 @@ import com.stun4j.stf.core.support.event.StfReceivedEvent;
 class JobBatchLockAndRunActor extends BaseActor<StfReceivedEvent> {
   private final StfBatchable core;
   private final JobRunners runners;
-  private final StfMetaGroupEnum metaGrp;
+  private final StfMetaGroup metaGrp;
   private final int handleBatchSize;
 
   @Override
@@ -94,7 +94,7 @@ class JobBatchLockAndRunActor extends BaseActor<StfReceivedEvent> {
     return super.getMailBoxMaxDrainNum();
   }
 
-  JobBatchLockAndRunActor(StfBatchable core, JobRunners runners, int baseCapacity, StfMetaGroupEnum metaGrp,
+  JobBatchLockAndRunActor(StfBatchable core, JobRunners runners, int baseCapacity, StfMetaGroup metaGrp,
       int handleBatchSize) {
     super("stf-grp-" + metaGrp.nameLowerCase() + "-job-batch-lockrun-actor", baseCapacity);
     this.core = core;

@@ -98,11 +98,11 @@ import com.stun4j.stf.core.utils.Exceptions;
 public class StfAutoConfigure implements BeanClassLoaderAware, ApplicationContextAware {
   private static final Logger LOG = LoggerFactory.getLogger(StfAutoConfigure.class);
 
-  private ClassLoader classLoader;
-  private ApplicationContext applicationContext;
-
   private final StfProperties props;
   private final BiFunction<Object, TreeMap<Integer, Object>, Boolean> flowConfFilterAndSortFn;
+
+  private ClassLoader classLoader;
+  private ApplicationContext applicationContext;
 
   @Bean
   StfTxnOps stfTxnOps() {

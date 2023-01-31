@@ -30,6 +30,6 @@ public final class StfThinContext {
   }
 
   public static void directCommitLastDone(Long laStfId, boolean async) {
-    _core.markDone(StfMetaGroupEnum.CORE, laStfId, async);
+    _core.markDone(StfMetaGroup.CORE, laStfId, async);
   }
 }

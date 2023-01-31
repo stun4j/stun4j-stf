@@ -20,13 +20,13 @@ import java.util.Map;
 
 public abstract class JobConsts {
   public static Map<Integer, Integer> retryBehaviorByPattern(
-      int timeoutSeconds) {/*- TODO mj:Open this block to make it configurable*/
+      int timeoutSecs) {/*- TODO mj:Open this block to make it configurable*/
     Map<Integer/* current retry-times */, Integer/* current timeout-secs */> map = new HashMap<>();
-    map.put(1, timeoutSeconds);
-    map.put(2, timeoutSeconds);
-    map.put(3, 2 * timeoutSeconds);
-    map.put(4, 3 * timeoutSeconds);
-    map.put(5, 5 * timeoutSeconds);
+    map.put(1, timeoutSecs);
+    map.put(2, timeoutSecs);
+    map.put(3, 2 * timeoutSecs);
+    map.put(4, 3 * timeoutSecs);
+    map.put(5, 5 * timeoutSecs);
     return map;
   }
 }

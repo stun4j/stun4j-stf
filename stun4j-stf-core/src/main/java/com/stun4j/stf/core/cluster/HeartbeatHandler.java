@@ -125,9 +125,9 @@ public abstract class HeartbeatHandler extends BaseLifecycle {
     return timeoutMs;
   }
 
-  public void setTimeoutSeconds(int timeoutSeconds) {
-    this.timeoutMs = timeoutSeconds < DFT_MIN_HB_TIMEOUT_SECONDS ? DFT_MIN_HB_TIMEOUT_SECONDS * 1000
-        : (timeoutSeconds > DFT_MAX_HB_TIMEOUT_SECONDS ? DFT_MAX_HB_TIMEOUT_SECONDS * 1000 : timeoutSeconds * 1000);
+  public void setTimeoutSeconds(int timeoutSecs) {
+    this.timeoutMs = timeoutSecs < DFT_MIN_HB_TIMEOUT_SECONDS ? DFT_MIN_HB_TIMEOUT_SECONDS * 1000
+        : (timeoutSecs > DFT_MAX_HB_TIMEOUT_SECONDS ? DFT_MAX_HB_TIMEOUT_SECONDS * 1000 : timeoutSecs * 1000);
   }
 
 }

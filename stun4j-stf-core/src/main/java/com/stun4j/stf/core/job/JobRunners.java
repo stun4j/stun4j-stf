@@ -24,14 +24,14 @@ import java.util.concurrent.TimeUnit;
 
 import com.stun4j.stf.core.Stf;
 import com.stun4j.stf.core.StfCore;
-import com.stun4j.stf.core.StfMetaGroupEnum;
+import com.stun4j.stf.core.StfMetaGroup;
 import com.stun4j.stf.core.support.BaseLifecycle;
 import com.stun4j.stf.core.utils.Exceptions;
 
 /** @author Jay Meng */
 public class JobRunners extends BaseLifecycle {
   private final StfCore stfCore;
-  private final Map<StfMetaGroupEnum, ThreadPoolExecutor> workers;
+  private final Map<StfMetaGroup, ThreadPoolExecutor> workers;
   private final JobRunner runner;
 
   @Override
@@ -47,7 +47,7 @@ public class JobRunners extends BaseLifecycle {
     });
   }
 
-  public void execute(StfMetaGroupEnum metaGrp, Stf job) {
+  public void execute(StfMetaGroup metaGrp, Stf job) {
     workers.get(metaGrp).execute(() -> {
       Long jobId = job.getId();
       try {
@@ -58,7 +58,7 @@ public class JobRunners extends BaseLifecycle {
     });
   }
 
-  public int getAvailablePoolSize(StfMetaGroupEnum metaGrp) {
+  public int getAvailablePoolSize(StfMetaGroup metaGrp) {
     return workers.get(metaGrp).getMaximumPoolSize() - workers.get(metaGrp).getActiveCount();
   }
 
@@ -69,7 +69,7 @@ public class JobRunners extends BaseLifecycle {
   public JobRunners(StfCore stfCore, Map<Integer, Integer> retryBehavior) {
     this.stfCore = stfCore;
     this.runner = JobRunner.init(retryBehavior);
-    this.workers = StfMetaGroupEnum.stream().reduce(new HashMap<>(), (map, metaGrp) -> {
+    this.workers = StfMetaGroup.stream().reduce(new HashMap<>(), (map, metaGrp) -> {
       map.put(metaGrp, newWorkerOfJobRunner(metaGrp));
       return map;
     }, (a, b) -> null);// TODO mj:abstraction to hide last piece shit

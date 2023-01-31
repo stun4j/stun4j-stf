@@ -20,7 +20,7 @@ package com.stun4j.stf.core;
  * @author Jay Meng
  */
 public interface StfDelayQueueCore {
-  Long newDelayStf(StfCall callee, int timeoutSeconds, int delaySeconds);
+  Long newDelayStf(StfCall callee, int timeoutSecs, int delaySecs);
 
   StfDelayQueueCore withDelayQueueEnabled(boolean enabled);
 

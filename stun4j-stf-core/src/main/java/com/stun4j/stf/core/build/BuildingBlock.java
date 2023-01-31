@@ -13,16 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.stun4j.stf.core;
+package com.stun4j.stf.core.build;
 
-/** @author Jay Meng */
-public enum StateEnum {
-  /** Initialized(waiting to be handled) */
-  I,
-  /** In progress(handling) */
-  P,
-  /** Success(the final state) */
-  S,
-  /** Fail(the final state) */
-  F;
+/**
+ * Syntax elements of the stf-flow configuration file
+ * @author Jay Meng
+ */
+public enum BuildingBlock {
+  ROOT("stfs"), //
+  LVS("local-vars"), GLB("global"), ACTS("actions"), FWDS("forwards"), // lvl-2
+  OID("oid"), // lvl-3 or 4
+  ARGS("args"), TIMEOUT("timeout"), TO("to"), // lvl-4
+  O_IN("invoke-on-in"), U_IN("use-in"), // lvl-5,in means last-out
+  M("method"), CLZ("class");
+
+  private final String key;
+
+  private BuildingBlock(String key) {
+    this.key = key;
+  }
+
+  public String key() {
+    return key;
+  }
+
 }

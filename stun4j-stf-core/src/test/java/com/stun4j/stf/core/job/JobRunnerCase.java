@@ -19,7 +19,7 @@ import org.testcontainers.containers.GenericContainer;
 import com.stun4j.guid.core.LocalGuid;
 import com.stun4j.guid.core.utils.Utils;
 import com.stun4j.stf.core.BaseContainerCase;
-import com.stun4j.stf.core.StateEnum;
+import com.stun4j.stf.core.State;
 import com.stun4j.stf.core.Stf;
 import com.stun4j.stf.core.StfCall;
 import com.stun4j.stf.core.StfConsts;
@@ -27,8 +27,8 @@ import com.stun4j.stf.core.StfContext;
 import com.stun4j.stf.core.StfCore;
 import com.stun4j.stf.core.StfCoreCase;
 import com.stun4j.stf.core.StfDelayQueueCore;
-import com.stun4j.stf.core.StfMetaGroupEnum;
-import com.stun4j.stf.core.YesNoEnum;
+import com.stun4j.stf.core.StfMetaGroup;
+import com.stun4j.stf.core.YesNo;
 import com.stun4j.stf.core.spi.StfJdbcOps;
 import com.stun4j.stf.core.spi.StfJdbcOps.StfJdbcRowMapper;
 import com.stun4j.stf.core.support.registry.StfDefaultPOJORegistry;
@@ -59,14 +59,14 @@ public abstract class JobRunnerCase extends BaseContainerCase<JobRunner> {
     // <-
 
     // 3 times retry following timeout
-    StfMetaGroupEnum metaGrp = StfMetaGroupEnum.CORE;
+    StfMetaGroup metaGrp = StfMetaGroup.CORE;
     for (int curRetryTimes = 1; curRetryTimes <= 3; curRetryTimes++) {
       Stf job = scanner.scanTimeoutCoreJobs(1).findFirst().get();
       assert stfId.equals(job.getId()) : "should find 1 timeout job";
       if (curRetryTimes == 1) {
-        assert job.getSt().equals(StateEnum.I.name()) : "should be an waiting-run job";
+        assert job.getSt().equals(State.I.name()) : "should be an waiting-run job";
       } else {
-        assert job.getSt().equals(StateEnum.P.name()) : "should be an in-progress job";
+        assert job.getSt().equals(State.P.name()) : "should be an in-progress job";
       }
       int curTimeoutSecs = mockCheckAndLock(jobr, retryBehav, stfc, scanner, stfId, job, metaGrp, curRetryTimes)
           .getLeft();
@@ -78,7 +78,7 @@ public abstract class JobRunnerCase extends BaseContainerCase<JobRunner> {
     // retry over 3 times,then assert 'dead'
     Stf job = scanner.scanTimeoutCoreJobs(1).findFirst().get();
     assert stfId.equals(job.getId()) : "should be the same job";
-    assert job.getSt().equals(StateEnum.P.name()) : "should be an in-progress job";
+    assert job.getSt().equals(State.P.name()) : "should be an in-progress job";
 
     int curTimeoutSecs = mockCheckAndLock(jobr, retryBehav, stfc, scanner, stfId, job, metaGrp, 4).getLeft();
     assert curTimeoutSecs == -1 : "shouldn't have timeout info";
@@ -90,7 +90,7 @@ public abstract class JobRunnerCase extends BaseContainerCase<JobRunner> {
     String sql = "select * from " + this.tblName + " where id = ?";
     Stream<Stf> stfs = jdbcOps.queryForStream(sql, new Object[]{stfId}, STF_ROW_MAPPER);
     Stf deadJob = stfs.findFirst().get();
-    assert YesNoEnum.Y.name().equals(deadJob.getIsDead()) : "should be dead job";
+    assert YesNo.Y.name().equals(deadJob.getIsDead()) : "should be dead job";
     int maxRetryTimes = retryBehav.size();
     assert deadJob.getRetryTimes() == maxRetryTimes : "should exceeded max retry-times";
   }
@@ -120,7 +120,7 @@ public abstract class JobRunnerCase extends BaseContainerCase<JobRunner> {
     Map<Integer, Integer> retryBehav = customeRetryBehavior(timeoutSecs);
     JobRunner jobr = JobRunner.init(retryBehav);
     // String jobGrp = JobConsts.JOB_GROUP_TIMEOUT_DELAY_WAITING_RUN;
-    StfMetaGroupEnum metaGrp = StfMetaGroupEnum.DELAY;
+    StfMetaGroup metaGrp = StfMetaGroup.DELAY;
     int curRetryTimes = 1;
     Pair<Integer, Long> lockedInfo = mockCheckAndLock(jobr, retryBehav, stfc, jobsc, stfId, delayJob, metaGrp,
         curRetryTimes);
@@ -132,7 +132,7 @@ public abstract class JobRunnerCase extends BaseContainerCase<JobRunner> {
     Stream<Stf> stfDls = jdbcOps.queryForStream(sql, new Object[]{stfId}, STF_ROW_MAPPER);
     Stf lockedDelayJob = stfDls.findFirst().get();
     //@formatter:off
-    assert StateEnum.P == StateEnum.valueOf(lockedDelayJob.getSt()) : "locked delay-job's status should be 'P";//TODO mj: move to '#mockCheckAndLock'
+    assert State.P == State.valueOf(lockedDelayJob.getSt()) : "locked delay-job's status should be 'P";//TODO mj: move to '#mockCheckAndLock'
     assert (delayJobLockedAt + lockedDelayJobTimeoutSecs * 1000) == lockedDelayJob
         .getTimeoutAt() : "locked delay-job's timeoutAt should be 'lockedAt + timeoutSecs * 1000'";//TODO mj: move to '#mockCheckAndLock'
     //@formatter:on
@@ -151,7 +151,7 @@ public abstract class JobRunnerCase extends BaseContainerCase<JobRunner> {
     });
     // <-
     // the real transfer&trigger happens here->
-    JobRunner.doHandleTimeoutJob(StfMetaGroupEnum.DELAY, lockedDelayJob, stfc);
+    JobRunner.doHandleTimeoutJob(StfMetaGroup.DELAY, lockedDelayJob, stfc);
     // <-
     Utils.sleepSeconds(2);
     try (Scanner scanner = new Scanner(new File("logs/info.log")).useDelimiter("\n")) {
@@ -167,7 +167,7 @@ public abstract class JobRunnerCase extends BaseContainerCase<JobRunner> {
     sql = "select * from " + this.tblName + " where id = ?";
     Stream<Stf> stfs = jdbcOps.queryForStream(sql, new Object[]{stfId}, STF_ROW_MAPPER);
     Stf transAndTriggeredJob = stfs.findFirst().get();
-    assert StateEnum.I == StateEnum
+    assert State.I == State
         .valueOf(transAndTriggeredJob.getSt()) : "transferred delay-job(became a stf)'s init-status should be 'I";
     assert 0 == transAndTriggeredJob
         .getRetryTimes() : "normal triggered delay-job(became a stf)'s retry-times should be 0";
@@ -188,7 +188,7 @@ public abstract class JobRunnerCase extends BaseContainerCase<JobRunner> {
   }
 
   static Pair<Integer, Long> mockCheckAndLock(JobRunner jobr, Map<Integer, Integer> retryBehav, StfCore stfc,
-      JobScanner scanner, Long stfId, Stf job, StfMetaGroupEnum metaGrp, int curRetryTimes) {
+      JobScanner scanner, Long stfId, Stf job, StfMetaGroup metaGrp, int curRetryTimes) {
     // pre-check before lock->
     Pair<Boolean, Integer> curRunInfo = jobr.checkWhetherTheJobCanRun(metaGrp, job, stfc);
     if (curRetryTimes <= 3) {

@@ -17,8 +17,8 @@ package com.stun4j.stf.core;
 
 import static com.stun4j.stf.core.StfHelper.H;
 import static com.stun4j.stf.core.StfHelper.partialUpdateJobInfoWhenLocked;
-import static com.stun4j.stf.core.StfMetaGroupEnum.CORE;
-import static com.stun4j.stf.core.StfMetaGroupEnum.DELAY;
+import static com.stun4j.stf.core.StfMetaGroup.CORE;
+import static com.stun4j.stf.core.StfMetaGroup.DELAY;
 import static com.stun4j.stf.core.support.executor.StfInternalExecutors.newWorkerOfStfCore;
 
 import java.util.ArrayList;
@@ -37,7 +37,6 @@ import org.springframework.dao.DuplicateKeyException;
 
 import com.stun4j.guid.core.LocalGuid;
 import com.stun4j.stf.core.build.StfConfigs;
-import com.stun4j.stf.core.support.CompressAlgorithmEnum;
 import com.stun4j.stf.core.utils.Exceptions;
 import com.stun4j.stf.core.utils.consumers.BaseConsumer;
 import com.stun4j.stf.core.utils.consumers.PairConsumer;
@@ -53,13 +52,14 @@ import com.stun4j.stf.core.utils.shaded.guava.common.primitives.Primitives;
 abstract class BaseStfCore implements StfCore, StfDelayQueueCore {
   protected final Logger LOG = LoggerFactory.getLogger(this.getClass());
   protected final ExecutorService worker;
-  private StfRunModeEnum runMode;
-  private boolean delayQueueEnabled;
 
-  protected final SextuConsumer<Pair<StfMetaGroupEnum, Long>, Stf, StfCall, Boolean, Boolean, BaseConsumer<StfMetaGroupEnum>> coreFn;
-  protected final QuadruConsumer<StfMetaGroupEnum, Long/*-TODO mj:Bad design just to distinguish it from another generic 'tri'*/, Stf, StfCall/*- bad design just for the special pre-eval purpose */> forward;
-  protected final TriConsumer<StfMetaGroupEnum, Long, Boolean> markDone;
-  protected final PairConsumer<StfMetaGroupEnum, Long> markDead;
+  protected final SextuConsumer<Pair<StfMetaGroup, Long>, Stf, StfCall, Boolean, Boolean, BaseConsumer<StfMetaGroup>> coreFn;
+  protected final QuadruConsumer<StfMetaGroup, Long/*-TODO mj:Bad design just to distinguish it from another generic 'tri'*/, Stf, StfCall/*- bad design just for the special pre-eval purpose */> forward;
+  protected final TriConsumer<StfMetaGroup, Long, Boolean> markDone;
+  protected final PairConsumer<StfMetaGroup, Long> markDead;
+  
+  private StfRunMode runMode;
+  private boolean delayQueueEnabled;
 
   @Override
   public Long newStf(String bizObjId, String bizMethodName, Integer timeoutSeconds,
@@ -73,15 +73,14 @@ abstract class BaseStfCore implements StfCore, StfDelayQueueCore {
   }
 
   @Override
-  public Long newDelayStf(StfCall callee, int timeoutSeconds, int delaySeconds) {
+  public Long newDelayStf(StfCall callee, int timeoutSecs, int delaySecs) {
     Long stfId;
-    callee.enableCompress();// FIXME mj:for test only
-    doNewDelayStf(stfId = LocalGuid.instance().next(), callee, timeoutSeconds, delaySeconds);
+    doNewDelayStf(stfId = LocalGuid.instance().next(), callee, timeoutSecs, delaySecs);
     return stfId;
   }
 
   @Override
-  public List<Stf> batchLockStfs(StfMetaGroupEnum metaGrp, List<Object[]> preBatchArgs) {
+  public List<Stf> batchLockStfs(StfMetaGroup metaGrp, List<Object[]> preBatchArgs) {
     List<Stf> jobs = new ArrayList<>();
     long lockedAt = System.currentTimeMillis();
     List<Object[]> batchArgs = preBatchArgs.stream().map(arg -> {
@@ -159,46 +158,46 @@ abstract class BaseStfCore implements StfCore, StfDelayQueueCore {
     }
   }
 
-  protected abstract void doNewStf(Long stfId, StfCall callee, int timeoutSeconds);
+  protected abstract void doNewStf(Long stfId, StfCall callee, int timeoutSecs);
 
-  protected abstract void doNewDelayStf(Long stfId, StfCall callee, int timeoutSeconds, int delaySeconds);
+  protected abstract void doNewDelayStf(Long stfId, StfCall callee, int timeoutSecs, int delaySecs);
 
-  protected abstract long doLockStf(StfMetaGroupEnum metaGrp, Long stfId, int timeoutSeconds, int lastRetryTimes,
+  protected abstract long doLockStf(StfMetaGroup metaGrp, Long stfId, int timeoutSecs, int lastRetryTimes,
       long lastTimeoutAt);
 
-  protected abstract int[] doBatchLockStfs(StfMetaGroupEnum metaGrp, List<Object[]> batchArgs);
+  protected abstract int[] doBatchLockStfs(StfMetaGroup metaGrp, List<Object[]> batchArgs);
 
   @Override
-  public boolean fallbackToSingleMarkDone(StfMetaGroupEnum metaGrp, Long stfId) {
+  public boolean fallbackToSingleMarkDone(StfMetaGroup metaGrp, Long stfId) {
     return doMarkDone(metaGrp, stfId, false);
   }
 
   @Override
-  public long fallbackToSingleLockStf(StfMetaGroupEnum metaGrp, Stf stf, int timeoutSeconds) {
+  public long fallbackToSingleLockStf(StfMetaGroup metaGrp, Stf stf, int timeoutSecs) {
     Long stfId = stf.getId();
     int lastRetryTimes = stf.getRetryTimes();
     long lastTimeoutAt = stf.getTimeoutAt();
-    return doLockStf(metaGrp, stfId, timeoutSeconds, lastRetryTimes, lastTimeoutAt);
+    return doLockStf(metaGrp, stfId, timeoutSecs, lastRetryTimes, lastTimeoutAt);
   }
 
-  protected abstract boolean doMarkDone(StfMetaGroupEnum metaGrp, Long stfId, boolean batch);
+  protected abstract boolean doMarkDone(StfMetaGroup metaGrp, Long stfId, boolean batch);
 
-  protected abstract void doMarkDead(StfMetaGroupEnum metaGrp, Long stfId);
+  protected abstract void doMarkDead(StfMetaGroup metaGrp, Long stfId);
 
   protected abstract boolean doDelayTransfer(Stf lockedDelayStf, StfCall delayCalleePreEval);
 
   protected abstract String getCoreTblName();
 
-  private void invokeConsumer(Pair<StfMetaGroupEnum, Long> stfMeta, Stf stf, StfCall callee, boolean batch,
-      BaseConsumer<StfMetaGroupEnum> bizFn) {
-    StfMetaGroupEnum metaGrp = stfMeta.getLeft();
+  private void invokeConsumer(Pair<StfMetaGroup, Long> stfMeta, Stf stf, StfCall callee, boolean batch,
+      BaseConsumer<StfMetaGroup> bizFn) {
+    StfMetaGroup metaGrp = stfMeta.getLeft();
     Long stfId = stfMeta.getRight();
     if (bizFn instanceof PairConsumer) {
-      ((PairConsumer<StfMetaGroupEnum, Long>)bizFn).accept(metaGrp, stfId);
+      ((PairConsumer<StfMetaGroup, Long>)bizFn).accept(metaGrp, stfId);
     } else if (bizFn instanceof TriConsumer) {
-      ((TriConsumer<StfMetaGroupEnum, Long, Boolean>)bizFn).accept(metaGrp, stfId, batch);
+      ((TriConsumer<StfMetaGroup, Long, Boolean>)bizFn).accept(metaGrp, stfId, batch);
     } else if (bizFn instanceof QuadruConsumer) {
-      ((QuadruConsumer<StfMetaGroupEnum, Long, Stf, StfCall>)bizFn).accept(metaGrp, stfId, stf, callee);
+      ((QuadruConsumer<StfMetaGroup, Long, Stf, StfCall>)bizFn).accept(metaGrp, stfId, stf, callee);
     }
   }
 
@@ -255,12 +254,12 @@ abstract class BaseStfCore implements StfCore, StfDelayQueueCore {
   }
 
   @Override
-  public StfRunModeEnum getRunMode() {
+  public StfRunMode getRunMode() {
     return runMode;
   }
 
   @Override
-  public StfCore withRunMode(StfRunModeEnum runMode) {
+  public StfCore withRunMode(StfRunMode runMode) {
     this.runMode = runMode;
     return this;
   }

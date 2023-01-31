@@ -28,7 +28,7 @@ import org.xerial.snappy.Snappy;
 
 import com.github.luben.zstd.Zstd;
 import com.stun4j.stf.core.support.BaseEntity;
-import com.stun4j.stf.core.support.CompressAlgorithmEnum;
+import com.stun4j.stf.core.support.CompressAlgorithm;
 import com.stun4j.stf.core.utils.Asserts;
 import com.stun4j.stf.core.utils.Exceptions;
 
@@ -65,7 +65,7 @@ public class Stf extends BaseEntity<Long> implements Cloneable {
     }
     try {
       StfCall meta = fromJson(NO_TYPING_SERIALIZER, bodyOrMeta, StfCall.class);
-      CompressAlgorithmEnum compAlgo = CompressAlgorithmEnum.valueOf(meta.getCompAlgo());
+      CompressAlgorithm compAlgo = CompressAlgorithm.valueOf(meta.getCompAlgo());
       switch (compAlgo) {
         case ZSTD:
           int oriSize = Optional.ofNullable(meta.getZstdOriSize()).orElse(65536);

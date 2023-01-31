@@ -24,7 +24,7 @@ import java.util.Collections;
 
 import org.apache.commons.lang3.tuple.Pair;
 
-import com.stun4j.stf.core.support.CompressAlgorithmEnum;
+import com.stun4j.stf.core.support.CompressAlgorithm;
 import com.stun4j.stf.core.utils.shaded.guava.common.primitives.Primitives;
 
 /**
@@ -42,7 +42,7 @@ public class StfCall {
   // private int timeoutSecs;
 
   private boolean bytes = false;
-  private byte compAlgo = CompressAlgorithmEnum.NONE.value();// FIXME mj:to be configured
+  private byte compAlgo = CompressAlgorithm.NONE.value();// FIXME mj:to be configured
   private Integer zstdOriSize;
 
   public static StfCall of(String type, String bizObjId, String method) {
@@ -72,8 +72,8 @@ public class StfCall {
   }
 
   public Pair<String, byte[]> toBytesIfNecessary() {
-    CompressAlgorithmEnum algo;
-    Pair<Integer, byte[]> bytesInfo = toJson(this, algo = CompressAlgorithmEnum.valueOf(compAlgo));
+    CompressAlgorithm algo;
+    Pair<Integer, byte[]> bytesInfo = toJson(this, algo = CompressAlgorithm.valueOf(compAlgo));
     byte[] rtnBytes = bytesInfo.getValue();
     switch (algo) {
       case NONE:
@@ -86,7 +86,7 @@ public class StfCall {
       default:
         StfCall call = new StfCall(algo)
             .enableBytes();/*- force bytes-format to be enabled when using any compress algorithm*/
-        if (algo == CompressAlgorithmEnum.ZSTD) {
+        if (algo == CompressAlgorithm.ZSTD) {
           call.withZstdOriSize(bytesInfo.getKey());
         }
         String meta = toJson(NO_TYPING_SERIALIZER, call);
@@ -133,12 +133,12 @@ public class StfCall {
   }
 
   public StfCall enableCompress() {
-    return enableCompress(CompressAlgorithmEnum.ZSTD);
+    return enableCompress(CompressAlgorithm.ZSTD);
   }
 
-  public StfCall enableCompress(CompressAlgorithmEnum compAlgo) {
+  public StfCall enableCompress(CompressAlgorithm compAlgo) {
     this.compAlgo = compAlgo.value();
-    if (compAlgo != CompressAlgorithmEnum.NONE) {
+    if (compAlgo != CompressAlgorithm.NONE) {
       this.enableBytes();// force bytes-format to be enabled when using any compress algorithm
     }
     return this;
@@ -151,7 +151,7 @@ public class StfCall {
     this.args = args;
   }
 
-  private StfCall(CompressAlgorithmEnum compAlgo) {
+  private StfCall(CompressAlgorithm compAlgo) {
     this();
     this.enableCompress(compAlgo);
   }

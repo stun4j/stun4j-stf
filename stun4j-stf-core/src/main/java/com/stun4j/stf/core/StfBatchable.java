@@ -22,11 +22,11 @@ import java.util.List;
  * @author Jay Meng
  */
 public interface StfBatchable {
-  boolean fallbackToSingleMarkDone(StfMetaGroupEnum metaGrp, Long stfId);
+  boolean fallbackToSingleMarkDone(StfMetaGroup metaGrp, Long stfId);
 
-  long fallbackToSingleLockStf(StfMetaGroupEnum metaGrp, Stf stf, int timeoutSeconds);
+  long fallbackToSingleLockStf(StfMetaGroup metaGrp, Stf stf, int timeoutSecs);
 
-  int[] batchMarkDone(StfMetaGroupEnum metaGrp, List<Object[]> stfIdsInfo);
+  int[] batchMarkDone(StfMetaGroup metaGrp, List<Object[]> stfIdsInfo);
 
-  List<Stf> batchLockStfs(StfMetaGroupEnum metaGrp, List<Object[]> batchArgs);
+  List<Stf> batchLockStfs(StfMetaGroup metaGrp, List<Object[]> batchArgs);
 }

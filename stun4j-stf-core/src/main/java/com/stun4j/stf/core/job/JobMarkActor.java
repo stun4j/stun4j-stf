@@ -15,11 +15,11 @@
  */
 package com.stun4j.stf.core.job;
 
-import static com.stun4j.stf.core.StfMetaGroupEnum.CORE;
+import static com.stun4j.stf.core.StfMetaGroup.CORE;
 
 import com.google.common.eventbus.Subscribe;
 import com.stun4j.stf.core.StfBatchable;
-import com.stun4j.stf.core.StfMetaGroupEnum;
+import com.stun4j.stf.core.StfMetaGroup;
 import com.stun4j.stf.core.support.event.StfDoneEvent;
 
 /**
@@ -34,11 +34,11 @@ class JobMarkActor extends BaseJobBatchMarkActor {
   }
 
   JobMarkActor(StfBatchable stfCore, int baseCapacity) {
-    super("stf-grp-" + StfMetaGroupEnum.CORE.nameLowerCase() + "-job-mark-actor", baseCapacity, stfCore);
+    super("stf-grp-" + StfMetaGroup.CORE.nameLowerCase() + "-job-mark-actor", baseCapacity, stfCore);
   }
 
   @Override
-  protected StfMetaGroupEnum metaGroup() {
+  protected StfMetaGroup metaGroup() {
     return CORE;
   }
 }

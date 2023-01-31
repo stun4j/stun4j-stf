@@ -44,15 +44,15 @@ public final class StfDelayQueue {
   private final Map<Class<?>, Object> CONSTRUCTOR_CHECK_MEMO;
   private final Map<String, Boolean> TASK_METHOD_HEAD_MEMO;
 
-  public final Long offer(String taskObjId, String taskMethodName, int timeoutSeconds, int delaySeconds,
+  public final Long offer(String taskObjId, String taskMethodName, int timeoutSecs, int delaySecs,
       Object... taskParams) {
     Stream<Pair<?/* arg-value */, Class<?>/* arg-type */>> pairStream = Stream.of(taskParams)
         .map(p -> Pair.of(p, p.getClass()));
-    return offer(taskObjId, taskMethodName, timeoutSeconds, delaySeconds, pairStream);
+    return offer(taskObjId, taskMethodName, timeoutSecs, delaySecs, pairStream);
   }
 
   @SuppressWarnings("unchecked")
-  public final Long offer(String taskObjId, String taskMethodName, int timeoutSeconds, int delaySeconds,
+  public final Long offer(String taskObjId, String taskMethodName, int timeoutSecs, int delaySecs,
       Stream<Pair<?/* arg-value */, Class<?>/* arg-type */>> taskParams) {
     state(core.isDelayQueueEnabled(), DLQ_DISABLE_MSG);
     // Inspired from ActionMethodChecker->
@@ -81,7 +81,7 @@ public final class StfDelayQueue {
     // <-
 
     StfCall callee = ((BaseStfCore)core).newCallee(taskObjId, taskMethodName, taskParamsPair);
-    Long stfId = core.newDelayStf(callee, timeoutSeconds, delaySeconds);
+    Long stfId = core.newDelayStf(callee, timeoutSecs, delaySecs);
     if (LOG.isInfoEnabled()) {
       LOG.info("The stf-delay-job#{} is successfully scheduled.", stfId);
     }

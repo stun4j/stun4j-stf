@@ -37,11 +37,11 @@ public abstract class JsonHelper {
     return new String(serializer.serialize(obj), StandardCharsets.UTF_8);
   }
 
-  public static Pair<Integer, byte[]> toJson(Object obj, CompressAlgorithmEnum compAlgo) {
+  public static Pair<Integer, byte[]> toJson(Object obj, CompressAlgorithm compAlgo) {
     return toJson(DFT_SERIALIZER, obj, compAlgo);
   }
 
-  public static Pair<Integer, byte[]> toJson(Serializer serializer, Object obj, CompressAlgorithmEnum compAlgo) {
+  public static Pair<Integer, byte[]> toJson(Serializer serializer, Object obj, CompressAlgorithm compAlgo) {
     try {
       byte[] raw = serializer.serialize(obj);
       switch (compAlgo) {

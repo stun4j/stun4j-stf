@@ -37,7 +37,7 @@ import com.stun4j.stf.core.utils.shaded.guava.common.primitives.Primitives;
  * @author Jay Meng
  */
 abstract class StfInvoker {
-  final static Pattern PATTERN = Pattern.compile("(injvm):(\\w+)\\.(\\w+)");
+  static final Pattern PATTERN = Pattern.compile("(injvm):(\\w+)\\.(\\w+)");
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   static void invoke(Long stfId, String calleeInfo, Object... calleeMethodArgs) throws Exception {
@@ -69,7 +69,7 @@ abstract class StfInvoker {
               Entry<String, Object> entry = map.entrySet().iterator().next();
               String argType = entry.getKey();
               argObj = entry.getValue();
-//              argClz = argTypes[i] = ClassUtils.getClass(argType);
+              // argClz = argTypes[i] = ClassUtils.getClass(argType);
               argClz = argTypes[i] = ClassUtils.resolveClassName(argType, ClassUtils.getDefaultClassLoader());
             }
             boolean isNum = NumberUtils.isCreatable(argClz);

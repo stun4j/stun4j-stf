@@ -37,7 +37,7 @@ public abstract class StfCoreCase extends BaseContainerCase<StfCore> {
     long timeoutAt = stf.getTimeoutAt();
 
     // String grp = JobConsts.JOB_GROUP_TIMEOUT_WAITING_RUN;
-    StfMetaGroupEnum metaGrp = StfMetaGroupEnum.CORE;
+    StfMetaGroup metaGrp = StfMetaGroup.CORE;
     long lockedAt = stfc.lockStf(metaGrp, stfId, timeoutSecs, 0, timeoutAt);
     assert lockedAt > 0 : "the timeout job should be locked";
     lockedAt = stfc.lockStf(metaGrp, stfId, timeoutSecs, 0, timeoutAt);
@@ -58,7 +58,7 @@ public abstract class StfCoreCase extends BaseContainerCase<StfCore> {
     long timeoutAt = stf.getTimeoutAt();
 
     // String grp = JobConsts.JOB_GROUP_TIMEOUT_WAITING_RUN;
-    StfMetaGroupEnum metaGrp = StfMetaGroupEnum.CORE;
+    StfMetaGroup metaGrp = StfMetaGroup.CORE;
     int n = 50;
     AtomicInteger cnt = new AtomicInteger();
     CyclicBarrier gate = new CyclicBarrier(n);

@@ -27,7 +27,7 @@ import org.testcontainers.containers.GenericContainer;
 import com.stun4j.guid.core.LocalGuid;
 import com.stun4j.guid.core.utils.Utils;
 import com.stun4j.stf.core.BaseContainerCase;
-import com.stun4j.stf.core.StateEnum;
+import com.stun4j.stf.core.State;
 import com.stun4j.stf.core.Stf;
 import com.stun4j.stf.core.StfContext;
 import com.stun4j.stf.core.StfCore;
@@ -64,10 +64,10 @@ public abstract class JobScannerCase extends BaseContainerCase<JobScanner> {
 
   @Test
   public void _02_timeout_scanTimeoutJobsWaitingRun() {
-    _02_template(StateEnum.I);
+    _02_template(State.I);
   }
 
-  private void _02_template(StateEnum st) {
+  private void _02_template(State st) {
     JobScanner biz = bizBean();
     StfCore stfc = newStfCore(biz);
     // Initialize two pieces of data, both in initial state 'I'

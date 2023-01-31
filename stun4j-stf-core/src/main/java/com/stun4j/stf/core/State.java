@@ -15,19 +15,14 @@
  */
 package com.stun4j.stf.core;
 
-/**
- * @author Jay Meng
- */
-public enum StfRunModeEnum {
-  /** All Stf functionality is enabled */
-  DEFAULT,
-  /**
-   * Stf functionality is limited, typically, only write operations is supported, but does not participate in job
-   * detection, execution, etc.
-   */
-  CLIENT;
-
-  public String nameLowerCase() {
-    return this.name().toLowerCase();
-  }
+/** @author Jay Meng */
+public enum State {
+  /** Initialized(waiting to be handled) */
+  I,
+  /** In progress(handling) */
+  P,
+  /** Success(the final state) */
+  S,
+  /** Fail(the final state) */
+  F;
 }

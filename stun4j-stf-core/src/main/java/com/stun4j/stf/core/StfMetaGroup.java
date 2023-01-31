@@ -20,11 +20,11 @@ import java.util.stream.Stream;
 /**
  * @author Jay Meng
  */
-public enum StfMetaGroupEnum {
+public enum StfMetaGroup {
   CORE, DELAY;
 
-  public static Stream<StfMetaGroupEnum> stream() {
-    return Stream.of(StfMetaGroupEnum.values());
+  public static Stream<StfMetaGroup> stream() {
+    return Stream.of(StfMetaGroup.values());
   }
 
   public static String[] namesLowerCase() {

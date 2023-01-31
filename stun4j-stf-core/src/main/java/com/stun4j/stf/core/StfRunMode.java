@@ -13,28 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.stun4j.stf.core.build;
+package com.stun4j.stf.core;
 
 /**
- * Syntax elements of the stf-flow configuration file
  * @author Jay Meng
  */
-public enum BuildingBlockEnum {
-  ROOT("stfs"), //
-  LVS("local-vars"), GLB("global"), ACTS("actions"), FWDS("forwards"), // lvl-2
-  OID("oid"), // lvl-3 or 4
-  ARGS("args"), TIMEOUT("timeout"), TO("to"), // lvl-4
-  O_IN("invoke-on-in"), U_IN("use-in"), // lvl-5,in means last-out
-  M("method"), CLZ("class");
+public enum StfRunMode {
+  /** All Stf functionality is enabled */
+  DEFAULT,
+  /**
+   * Stf functionality is limited, typically, only write operations is supported, but does not participate in job
+   * detection, execution, etc.
+   */
+  CLIENT;
 
-  private final String key;
-
-  private BuildingBlockEnum(String key) {
-    this.key = key;
+  public String nameLowerCase() {
+    return this.name().toLowerCase();
   }
-
-  public String key() {
-    return key;
-  }
-
 }

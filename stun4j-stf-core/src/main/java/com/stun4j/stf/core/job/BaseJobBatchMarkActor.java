@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.stun4j.stf.core.StfBatchable;
-import com.stun4j.stf.core.StfMetaGroupEnum;
+import com.stun4j.stf.core.StfMetaGroup;
 import com.stun4j.stf.core.support.actor.BaseActor;
 
 /**
@@ -48,5 +48,5 @@ abstract class BaseJobBatchMarkActor extends BaseActor<Long> {
     this.core = core;
   }
 
-  protected abstract StfMetaGroupEnum metaGroup();
+  protected abstract StfMetaGroup metaGroup();
 }

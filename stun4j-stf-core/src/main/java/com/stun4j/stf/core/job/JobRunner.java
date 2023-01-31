@@ -17,7 +17,7 @@ package com.stun4j.stf.core.job;
 
 import static com.stun4j.stf.core.StfConsts.DFT_JOB_TIMEOUT_SECONDS;
 import static com.stun4j.stf.core.StfConsts.WITH_MS_DATE_FMT;
-import static com.stun4j.stf.core.StfMetaGroupEnum.CORE;
+import static com.stun4j.stf.core.StfMetaGroup.CORE;
 import static com.stun4j.stf.core.job.JobConsts.retryBehaviorByPattern;
 
 import java.util.Date;
@@ -34,7 +34,7 @@ import com.google.common.cache.LoadingCache;
 import com.stun4j.stf.core.Stf;
 import com.stun4j.stf.core.StfCall;
 import com.stun4j.stf.core.StfCore;
-import com.stun4j.stf.core.StfMetaGroupEnum;
+import com.stun4j.stf.core.StfMetaGroup;
 import com.stun4j.stf.core.support.JsonHelper;
 
 /**
@@ -48,7 +48,7 @@ class JobRunner {
   private final LoadingCache<Integer, Map<Integer, Integer>> cachedRetryBehavior;
   private static JobRunner _instance;
 
-  Pair<Boolean, Integer> checkWhetherTheJobCanRun(StfMetaGroupEnum metaGrp, Stf lockingJob, StfCore stfCore) {
+  Pair<Boolean, Integer> checkWhetherTheJobCanRun(StfMetaGroup metaGrp, Stf lockingJob, StfCore stfCore) {
     int minTimeoutSecs;
     Map<Integer, Integer> retryBehav = _instance
         .determineJobRetryBehavior(minTimeoutSecs = lockingJob.getTimeoutSecs());
@@ -63,7 +63,7 @@ class JobRunner {
     return Pair.of(true, curTimeoutSecs < minTimeoutSecs ? minTimeoutSecs : curTimeoutSecs);
   }
 
-  static void doHandleTimeoutJob(StfMetaGroupEnum metaGrp, Stf lockedJob, StfCore stfCore) {
+  static void doHandleTimeoutJob(StfMetaGroup metaGrp, Stf lockedJob, StfCore stfCore) {
     Map<Integer, Integer> retryBehav = _instance.determineJobRetryBehavior(lockedJob.getTimeoutSecs());
 
     logTriggerInformation(metaGrp, lockedJob, retryBehav);
@@ -74,7 +74,7 @@ class JobRunner {
         true);/*-TODO mj:1.consider set to false 2.or we will have redundant threadpool 3.or we extract cpu-related jobs here(current choice)*/
   }
 
-  private static Pair<Boolean, Integer> doCheckAndMarkJobDeadIfNecessary(StfMetaGroupEnum metaGrp, Stf job,
+  private static Pair<Boolean, Integer> doCheckAndMarkJobDeadIfNecessary(StfMetaGroup metaGrp, Stf job,
       StfCore stfCore, Map<Integer, Integer> retryBehav) {
     int retryMaxTimes = retryBehav.size();
     int lastRetryTimes = job.getRetryTimes();
@@ -88,7 +88,7 @@ class JobRunner {
     return Pair.of(true, null);
   }
 
-  private static void logTriggerInformation(StfMetaGroupEnum metaGrp, Stf lockedJob, Map<Integer, Integer> retryBehav) {
+  private static void logTriggerInformation(StfMetaGroup metaGrp, Stf lockedJob, Map<Integer, Integer> retryBehav) {
     Long jobId = lockedJob.getId();
     int curRetryTimes = lockedJob.getRetryTimes();
     if (LOG.isDebugEnabled()) {
@@ -123,14 +123,14 @@ class JobRunner {
     return _instance = new JobRunner(retryBehavior);
   }
 
-  Map<Integer, Integer> determineJobRetryBehavior(int timeoutSeconds) {
+  Map<Integer, Integer> determineJobRetryBehavior(int timeoutSecs) {
     if (this.retryBehavior != null) {
       return this.retryBehavior;
     }
-    if (timeoutSeconds == DFT_JOB_TIMEOUT_SECONDS) {
+    if (timeoutSecs == DFT_JOB_TIMEOUT_SECONDS) {
       return DFT_FIXED_JOB_RETRY_INTERVAL_SECONDS;
     }
-    return cachedRetryBehavior.getUnchecked(timeoutSeconds);
+    return cachedRetryBehavior.getUnchecked(timeoutSecs);
   }
 
   static {
@@ -141,8 +141,8 @@ class JobRunner {
     this.retryBehavior = retryBehavior;
 
     CacheLoader<Integer, Map<Integer, Integer>> loader = new CacheLoader<Integer, Map<Integer, Integer>>() {
-      public Map<Integer, Integer> load(Integer timeoutSeconds) throws Exception {
-        Map<Integer, Integer> map = retryBehaviorByPattern(timeoutSeconds);
+      public Map<Integer, Integer> load(Integer timeoutSecs) throws Exception {
+        Map<Integer, Integer> map = retryBehaviorByPattern(timeoutSecs);
         return map;
       }
     };

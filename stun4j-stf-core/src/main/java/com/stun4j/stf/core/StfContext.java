@@ -89,7 +89,7 @@ public final class StfContext {
 
   static void commitLastDead(Long laStfId) {
     markLastCommitted();
-    _core.markDead(StfMetaGroupEnum.CORE, laStfId, true);
+    _core.markDead(StfMetaGroup.CORE, laStfId, true);
   }
 
   @SafeVarargs

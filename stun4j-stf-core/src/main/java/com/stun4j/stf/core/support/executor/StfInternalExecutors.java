@@ -29,12 +29,12 @@ import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 
-import com.stun4j.stf.core.StfMetaGroupEnum;
+import com.stun4j.stf.core.StfMetaGroup;
 import com.stun4j.stf.core.utils.executor.NamedThreadFactory;
 
 /** @author Jay Meng */
 public final class StfInternalExecutors {
-  public static ThreadPoolExecutor newWorkerOfJobRunner(StfMetaGroupEnum metaGrp) {
+  public static ThreadPoolExecutor newWorkerOfJobRunner(StfMetaGroup metaGrp) {
     return (ThreadPoolExecutor)defaultCpuPrefer("stf-grp-" + metaGrp.nameLowerCase() + "-job-runner");
   }
 
@@ -55,7 +55,7 @@ public final class StfInternalExecutors {
         false, SILENT_DROP_POLICY);
   }
 
-  public static ExecutorService newWorkerOfJobLoading(StfMetaGroupEnum metaGrp) {
+  public static ExecutorService newWorkerOfJobLoading(StfMetaGroup metaGrp) {
     // TODO mj:recheck this policy,for the purpose fulfill&little-bit-overload?
     return defaultWorkStealingPool(Math.min(Runtime.getRuntime().availableProcessors(), 16),
         "stf-grp-" + metaGrp.nameLowerCase() + "-job-load-worker", true);

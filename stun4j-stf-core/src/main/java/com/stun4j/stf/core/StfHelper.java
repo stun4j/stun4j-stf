@@ -102,13 +102,13 @@ public class StfHelper {
     job.setRetryTimes(lastRetryTimes + 1);// update to current retry-times
   }
 
-  public static StfMetaGroupEnum determinJobMetaGroup(String type) {
+  public static StfMetaGroup determinJobMetaGroup(String type) {
     int idx;
-    if ((idx = ArrayUtils.indexOf(StfMetaGroupEnum.namesLowerCase(), type)) == StfMetaGroupEnum.CORE.ordinal()) {
-      return StfMetaGroupEnum.CORE;
+    if ((idx = ArrayUtils.indexOf(StfMetaGroup.namesLowerCase(), type)) == StfMetaGroup.CORE.ordinal()) {
+      return StfMetaGroup.CORE;
     }
-    if (idx == StfMetaGroupEnum.DELAY.ordinal()) {
-      return StfMetaGroupEnum.DELAY;
+    if (idx == StfMetaGroup.DELAY.ordinal()) {
+      return StfMetaGroup.DELAY;
     }
     return null;
   }

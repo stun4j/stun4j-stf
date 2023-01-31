@@ -16,19 +16,19 @@
 package com.stun4j.stf.core.build;
 
 import static com.google.common.base.Strings.lenientFormat;
-import static com.stun4j.stf.core.build.BuildingBlockEnum.ACTS;
-import static com.stun4j.stf.core.build.BuildingBlockEnum.ARGS;
-import static com.stun4j.stf.core.build.BuildingBlockEnum.CLZ;
-import static com.stun4j.stf.core.build.BuildingBlockEnum.FWDS;
-import static com.stun4j.stf.core.build.BuildingBlockEnum.GLB;
-import static com.stun4j.stf.core.build.BuildingBlockEnum.LVS;
-import static com.stun4j.stf.core.build.BuildingBlockEnum.M;
-import static com.stun4j.stf.core.build.BuildingBlockEnum.OID;
-import static com.stun4j.stf.core.build.BuildingBlockEnum.O_IN;
-import static com.stun4j.stf.core.build.BuildingBlockEnum.ROOT;
-import static com.stun4j.stf.core.build.BuildingBlockEnum.TIMEOUT;
-import static com.stun4j.stf.core.build.BuildingBlockEnum.TO;
-import static com.stun4j.stf.core.build.BuildingBlockEnum.U_IN;
+import static com.stun4j.stf.core.build.BuildingBlock.ACTS;
+import static com.stun4j.stf.core.build.BuildingBlock.ARGS;
+import static com.stun4j.stf.core.build.BuildingBlock.CLZ;
+import static com.stun4j.stf.core.build.BuildingBlock.FWDS;
+import static com.stun4j.stf.core.build.BuildingBlock.GLB;
+import static com.stun4j.stf.core.build.BuildingBlock.LVS;
+import static com.stun4j.stf.core.build.BuildingBlock.M;
+import static com.stun4j.stf.core.build.BuildingBlock.OID;
+import static com.stun4j.stf.core.build.BuildingBlock.O_IN;
+import static com.stun4j.stf.core.build.BuildingBlock.ROOT;
+import static com.stun4j.stf.core.build.BuildingBlock.TIMEOUT;
+import static com.stun4j.stf.core.build.BuildingBlock.TO;
+import static com.stun4j.stf.core.build.BuildingBlock.U_IN;
 import static com.stun4j.stf.core.utils.Asserts.argument;
 import static com.stun4j.stf.core.utils.Asserts.notNull;
 
@@ -227,20 +227,20 @@ public class StfConfig {
           argument((idx = timeoutStr.lastIndexOf("s")) != -1,
               msg = ("The 'timeout' of action[%s] can only be set to seconds, the wrong value is '%s'"), action,
               timeoutStr);
-          Integer timeoutSeconds;
+          Integer timeoutSecs;
           try {
-            timeoutSeconds = Integer.valueOf(timeoutStr.substring(0, idx));
+            timeoutSecs = Integer.valueOf(timeoutStr.substring(0, idx));
             argument(timeoutStr.substring(idx + 1).length() == 0, msg);
-            argument(timeoutSeconds > 0,
+            argument(timeoutSecs > 0,
                 msg = "The timeout-seconds of action[%s] must be greater than 0, the wrong value is '%s'", action,
                 timeoutStr);
-            argument(timeoutSeconds <= 8388607,
+            argument(timeoutSecs <= 8388607,
                 msg = "The timeout-seconds of action[%s] must be less than or equal to 8388607, the wrong value is '%s'", action,
                 timeoutStr);
           } catch (Exception e) {
             throw new RuntimeException(lenientFormat(msg, action, timeoutStr), e);
           }
-          ACTIONS.computeIfAbsent(action, k -> new HashMap<>()).put(parsingActElmtKey, timeoutSeconds);
+          ACTIONS.computeIfAbsent(action, k -> new HashMap<>()).put(parsingActElmtKey, timeoutSecs);
         }
       });
     }

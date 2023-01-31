@@ -16,23 +16,23 @@
 package com.stun4j.stf.core.job;
 
 import static com.google.common.base.Strings.lenientFormat;
-import static com.stun4j.stf.core.StateEnum.I;
-import static com.stun4j.stf.core.StateEnum.P;
+import static com.stun4j.stf.core.State.I;
+import static com.stun4j.stf.core.State.P;
 import static com.stun4j.stf.core.StfConsts.DFT_DELAY_TBL_NAME_SUFFIX;
-import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.CALLEE;
-import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.CALLEE_BYTES;
-import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.CT_AT;
-import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.ID;
-import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.IS_DEAD;
-import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.RETRY_TIMES;
-import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.ST;
-import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.TIMEOUT_AT;
-import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.TIMEOUT_SECS;
-import static com.stun4j.stf.core.StfConsts.StfDbFieldEnum.UP_AT;
+import static com.stun4j.stf.core.StfConsts.StfDbField.CALLEE;
+import static com.stun4j.stf.core.StfConsts.StfDbField.CALLEE_BYTES;
+import static com.stun4j.stf.core.StfConsts.StfDbField.CT_AT;
+import static com.stun4j.stf.core.StfConsts.StfDbField.ID;
+import static com.stun4j.stf.core.StfConsts.StfDbField.IS_DEAD;
+import static com.stun4j.stf.core.StfConsts.StfDbField.RETRY_TIMES;
+import static com.stun4j.stf.core.StfConsts.StfDbField.ST;
+import static com.stun4j.stf.core.StfConsts.StfDbField.TIMEOUT_AT;
+import static com.stun4j.stf.core.StfConsts.StfDbField.TIMEOUT_SECS;
+import static com.stun4j.stf.core.StfConsts.StfDbField.UP_AT;
 import static com.stun4j.stf.core.StfHelper.H;
-import static com.stun4j.stf.core.StfMetaGroupEnum.CORE;
-import static com.stun4j.stf.core.StfMetaGroupEnum.DELAY;
-import static com.stun4j.stf.core.YesNoEnum.N;
+import static com.stun4j.stf.core.StfMetaGroup.CORE;
+import static com.stun4j.stf.core.StfMetaGroup.DELAY;
+import static com.stun4j.stf.core.YesNo.N;
 import static com.stun4j.stf.core.utils.DataSourceUtils.DB_VENDOR_MY_SQL;
 import static com.stun4j.stf.core.utils.DataSourceUtils.DB_VENDOR_ORACLE;
 import static com.stun4j.stf.core.utils.DataSourceUtils.DB_VENDOR_POSTGRE_SQL;
@@ -48,7 +48,7 @@ import org.slf4j.LoggerFactory;
 
 import com.stun4j.stf.core.Stf;
 import com.stun4j.stf.core.StfConsts;
-import com.stun4j.stf.core.StfMetaGroupEnum;
+import com.stun4j.stf.core.StfMetaGroup;
 import com.stun4j.stf.core.spi.StfJdbcOps;
 import com.stun4j.stf.core.spi.StfJdbcOps.StfJdbcRowMapper;
 import com.stun4j.stf.core.support.JdbcAware;
@@ -83,7 +83,7 @@ public class JobScannerJdbc implements JobScanner, JdbcAware {
     return doScanStillAlive(DELAY, limit, pageNo);
   }
 
-  public Stream<Stf> doScanStillAlive(StfMetaGroupEnum metaGrp, int limit, int pageNo,
+  public Stream<Stf> doScanStillAlive(StfMetaGroup metaGrp, int limit, int pageNo,
       String... includeFields) {/*- pageNo start with 0*/
     if (H.isDataSourceClose()) {
       H.logOnDataSourceClose(LOG, "doScanStillAlive");

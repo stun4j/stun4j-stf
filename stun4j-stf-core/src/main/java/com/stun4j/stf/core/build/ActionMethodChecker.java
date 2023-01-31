@@ -1,7 +1,7 @@
 package com.stun4j.stf.core.build;
 
 import static com.google.common.base.Strings.lenientFormat;
-import static com.stun4j.stf.core.build.BuildingBlockEnum.ARGS;
+import static com.stun4j.stf.core.build.BuildingBlock.ARGS;
 import static com.stun4j.stf.core.build.StfConfigs.ACTION_FULL_PATH_SEPARATOR;
 import static com.stun4j.stf.core.build.StfConfigs.FULL_PATH_ACTIONS;
 import static com.stun4j.stf.core.build.StfConfigs.actionPathBy;

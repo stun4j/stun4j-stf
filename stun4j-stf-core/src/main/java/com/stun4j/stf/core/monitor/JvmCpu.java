@@ -46,6 +46,8 @@ public final class JvmCpu extends BaseLifecycle {
   private final int processorCnt;
   private final float highFactorHalfProcessors;
 
+  private final Thread worker;
+
   private long lastUpTime;
   private long lastProcessCpuTime;
   private long lastProcessGcTime;
@@ -54,7 +56,6 @@ public final class JvmCpu extends BaseLifecycle {
   private double lastWindowSecondsAvgRate;
 
   private int elapsedSeconds;
-  private final Thread worker;
   private volatile boolean shutdown;
 
   @Override

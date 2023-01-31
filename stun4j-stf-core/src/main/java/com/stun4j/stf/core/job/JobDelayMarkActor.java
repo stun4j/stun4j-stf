@@ -15,11 +15,11 @@
  */
 package com.stun4j.stf.core.job;
 
-import static com.stun4j.stf.core.StfMetaGroupEnum.DELAY;
+import static com.stun4j.stf.core.StfMetaGroup.DELAY;
 
 import com.google.common.eventbus.Subscribe;
 import com.stun4j.stf.core.StfBatchable;
-import com.stun4j.stf.core.StfMetaGroupEnum;
+import com.stun4j.stf.core.StfMetaGroup;
 import com.stun4j.stf.core.support.event.StfDelayTriggeredEvent;
 
 /**
@@ -34,11 +34,11 @@ class JobDelayMarkActor extends BaseJobBatchMarkActor {
   }
 
   JobDelayMarkActor(StfBatchable stfCore, int baseCapacity) {
-    super("stf-grp-" + StfMetaGroupEnum.DELAY.nameLowerCase() + "-job-mark-actor", baseCapacity, stfCore);
+    super("stf-grp-" + StfMetaGroup.DELAY.nameLowerCase() + "-job-mark-actor", baseCapacity, stfCore);
   }
 
   @Override
-  protected StfMetaGroupEnum metaGroup() {
+  protected StfMetaGroup metaGroup() {
     return DELAY;
   }
 }

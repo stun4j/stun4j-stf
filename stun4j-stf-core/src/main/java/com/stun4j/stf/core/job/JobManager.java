@@ -17,7 +17,7 @@ package com.stun4j.stf.core.job;
 
 import static com.stun4j.stf.core.StfHelper.determinJobMetaGroup;
 import static com.stun4j.stf.core.StfHelper.partialUpdateJobInfoWhenLocked;
-import static com.stun4j.stf.core.StfRunModeEnum.DEFAULT;
+import static com.stun4j.stf.core.StfRunMode.DEFAULT;
 import static com.stun4j.stf.core.support.executor.StfInternalExecutors.newWatcherOfJobManager;
 
 import java.util.HashMap;
@@ -31,8 +31,8 @@ import com.stun4j.guid.core.utils.Utils;
 import com.stun4j.stf.core.Stf;
 import com.stun4j.stf.core.StfCore;
 import com.stun4j.stf.core.StfDelayQueueCore;
-import com.stun4j.stf.core.StfMetaGroupEnum;
-import com.stun4j.stf.core.StfRunModeEnum;
+import com.stun4j.stf.core.StfMetaGroup;
+import com.stun4j.stf.core.StfRunMode;
 import com.stun4j.stf.core.cluster.Heartbeat;
 import com.stun4j.stf.core.cluster.HeartbeatHandler;
 import com.stun4j.stf.core.cluster.StfClusterMember;
@@ -65,15 +65,16 @@ public class JobManager extends BaseLifecycle {
   private static final int DFT_HANDLE_BATCH_SIZE = 20;
 
   private final StfCore stfCore;
-  private final StfRunModeEnum runMode;
+  private final StfRunMode runMode;
   private final JobLoader loader;
   private final JobRunners runners;
   private final JobRunner runner;
   private final JobMarkActor marker;
+  private final boolean delayQueueEnabled;
+
   private JobDelayMarkActor delayMarker;
 
   private Map<String, Thread> watchers;
-  private final boolean delayQueueEnabled;
 
   private HeartbeatHandler heartbeatHandler;
   private int handleBatchSize;
@@ -101,7 +102,7 @@ public class JobManager extends BaseLifecycle {
       }
 
       watchers.forEach((type, watcher) -> {
-        if (determinJobMetaGroup(type) == StfMetaGroupEnum.DELAY && !this.delayQueueEnabled) {
+        if (determinJobMetaGroup(type) == StfMetaGroup.DELAY && !this.delayQueueEnabled) {
           return;
         }
         watcher.start();
@@ -138,7 +139,7 @@ public class JobManager extends BaseLifecycle {
     LOG.info("The stf-job-manager is successfully shut down");
   }
 
-  protected long lockJob(StfMetaGroupEnum metaGrp, Long jobId, int timeoutSecs, int lastRetryTimes,
+  protected long lockJob(StfMetaGroup metaGrp, Long jobId, int timeoutSecs, int lastRetryTimes,
       long lastTimeoutAt) {
     long lockedAt;
     if ((lockedAt = stfCore.lockStf(metaGrp, jobId, timeoutSecs, lastRetryTimes, lastTimeoutAt)) == -1) {
@@ -194,7 +195,7 @@ public class JobManager extends BaseLifecycle {
     if (runMode != DEFAULT) {
       return;
     }
-    this.watchers = Stream.of(ArrayUtils.add(StfMetaGroupEnum.namesLowerCase(), Heartbeat.typeNameLowerCase()))
+    this.watchers = Stream.of(ArrayUtils.add(StfMetaGroup.namesLowerCase(), Heartbeat.typeNameLowerCase()))
         .reduce(new HashMap<String, Thread>(), (map, type) -> {
           Runnable runnable;
           if (type.equals(Heartbeat.typeNameLowerCase())) {
@@ -210,8 +211,8 @@ public class JobManager extends BaseLifecycle {
               LOG.info("The {} seems going through a shutdown", Thread.currentThread().getName());
             };
           } else {
-            StfMetaGroupEnum metaGrp = StfMetaGroupEnum.valueOf(type.toUpperCase());
-            if (metaGrp == StfMetaGroupEnum.DELAY && !delayQueueEnabled) {
+            StfMetaGroup metaGrp = StfMetaGroup.valueOf(type.toUpperCase());
+            if (metaGrp == StfMetaGroup.DELAY && !delayQueueEnabled) {
               return map;
             }
             runnable = () -> {

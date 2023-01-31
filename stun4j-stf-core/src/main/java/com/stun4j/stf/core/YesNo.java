@@ -16,6 +16,6 @@
 package com.stun4j.stf.core;
 
 /** @author JayMeng */
-public enum YesNoEnum {
+public enum YesNo {
   Y, N;
 }

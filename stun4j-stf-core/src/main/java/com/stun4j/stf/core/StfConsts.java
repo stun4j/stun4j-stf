@@ -33,12 +33,12 @@ public interface StfConsts {
   int DFT_MIN_JOB_TIMEOUT_SECONDS = 5;
   int DFT_JOB_TIMEOUT_SECONDS = 20;
 
-  static enum StfDbFieldEnum {
+  static enum StfDbField {
     ID, CALLEE, CALLEE_BYTES, ST, IS_DEAD, RETRY_TIMES, TIMEOUT_SECS, TIMEOUT_AT, CT_AT, UP_AT;
 
     static final String ALL_FIELD_NAMES_LOWER_CASE;
     static {
-      String[] namesLowerCase = Stream.of(StfDbFieldEnum.values()).map(e -> e.nameLowerCase()).toArray(String[]::new);
+      String[] namesLowerCase = Stream.of(StfDbField.values()).map(e -> e.nameLowerCase()).toArray(String[]::new);
       ALL_FIELD_NAMES_LOWER_CASE = StringUtils.join(namesLowerCase, ", ");
     }
 

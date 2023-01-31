@@ -18,7 +18,7 @@ package com.stun4j.stf.core.job;
 import java.util.stream.Stream;
 
 import com.stun4j.stf.core.Stf;
-import com.stun4j.stf.core.StfMetaGroupEnum;
+import com.stun4j.stf.core.StfMetaGroup;
 import com.stun4j.stf.core.cluster.StfClusterMembers;
 
 /**
@@ -28,7 +28,7 @@ public class JobLoader extends BaseJobLoader {
   private final JobScanner scanner;
 
   @Override
-  protected Stream<Stf> loadJobs(StfMetaGroupEnum metaGrp, int loadSize) {
+  protected Stream<Stf> loadJobs(StfMetaGroup metaGrp, int loadSize) {
     int pageNo = StfClusterMembers.determineBlockToTakeOver();
     // TODO mj:Downgrade solution,consider the underlying FJP: StfInternalExecutors#newWorkerOfJobLoading
     switch (metaGrp) {
