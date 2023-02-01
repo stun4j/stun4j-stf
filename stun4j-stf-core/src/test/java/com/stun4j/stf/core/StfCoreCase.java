@@ -53,7 +53,7 @@ public abstract class StfCoreCase extends BaseContainerCase<StfCore> {
     Long stfId = stfc.newStf("foo", "bar", timeoutSecs);
     Utils.sleepSeconds(timeoutSecs);
 
-    Stream<Stf> stfs = scanner.scanTimeoutCoreJobs(2).filter(job->job.getId().equals(stfId));
+    Stream<Stf> stfs = scanner.scanTimeoutCoreJobs(2).filter(job -> job.getId().equals(stfId));
     Stf stf = stfs.findFirst().get();
     long timeoutAt = stf.getTimeoutAt();
 
@@ -85,9 +85,9 @@ public abstract class StfCoreCase extends BaseContainerCase<StfCore> {
     assert cnt.get() == 1 : "exactly 1 job should be locked";
   }
 
-  public static StfCall delegateNewStfCallee(StfCore stfc, String bizObjId, String bizMethodName,
+  public static StfCall delegateNewStfCallee(StfMetaGroup metaGrp, String bizObjId, String bizMethodName,
       @SuppressWarnings("unchecked") Pair<?, Class<?>>... typedArgs) {
-    StfCall callee = ((BaseStfCore)stfc).newCallee(bizObjId, bizMethodName, typedArgs);
+    StfCall callee = StfCall.newCallee(metaGrp, bizObjId, bizMethodName, typedArgs);
     return callee;
   }
 

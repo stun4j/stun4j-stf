@@ -17,6 +17,8 @@ package com.stun4j.stf.core;
 
 import java.util.stream.Stream;
 
+import com.stun4j.stf.core.support.CompressAlgorithm;
+
 /**
  * @author Jay Meng
  */
@@ -34,4 +36,37 @@ public enum StfMetaGroup {
   public String nameLowerCase() {
     return this.name().toLowerCase();
   }
+
+  private boolean globalBodyBytesEnabled = false;
+  private CompressAlgorithm globalBodyCompressAlgorithm = CompressAlgorithm.NONE;
+
+  public StfMetaGroup enableGlobalStfBodyBytes() {
+    return withGlobalStfBodyBytesEnabled(true);
+  }
+
+  public StfMetaGroup enableGlobalStfBodyCompress() {
+    return withGlobalStfBodyCompress(CompressAlgorithm.ZSTD);
+  }
+
+  public StfMetaGroup withGlobalStfBodyCompress(CompressAlgorithm globalBodyCompressAlgorithm) {
+    this.globalBodyCompressAlgorithm = globalBodyCompressAlgorithm;
+    if (globalBodyCompressAlgorithm != CompressAlgorithm.NONE) {
+      this.enableGlobalStfBodyBytes();// force bytes-format to be enabled when using any compress algorithm
+    }
+    return this;
+  }
+
+  public boolean isGlobalBodyBytesEnabled() {
+    return globalBodyBytesEnabled;
+  }
+
+  public CompressAlgorithm getGlobalBodyCompressAlgorithm() {
+    return globalBodyCompressAlgorithm;
+  }
+
+  public StfMetaGroup withGlobalStfBodyBytesEnabled(boolean globalBodyBytesEnabled) {
+    this.globalBodyBytesEnabled = globalBodyBytesEnabled;
+    return this;
+  }
+
 }

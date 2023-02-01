@@ -63,11 +63,13 @@ import com.stun4j.guid.core.utils.Asserts;
 import com.stun4j.guid.core.utils.Strings;
 import com.stun4j.stf.boot.Transaction.IsolationLevel;
 import com.stun4j.stf.boot.Transaction.Propagation;
+import com.stun4j.stf.core.StfCall;
 import com.stun4j.stf.core.StfContext;
 import com.stun4j.stf.core.StfCore;
 import com.stun4j.stf.core.StfCoreJdbc;
 import com.stun4j.stf.core.StfDelayQueue;
 import com.stun4j.stf.core.StfDelayQueueCore;
+import com.stun4j.stf.core.StfMetaGroup;
 import com.stun4j.stf.core.StfTxnOps;
 import com.stun4j.stf.core.build.StfConfig;
 import com.stun4j.stf.core.build.StfConfigs;
@@ -141,6 +143,15 @@ public class StfAutoConfigure implements BeanClassLoaderAware, ApplicationContex
     DataSource dataSource = applicationContext.getBean(props.getDatasourceBeanName(), DataSource.class);
 
     // the initialization
+    // configure global
+    Body coreBodyCfg;
+    Body dlqBodyCfg;
+    StfMetaGroup.CORE.withGlobalStfBodyBytesEnabled((coreBodyCfg = props.getCore().getBody()).isBytesEnabled())
+        .withGlobalStfBodyCompress(coreBodyCfg.getCompressAlgorithm());
+    StfMetaGroup.DELAY.withGlobalStfBodyBytesEnabled((dlqBodyCfg = props.getDelayQueue().getBody()).isBytesEnabled())
+        .withGlobalStfBodyCompress(dlqBodyCfg.getCompressAlgorithm());
+
+    // configure core
     StfRegistry bizReg = new StfDefaultSpringRegistry(applicationContext);
     StfJdbcOps jdbcOps = new StfDefaultSpringJdbcOps(dataSource);
     StfCore stfCore = new StfCoreJdbc(jdbcOps).withRunMode(props.getRunMode());

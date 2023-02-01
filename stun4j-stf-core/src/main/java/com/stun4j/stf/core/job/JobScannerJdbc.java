@@ -37,6 +37,7 @@ import static com.stun4j.stf.core.utils.DataSourceUtils.DB_VENDOR_MY_SQL;
 import static com.stun4j.stf.core.utils.DataSourceUtils.DB_VENDOR_ORACLE;
 import static com.stun4j.stf.core.utils.DataSourceUtils.DB_VENDOR_POSTGRE_SQL;
 import static org.apache.commons.lang3.ArrayUtils.contains;
+import static org.apache.commons.lang3.ArrayUtils.isNotEmpty;
 
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
@@ -141,7 +142,7 @@ public class JobScannerJdbc implements JobScanner, JdbcAware {
     }
 
     boolean checkFlds = false;
-    if (includeFields != null && includeFields.length > 0) {
+    if (isNotEmpty(includeFields)) {
       if (!DB_VENDOR_ORACLE.equals(dbVendor)) {
         String[] includeFldsWithPrefix = Stream.of(includeFields).map(fld -> "a." + fld).toArray(String[]::new);
         sql = sql.substring(sql.indexOf("*") + 1);
@@ -205,19 +206,20 @@ public class JobScannerJdbc implements JobScanner, JdbcAware {
     this.jdbcOps = jdbcOps;
     this.includeHowManyDaysAgo = DFT_INCLUDE_HOW_MANY_DAYS_AGO;
 
-    String mainSqlTpl = "select a.* from %s a inner join (select id from %s where timeout_at between ? and ? and st in (?, ?) and is_dead = ?%s) b on a.id = b.id";
-    String orderSqlTpl = " order by %stimeout_at, %sid";// To get certain order
+    String mainClauseTpl = "select a.* from %s a inner join (select id from %s where timeout_at between ? and ? and st in (?, ?) and is_dead = ?%s) b on a.id = b.id";
+    String orderClauseTpl = " order by %stimeout_at, %sid";// To get certain order
+    String limitClause = " limit ?";
     Stream.of(tblName, tblName + DFT_DELAY_TBL_NAME_SUFFIX).forEach(tbl -> {
-      String mysql = lenientFormat(mainSqlTpl, tbl, tbl, lenientFormat(orderSqlTpl + " limit ?", "", ""));
-      String mainSqlNoLimit;
-      String postgres = (mainSqlNoLimit = lenientFormat(mainSqlTpl, tbl, tbl, ""))
-          + lenientFormat(orderSqlTpl + " limit ?", "a.", "a.");// To get certain order on PG
-      String mainSqlNoLimitNoJoin = mainSqlNoLimit
-          .substring(mainSqlNoLimit.indexOf("(") + 1, mainSqlNoLimit.lastIndexOf(")"))
+      String mysql = lenientFormat(mainClauseTpl, tbl, tbl, lenientFormat(orderClauseTpl + limitClause, "", ""));
+      String mainClauseNoLimit;
+      String postgres = (mainClauseNoLimit = lenientFormat(mainClauseTpl, tbl, tbl, ""))
+          + lenientFormat(orderClauseTpl + limitClause, "a.", "a.");// To get certain order on PG
+      String mainClauseNoLimitNoJoin = mainClauseNoLimit
+          .substring(mainClauseNoLimit.indexOf("(") + 1, mainClauseNoLimit.lastIndexOf(")"))
           .replaceFirst("select id", "select *");
       String oracle = lenientFormat(
           "select * from (select t_temp.*, rownum rn from (%s) t_temp where rownum <= ?) where rn > ?%s",
-          mainSqlNoLimitNoJoin, lenientFormat(orderSqlTpl, "", ""));
+          mainClauseNoLimitNoJoin, lenientFormat(orderClauseTpl, "", ""));
       if (!tbl.endsWith(DFT_DELAY_TBL_NAME_SUFFIX)) {
         SQL_CORE_MYSQL = mysql;
         SQL_CORE_POSTGRES = postgres;

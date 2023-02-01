@@ -57,21 +57,19 @@ public interface StfCore extends StfBatchable {
 
       @SuppressWarnings("unchecked")
       @Override
-      public Long newStf(String bizObjId, String bizMethodName, Integer timeoutSecs,
-          Pair<?, Class<?>>... typedArgs) {
+      public Long newStf(String bizObjId, String bizMethodName, Integer timeoutSecs, Pair<?, Class<?>>... typedArgs) {
         NOT_INITIALIZED_THROW.accept(MODULE_ID);
         return null;
       }
 
       @Override
-      public long lockStf(StfMetaGroup metaGrp, Long stfId, int timeoutSecs, int lastRetryTimes,
-          long lastTimeoutAt) {
+      public long lockStf(StfMetaGroup metaGrp, Long stfId, int timeoutSecs, int lastRetryTimes, long lastTimeoutAt) {
         NOT_INITIALIZED_THROW.accept(MODULE_ID);
         return -1;
       }
 
       @Override
-      public void forward(StfMetaGroup metaGrp, Stf lockedStf, StfCall callee, boolean async) {
+      public void forward(StfMetaGroup metaGrp, Stf lockedStf, StfCall calleePreEval, boolean async) {
         NOT_INITIALIZED_THROW.accept(MODULE_ID);
       }
 

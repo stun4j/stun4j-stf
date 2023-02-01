@@ -35,7 +35,6 @@ import com.stun4j.stf.core.Stf;
 import com.stun4j.stf.core.StfCall;
 import com.stun4j.stf.core.StfCore;
 import com.stun4j.stf.core.StfMetaGroup;
-import com.stun4j.stf.core.support.JsonHelper;
 
 /**
  * @author Jay Meng
@@ -48,11 +47,11 @@ class JobRunner {
   private final LoadingCache<Integer, Map<Integer, Integer>> cachedRetryBehavior;
   private static JobRunner _instance;
 
-  Pair<Boolean, Integer> checkWhetherTheJobCanRun(StfMetaGroup metaGrp, Stf lockingJob, StfCore stfCore) {
+  Pair<Boolean, Integer> checkWhetherTheJobCanRun(StfMetaGroup metaGrp, Stf lockingJob, StfCore stfc) {
     int minTimeoutSecs;
     Map<Integer, Integer> retryBehav = _instance
         .determineJobRetryBehavior(minTimeoutSecs = lockingJob.getTimeoutSecs());
-    Pair<Boolean, Integer> canRun = doCheckAndMarkJobDeadIfNecessary(metaGrp, lockingJob, stfCore, retryBehav);
+    Pair<Boolean, Integer> canRun = doCheckAndMarkJobDeadIfNecessary(metaGrp, lockingJob, stfc, retryBehav);
     if (!canRun.getKey()) {
       return Pair.of(false, null);
     }
@@ -63,26 +62,29 @@ class JobRunner {
     return Pair.of(true, curTimeoutSecs < minTimeoutSecs ? minTimeoutSecs : curTimeoutSecs);
   }
 
-  static void doHandleTimeoutJob(StfMetaGroup metaGrp, Stf lockedJob, StfCore stfCore) {
+  static void doHandleTimeoutJob(StfMetaGroup metaGrp, Stf lockedJob, StfCore stfc) {
     Map<Integer, Integer> retryBehav = _instance.determineJobRetryBehavior(lockedJob.getTimeoutSecs());
 
     logTriggerInformation(metaGrp, lockedJob, retryBehav);
 
-    StfCall callee = JsonHelper.fromJson(lockedJob.evalBody().getBody(), StfCall.class);
+    StfCall callee = null;
+    if (metaGrp == CORE) {
+      callee = lockedJob.toCallee();
+    }
 
-    stfCore.forward(metaGrp, lockedJob, callee,
-        true);/*-TODO mj:1.consider set to false 2.or we will have redundant threadpool 3.or we extract cpu-related jobs here(current choice)*/
+    stfc.forward(metaGrp, lockedJob, callee,
+        true);/*-TODO mj:1.consider set to false or we may encounter excessiving threadpool(or pre-choose tp via meta-gloabl?) 2.extract cpu-related jobs here(current choice)*/
   }
 
-  private static Pair<Boolean, Integer> doCheckAndMarkJobDeadIfNecessary(StfMetaGroup metaGrp, Stf job,
-      StfCore stfCore, Map<Integer, Integer> retryBehav) {
+  private static Pair<Boolean, Integer> doCheckAndMarkJobDeadIfNecessary(StfMetaGroup metaGrp, Stf job, StfCore stfc,
+      Map<Integer, Integer> retryBehav) {
     int retryMaxTimes = retryBehav.size();
     int lastRetryTimes = job.getRetryTimes();
     Long jobId = job.getId();
     if (lastRetryTimes >= retryMaxTimes) {
       LOG.info("Exceeded retryMaxTimes, now marking the job#{} dead [lastRetryTimes={}, retryMaxTimes={}]", jobId,
           lastRetryTimes, retryMaxTimes);
-      stfCore.markDead(metaGrp, jobId, true);
+      stfc.markDead(metaGrp, jobId, true);
       return Pair.of(false, null);
     }
     return Pair.of(true, null);

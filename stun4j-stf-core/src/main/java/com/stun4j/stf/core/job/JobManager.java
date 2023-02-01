@@ -183,13 +183,13 @@ public class JobManager extends BaseLifecycle {
     this.stfCore = stfc = runners.getStfCore();
     this.runMode = stfc.getRunMode();
     boolean delayQueueEnabled;
-    this.delayQueueEnabled = delayQueueEnabled = ((StfDelayQueueCore)this.stfCore).isDelayQueueEnabled();
+    this.delayQueueEnabled = delayQueueEnabled = ((StfDelayQueueCore)stfc).isDelayQueueEnabled();
     this.loader = loader;
     this.runners = runners;
     this.runner = runners.getRunner();
-    StfEventBus.registerHandler(this.marker = new JobMarkActor(stfCore, 16384));// TODO mj:to be configured
+    StfEventBus.registerHandler(this.marker = new JobMarkActor(stfc, 16384));// TODO mj:to be configured
     if (delayQueueEnabled) {
-      StfEventBus.registerHandler(this.delayMarker = new JobDelayMarkActor(stfCore, 16384));
+      StfEventBus.registerHandler(this.delayMarker = new JobDelayMarkActor(stfc, 16384));
     }
 
     if (runMode != DEFAULT) {
@@ -219,7 +219,7 @@ public class JobManager extends BaseLifecycle {
               int handleBatchSize = this.handleBatchSize;
               JobBatchLockAndRunActor batcher = null;
               if (handleBatchSize > 1) {
-                batcher = new JobBatchLockAndRunActor(stfCore, runners, 16384, metaGrp, handleBatchSize);
+                batcher = new JobBatchLockAndRunActor(stfc, runners, 16384, metaGrp, handleBatchSize);
                 batcher.start();// TODO mj:Cascade special #start
               }
 
@@ -247,7 +247,7 @@ public class JobManager extends BaseLifecycle {
                     }
 
                     Pair<Boolean, Integer> pair;
-                    if (!(pair = runner.checkWhetherTheJobCanRun(metaGrp, job, stfCore)).getKey()) {
+                    if (!(pair = runner.checkWhetherTheJobCanRun(metaGrp, job, stfc)).getKey()) {
                       continue;
                     }
                     batcher.tell(new StfReceivedEvent(job, pair.getValue()));
@@ -268,7 +268,7 @@ public class JobManager extends BaseLifecycle {
                   }
 
                   Pair<Boolean, Integer> pair;
-                  if (!(pair = runner.checkWhetherTheJobCanRun(metaGrp, job, stfCore)).getKey()) {/*-A double check here,meanwhile,pick up the dynamic timeout because we are using a
+                  if (!(pair = runner.checkWhetherTheJobCanRun(metaGrp, job, stfc)).getKey()) {/*-A double check here,meanwhile,pick up the dynamic timeout because we are using a
                  custom gradient retry mechanism*/
                     continue;
                   }

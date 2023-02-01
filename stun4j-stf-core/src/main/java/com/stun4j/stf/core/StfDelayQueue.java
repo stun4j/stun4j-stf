@@ -16,6 +16,7 @@
 package com.stun4j.stf.core;
 
 import static com.google.common.base.Strings.lenientFormat;
+import static com.stun4j.stf.core.StfMetaGroup.DELAY;
 import static com.stun4j.stf.core.utils.Asserts.notNull;
 import static com.stun4j.stf.core.utils.Asserts.requireNonNull;
 import static com.stun4j.stf.core.utils.Asserts.state;
@@ -80,7 +81,7 @@ public final class StfDelayQueue {
     });
     // <-
 
-    StfCall callee = ((BaseStfCore)core).newCallee(taskObjId, taskMethodName, taskParamsPair);
+    StfCall callee = StfCall.newCallee(DELAY, taskObjId, taskMethodName, taskParamsPair);
     Long stfId = core.newDelayStf(callee, timeoutSecs, delaySecs);
     if (LOG.isInfoEnabled()) {
       LOG.info("The stf-delay-job#{} is successfully scheduled.", stfId);

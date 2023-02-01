@@ -104,7 +104,7 @@ public abstract class JobRunnerCase extends BaseContainerCase<JobRunner> {
     StfDelayQueueCore sftDlqc = newStfDelayQueueCore(stfc);
     JobScanner jobsc = newJobScanner(stfc);
     String mockBizObjId = "foo2";
-    StfCall callee = StfCoreCase.delegateNewStfCallee(stfc, mockBizObjId, "toString");
+    StfCall callee = StfCoreCase.delegateNewStfCallee(StfMetaGroup.DELAY, mockBizObjId, "toString");
 
     int timeoutSecs = 2;
     int delaySecs = 3;

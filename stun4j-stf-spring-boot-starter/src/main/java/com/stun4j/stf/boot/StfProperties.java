@@ -77,19 +77,22 @@ public class StfProperties extends BaseVo {
   private String[] confFullLoadOrder;
 
   @NestedConfigurationProperty
-  private Transaction transaction = new Transaction();
+  private final Transaction transaction = new Transaction();
 
   @NestedConfigurationProperty
-  private Job job = new Job();
+  private final Job job = new Job();
 
   @NestedConfigurationProperty
-  private Monitor monitor = new Monitor();
+  private final Monitor monitor = new Monitor();
 
   @NestedConfigurationProperty
-  private DefaultExecutor defaultExecutor = new DefaultExecutor();
+  private final DefaultExecutor defaultExecutor = new DefaultExecutor();
 
   @NestedConfigurationProperty
-  private DelayQueue delayQueue = new DelayQueue();
+  private final Core core = new Core();
+
+  @NestedConfigurationProperty
+  private final DelayQueue delayQueue = new DelayQueue();
 
   public void setConfRootPath(String confRootPath) {
     argument(confRootPath.indexOf("*") == -1, "'*' is not supported in root path of stf-flow configurations");
@@ -153,6 +156,10 @@ public class StfProperties extends BaseVo {
 
   public DelayQueue getDelayQueue() {
     return delayQueue;
+  }
+
+  public Core getCore() {
+    return core;
   }
 
 }

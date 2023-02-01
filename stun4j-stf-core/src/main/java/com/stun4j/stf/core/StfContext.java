@@ -185,8 +185,8 @@ public final class StfContext {
   }
 
   /** Must be called in the very beginning */
-  public static void init(StfCore stfCore, StfRegistry bizReg) {
-    StfContext._core = StfThinContext._core = requireNonNull(stfCore, "The stf-core can't be null");
+  public static void init(StfCore stfc, StfRegistry bizReg) {
+    StfContext._core = StfThinContext._core = requireNonNull(stfc, "The stf-core can't be null");
     StfContext._bizReg = requireNonNull(bizReg, "The stf-biz-reg can't be null");
 
   }

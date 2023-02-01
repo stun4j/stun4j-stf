@@ -73,17 +73,17 @@ public class StfCoreJdbc extends BaseStfCore implements JdbcAware {
 
   @Override
   public void markDone(StfMetaGroup metaGrp, Long stfId, boolean async) {
-    coreFn.accept(Pair.of(metaGrp, stfId), null, null, async, true, markDone);
+    coreFn.accept(of(metaGrp, stfId), null, null, async, true, markDone);
   }
 
   @Override
   public void markDead(StfMetaGroup metaGrp, Long stfId, boolean async) {
-    coreFn.accept(Pair.of(metaGrp, stfId), null, null, async, false, markDead);
+    coreFn.accept(of(metaGrp, stfId), null, null, async, false, markDead);
   }
 
   @Override
   public void forward(StfMetaGroup metaGrp, Stf lockedStf, StfCall calleePreEval, boolean async) {
-    coreFn.accept(Pair.of(metaGrp, lockedStf.getId()), lockedStf, calleePreEval, async, false, forward);
+    coreFn.accept(of(metaGrp, lockedStf.getId()), lockedStf, calleePreEval, async, false, forward);
   }
 
   @Override
@@ -123,8 +123,7 @@ public class StfCoreJdbc extends BaseStfCore implements JdbcAware {
   }
 
   @Override
-  protected long doLockStf(StfMetaGroup metaGrp, Long stfId, int timeoutSecs, int lastRetryTimes,
-      long lastTimeoutAt) {
+  protected long doLockStf(StfMetaGroup metaGrp, Long stfId, int timeoutSecs, int lastRetryTimes, long lastTimeoutAt) {
     if (H.isDataSourceClose()) {
       H.logOnDataSourceClose(LOG, "doLockStf", of("stf", stfId));
       return -1;
@@ -179,17 +178,21 @@ public class StfCoreJdbc extends BaseStfCore implements JdbcAware {
   }
 
   @Override
-  protected boolean doDelayTransfer(Stf lockedDelayStf, StfCall delayCalleePreEval) {/*-TODO mj:runCallee read config*/
+  protected boolean doDelayTransfer(Stf lockedDelayStf, StfCall delayCalleePreEval) {
     Long stfId = lockedDelayStf.getId();
-    String calleeBody = lockedDelayStf.getBody();
-    byte[] calleeBytes = lockedDelayStf.getBodyBytes();
+    if (H.isDataSourceClose()) {
+      H.logOnDataSourceClose(LOG, "doDelayTransfer", of("stf", stfId));
+      return false;
+    }
+
+    Pair<String, byte[]> calleeMayGotBodyFormatChanged = super.doDelayTransfer0(lockedDelayStf, delayCalleePreEval);
     int timeoutSecs = lockedDelayStf.getTimeoutSecs();
-    // TODO mj:compare delayCallee with runCallee bytes-store info
 
     long now;
-    int cnt = jdbcOps.update(DELAY_TRANSFER_FULL_SQL, stfId, calleeBody, calleeBytes, timeoutSecs,
-        (now = System.currentTimeMillis()) + timeoutSecs * 1000, now,
-        now);/*- TODO mj:Do transparent transfer if bytes-store info is all the same,to support different bytes-store approach btw delay&run*/
+    String metaOrBody = calleeMayGotBodyFormatChanged.getLeft();
+    byte[] bytesOrNull = calleeMayGotBodyFormatChanged.getRight();
+    int cnt = jdbcOps.update(DELAY_TRANSFER_FULL_SQL, stfId, metaOrBody, bytesOrNull, timeoutSecs,
+        (now = System.currentTimeMillis()) + timeoutSecs * 1000, now, now);
     return cnt == 1;
   }
 

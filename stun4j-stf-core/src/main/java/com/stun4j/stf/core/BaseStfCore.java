@@ -20,6 +20,7 @@ import static com.stun4j.stf.core.StfHelper.partialUpdateJobInfoWhenLocked;
 import static com.stun4j.stf.core.StfMetaGroup.CORE;
 import static com.stun4j.stf.core.StfMetaGroup.DELAY;
 import static com.stun4j.stf.core.support.executor.StfInternalExecutors.newWorkerOfStfCore;
+import static org.apache.commons.lang3.tuple.Pair.of;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -37,13 +38,13 @@ import org.springframework.dao.DuplicateKeyException;
 
 import com.stun4j.guid.core.LocalGuid;
 import com.stun4j.stf.core.build.StfConfigs;
+import com.stun4j.stf.core.support.CompressAlgorithm;
 import com.stun4j.stf.core.utils.Exceptions;
 import com.stun4j.stf.core.utils.consumers.BaseConsumer;
 import com.stun4j.stf.core.utils.consumers.PairConsumer;
 import com.stun4j.stf.core.utils.consumers.QuadruConsumer;
 import com.stun4j.stf.core.utils.consumers.SextuConsumer;
 import com.stun4j.stf.core.utils.consumers.TriConsumer;
-import com.stun4j.stf.core.utils.shaded.guava.common.primitives.Primitives;
 
 /**
  * Base class for the core operations of Stf.
@@ -54,10 +55,10 @@ abstract class BaseStfCore implements StfCore, StfDelayQueueCore {
   protected final ExecutorService worker;
 
   protected final SextuConsumer<Pair<StfMetaGroup, Long>, Stf, StfCall, Boolean, Boolean, BaseConsumer<StfMetaGroup>> coreFn;
-  protected final QuadruConsumer<StfMetaGroup, Long/*-TODO mj:Bad design just to distinguish it from another generic 'tri'*/, Stf, StfCall/*- bad design just for the special pre-eval purpose */> forward;
+  protected final QuadruConsumer<StfMetaGroup, Long/*-TODO mj:Bad design just to distinguish it from another generic 'tri'*/, Stf, StfCall/*-TODO mj:Bad design just for the special pre-eval purpose*/> forward;
   protected final TriConsumer<StfMetaGroup, Long, Boolean> markDone;
   protected final PairConsumer<StfMetaGroup, Long> markDead;
-  
+
   private StfRunMode runMode;
   private boolean delayQueueEnabled;
 
@@ -65,10 +66,10 @@ abstract class BaseStfCore implements StfCore, StfDelayQueueCore {
   public Long newStf(String bizObjId, String bizMethodName, Integer timeoutSeconds,
       @SuppressWarnings("unchecked") Pair<?, Class<?>>... typedArgs) {
     int timeoutSecs = Optional.ofNullable(timeoutSeconds).orElse(StfConfigs.getActionTimeout(bizObjId, bizMethodName));
-    StfCall callee = newCallee(bizObjId, bizMethodName, typedArgs);
-    StfId newStfId = StfContext.newStfId(bizObjId, bizMethodName);
+    StfCall callee = StfCall.newCallee(CORE, bizObjId, bizMethodName, typedArgs);
+    StfId stfId = StfContext.newStfId(bizObjId, bizMethodName);
     Long idVal;
-    doNewStf(idVal = newStfId.getValue(), callee, timeoutSecs);
+    doNewStf(idVal = stfId.getValue(), callee, timeoutSecs);
     return idVal;
   }
 
@@ -120,25 +121,6 @@ abstract class BaseStfCore implements StfCore, StfDelayQueueCore {
     return jobs;
   }
 
-  StfCall newCallee(String bizObjId, String bizMethodName,
-      @SuppressWarnings("unchecked") Pair<?, Class<?>>... typedArgs) {
-    if (ArrayUtils.isNotEmpty(typedArgs)) {
-      StfCall callee = StfCall.ofInJvm(bizObjId, bizMethodName, typedArgs.length);
-      int argIdx = 0;
-      for (Pair<?, Class<?>> arg : typedArgs) {
-        Class<?> argType = arg.getRight();
-        Object argVal = arg.getLeft();
-        if (Primitives.isPrimitive(argType)) {
-          callee.withPrimitiveArg(argIdx++, argVal, argType);
-        } else {
-          callee.withArg(argIdx++, argVal);
-        }
-      }
-      return callee;
-    }
-    return StfCall.ofInJvm(bizObjId, bizMethodName);
-  }
-
   protected boolean checkFail(Long stfId) {
     if (stfId == null || stfId <= 0) {
       LOG.error("The id of stf#{} must be greater than 0", stfId);
@@ -147,9 +129,12 @@ abstract class BaseStfCore implements StfCore, StfDelayQueueCore {
     return false;
   }
 
-  protected void invokeCall(Long stfId, StfCall callee) {
+  protected void invokeCall(Stf lockedStf, StfCall calleePreEval) {
+    Long stfId = lockedStf.getId();
     try {
-      Pair<String, Object[]> invokeMeta = callee.toInvokeMeta();
+      calleePreEval = Optional.ofNullable(calleePreEval).orElse(lockedStf.toCallee());
+
+      Pair<String, Object[]> invokeMeta = calleePreEval.toInvokeMeta();
       String calleeSvcUri = invokeMeta.getKey();
       Object[] calleeMethodArgs = invokeMeta.getValue();
       StfInvoker.invoke(stfId, calleeSvcUri, calleeMethodArgs);
@@ -188,6 +173,50 @@ abstract class BaseStfCore implements StfCore, StfDelayQueueCore {
 
   protected abstract String getCoreTblName();
 
+  protected Pair<String, byte[]> doDelayTransfer0(Stf lockedDelayStf, StfCall delayCalleePreEval) {
+    String delayBody = lockedDelayStf.getBody();
+    byte[] delayBodyBytes = lockedDelayStf.getBodyBytes();
+
+    // Compare delayCallee with runCallee bytes-store info, do the transformation if necessary
+    boolean delayBytesEnabled = DELAY.isGlobalBodyBytesEnabled();// So far, we are reading global information
+    CompressAlgorithm delayCompAlgo = DELAY.getGlobalBodyCompressAlgorithm();
+    boolean coreBytesEnabled = CORE.isGlobalBodyBytesEnabled();
+    CompressAlgorithm coreCompAlgo = CORE.getGlobalBodyCompressAlgorithm();
+
+    Pair<String, byte[]> calleeMayGotBodyFormatChanged = of(delayBody, delayBodyBytes);
+    // @formatter:off
+    // Force follow core-meta
+    if (delayBytesEnabled != coreBytesEnabled) {
+      calleeMayGotBodyFormatChanged = doDelayBodyFormatToCore(delayBody, delayBodyBytes, coreBytesEnabled, coreCompAlgo);
+
+    // Check compress-algorithm which may different
+    } else {
+      if (coreBytesEnabled == true) {
+        if (delayCompAlgo != coreCompAlgo) {
+          calleeMayGotBodyFormatChanged = doDelayBodyFormatToCore(delayBody, delayBodyBytes, coreBytesEnabled, coreCompAlgo);
+        }
+        // Do nothiing but follow delay's original body&bytes
+        // else {
+        //
+        // }
+      }
+      // Do nothiing but follow delay's original body&bytes
+      // else {
+      //
+      // }
+    }
+    // @formatter:on
+    return calleeMayGotBodyFormatChanged;
+  }
+
+  private Pair<String, byte[]> doDelayBodyFormatToCore(String delayBody, byte[] delayBodyBytes,
+      boolean coreBytesEnabled, CompressAlgorithm coreCompAlgo) {
+    Stf restored = new Stf(delayBody, delayBodyBytes);
+    StfCall callee = restored.toCallee();
+    Pair<String, byte[]> res = callee.withBytes(coreBytesEnabled).withCompress(coreCompAlgo).toBytesIfNecessary();
+    return res;
+  }
+
   private void invokeConsumer(Pair<StfMetaGroup, Long> stfMeta, Stf stf, StfCall callee, boolean batch,
       BaseConsumer<StfMetaGroup> bizFn) {
     StfMetaGroup metaGrp = stfMeta.getLeft();
@@ -215,12 +244,12 @@ abstract class BaseStfCore implements StfCore, StfDelayQueueCore {
         return;
       }
       worker.execute(() -> invokeConsumer(stfMeta, stf, callee, batch, bizFn));
-    };/*-TODO mj:Move to other place,not jdbc semantic*/
+    };
 
     forward = (metaGrp, stfId, lockedStf, calleePreEval) -> {
       if (metaGrp == CORE) {
         // Invoke callee to actually retry the job
-        invokeCall(stfId, calleePreEval);
+        invokeCall(lockedStf, calleePreEval);
         return;
       }
       try {
@@ -239,7 +268,7 @@ abstract class BaseStfCore implements StfCore, StfDelayQueueCore {
       this.markDone(DELAY, stfId, true);// Stf internally using Stf itself:)
 
       // Immediate trigger the invoke(this is not retry)
-      invokeCall(stfId, calleePreEval);
+      invokeCall(lockedStf, calleePreEval);
     };
 
     markDone = (metaGrp, stfId, batch) -> {

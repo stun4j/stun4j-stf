@@ -18,6 +18,8 @@ package com.stun4j.stf.core;
 import static com.stun4j.stf.core.support.JsonHelper.NO_TYPING_SERIALIZER;
 import static com.stun4j.stf.core.support.JsonHelper.toJson;
 import static com.stun4j.stf.core.utils.Asserts.state;
+import static com.stun4j.stf.core.utils.shaded.guava.common.primitives.Primitives.isPrimitive;
+import static org.apache.commons.lang3.ArrayUtils.isNotEmpty;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
@@ -25,7 +27,6 @@ import java.util.Collections;
 import org.apache.commons.lang3.tuple.Pair;
 
 import com.stun4j.stf.core.support.CompressAlgorithm;
-import com.stun4j.stf.core.utils.shaded.guava.common.primitives.Primitives;
 
 /**
  * A 'call' carries enough meta-data of an action/cmd,which drives state move-forward,could be a caller or a callee
@@ -42,7 +43,7 @@ public class StfCall {
   // private int timeoutSecs;
 
   private boolean bytes = false;
-  private byte compAlgo = CompressAlgorithm.NONE.value();// FIXME mj:to be configured
+  private byte compAlgo = CompressAlgorithm.NONE.value();
   private Integer zstdOriSize;
 
   public static StfCall of(String type, String bizObjId, String method) {
@@ -61,41 +62,8 @@ public class StfCall {
     return new StfCall(type, bizObjId, method, new Object[argsLength]);
   }
 
-  public Pair<String, Object[]> toInvokeMeta() {
-    // String type = this.type;
-    // String bizObjId = this.getBizObjId();
-    // String method = this.getMethod();
-    StringBuilder builder = new StringBuilder(this.type).append(":").append(this.bizObjId).append(".")
-        .append(this.method);
-    String invokeInfo = builder.toString();
-    return Pair.of(invokeInfo, this.args);
-  }
-
-  public Pair<String, byte[]> toBytesIfNecessary() {
-    CompressAlgorithm algo;
-    Pair<Integer, byte[]> bytesInfo = toJson(this, algo = CompressAlgorithm.valueOf(compAlgo));
-    byte[] rtnBytes = bytesInfo.getValue();
-    switch (algo) {
-      case NONE:
-        if (bytes) {
-          String meta = toJson(NO_TYPING_SERIALIZER, new StfCall(algo).enableBytes());
-          return Pair.of(meta, rtnBytes);
-        }
-        String callStr = new String(rtnBytes, StandardCharsets.UTF_8);
-        return Pair.of(callStr, null);
-      default:
-        StfCall call = new StfCall(algo)
-            .enableBytes();/*- force bytes-format to be enabled when using any compress algorithm*/
-        if (algo == CompressAlgorithm.ZSTD) {
-          call.withZstdOriSize(bytesInfo.getKey());
-        }
-        String meta = toJson(NO_TYPING_SERIALIZER, call);
-        return Pair.of(meta, rtnBytes);
-    }
-  }
-
   public StfCall withPrimitiveArg(int argIdx, Object argValue, Class<?> primitiveClz) {
-    state(Primitives.isPrimitive(primitiveClz), "Not primitive type");
+    state(isPrimitive(primitiveClz), "Not primitive type");
     // primitiveClz = Primitives.unwrap(primitiveClz);
     if (int.class == primitiveClz) {
       argValue = (int)argValue;
@@ -127,21 +95,73 @@ public class StfCall {
     return this;
   }
 
+  public Pair<String, Object[]> toInvokeMeta() {
+    StringBuilder builder = new StringBuilder(this.type).append(":").append(this.bizObjId).append(".")
+        .append(this.method);
+    String invokeInfo = builder.toString();
+    return Pair.of(invokeInfo, this.args);
+  }
+
+  public Pair<String, byte[]> toBytesIfNecessary() {
+    CompressAlgorithm algo;
+    Pair<Integer, byte[]> bytesInfo = toJson(this, algo = CompressAlgorithm.valueOf(compAlgo));
+    byte[] rtnBytes = bytesInfo.getValue();
+    switch (algo) {
+      case NONE:
+        if (bytes) {
+          String meta = toJson(NO_TYPING_SERIALIZER, new StfCall(algo).enableBytes());
+          return Pair.of(meta, rtnBytes);
+        }
+        String callStr = new String(rtnBytes, StandardCharsets.UTF_8);
+        return Pair.of(callStr, null);
+      default:
+        StfCall call = new StfCall(algo)
+            .enableBytes();/*- force bytes-format to be enabled when using any compress algorithm*/
+        if (algo == CompressAlgorithm.ZSTD) {
+          call.withZstdOriSize(bytesInfo.getKey());
+        }
+        String meta = toJson(NO_TYPING_SERIALIZER, call);
+        return Pair.of(meta, rtnBytes);
+    }
+  }
+
   public StfCall enableBytes() {
-    bytes = true;
-    return this;
+    return withBytes(true);
   }
 
   public StfCall enableCompress() {
-    return enableCompress(CompressAlgorithm.ZSTD);
+    return withCompress(CompressAlgorithm.ZSTD);
   }
 
-  public StfCall enableCompress(CompressAlgorithm compAlgo) {
+  public StfCall withCompress(CompressAlgorithm compAlgo) {
     this.compAlgo = compAlgo.value();
     if (compAlgo != CompressAlgorithm.NONE) {
       this.enableBytes();// force bytes-format to be enabled when using any compress algorithm
     }
     return this;
+  }
+
+  static StfCall newCallee(StfMetaGroup metaGrp, String bizObjId, String bizMethodName,
+      @SuppressWarnings("unchecked") Pair<?, Class<?>>... typedArgs) {
+    StfCall res;
+    if (isNotEmpty(typedArgs)) {
+      StfCall callee = ofInJvm(bizObjId, bizMethodName, typedArgs.length);
+      int argIdx = 0;
+      for (Pair<?, Class<?>> arg : typedArgs) {
+        Class<?> argType = arg.getRight();
+        Object argVal = arg.getLeft();
+        if (isPrimitive(argType)) {
+          callee.withPrimitiveArg(argIdx++, argVal, argType);
+        } else {
+          callee.withArg(argIdx++, argVal);
+        }
+      }
+      res = callee;
+    } else {
+      res = ofInJvm(bizObjId, bizMethodName);
+    }
+
+    return res.withBytes(metaGrp.isGlobalBodyBytesEnabled()).withCompress(metaGrp.getGlobalBodyCompressAlgorithm());
   }
 
   private StfCall(String type, String bizObjId, String method, Object[] args) {
@@ -153,7 +173,7 @@ public class StfCall {
 
   private StfCall(CompressAlgorithm compAlgo) {
     this();
-    this.enableCompress(compAlgo);
+    this.withCompress(compAlgo);
   }
 
   StfCall() {
@@ -190,6 +210,11 @@ public class StfCall {
 
   public StfCall withZstdOriSize(Integer zstdOriSize) {
     this.zstdOriSize = zstdOriSize;
+    return this;
+  }
+
+  public StfCall withBytes(boolean bytes) {
+    this.bytes = bytes;
     return this;
   }
 

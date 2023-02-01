@@ -18,28 +18,14 @@ package com.stun4j.stf.boot;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
 /**
- * Stf DelayQueue configuration
+ * Stf Core global configuration
  * <p>
  * @author Jay Meng
  */
-public class DelayQueue {
-  /**
-   * Whether Stf DelayQueue is enabled
-   * <p>
-   * Default: true
-   */
-  private boolean enabled = true;
+public class Core {
 
   @NestedConfigurationProperty
   private final Body body = new Body();
-
-  public boolean isEnabled() {
-    return enabled;
-  }
-
-  public void setEnabled(boolean enabled) {
-    this.enabled = enabled;
-  }
 
   public Body getBody() {
     return body;

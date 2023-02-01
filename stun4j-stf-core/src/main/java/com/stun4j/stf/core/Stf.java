@@ -18,6 +18,7 @@ package com.stun4j.stf.core;
 
 import static com.stun4j.stf.core.support.JsonHelper.NO_TYPING_SERIALIZER;
 import static com.stun4j.stf.core.support.JsonHelper.fromJson;
+import static com.stun4j.stf.core.utils.Asserts.requireNonNull;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
@@ -29,7 +30,6 @@ import org.xerial.snappy.Snappy;
 import com.github.luben.zstd.Zstd;
 import com.stun4j.stf.core.support.BaseEntity;
 import com.stun4j.stf.core.support.CompressAlgorithm;
-import com.stun4j.stf.core.utils.Asserts;
 import com.stun4j.stf.core.utils.Exceptions;
 
 /**
@@ -56,9 +56,15 @@ public class Stf extends BaseEntity<Long> implements Cloneable {
   private long ctAt;
   private long upAt;
 
-  public Stf evalBody() {
+  public StfCall toCallee() {
+    String restored = this.evalBody().getBody();
+    StfCall res = fromJson(restored, StfCall.class);
+    return res;
+  }
+
+  private Stf evalBody() {
     // Uncompress and replace body if necessary
-    String bodyOrMeta = Asserts.requireNonNull(this.body, "The stf-body can't be null");
+    String bodyOrMeta = requireNonNull(this.body, "The stf-body can't be null");
     byte[] bodyBytes;
     if ((bodyBytes = this.bodyBytes) == null) {
       return this;
@@ -83,6 +89,14 @@ public class Stf extends BaseEntity<Long> implements Cloneable {
     } catch (Throwable e) {
       throw Exceptions.sneakyThrow(e, LOG, "An error occured while evaling stf-body [bodyMeta={}]", bodyOrMeta);
     }
+  }
+
+  Stf(String body, byte[] bodyBytes) {
+    this.body = body;
+    this.bodyBytes = bodyBytes;
+  }
+
+  public Stf() {
   }
 
   @Override
