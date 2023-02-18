@@ -13,6 +13,11 @@
 	<description>Starter for using Stun4J Stf</description>
 	<url>https://github.com/stun4j/stun4j-stf</url>
 
+	<properties>
+		<!-- core -->
+		<druid.version>1.2.15</druid.version>
+	</properties>
+
 	<dependencies>
 		<!-- module -->
 		<dependency>
@@ -24,6 +29,18 @@
 			<groupId>com.stun4j.boot</groupId>
 			<artifactId>stun4j-guid-spring-boot-starter</artifactId>
 			<version>${stun4j-guid.version}</version>
+		</dependency>
+		<!-- core -->
+		<dependency>
+			<groupId>com.zaxxer</groupId>
+			<artifactId>HikariCP</artifactId>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>com.alibaba</groupId>
+			<artifactId>druid</artifactId>
+			<version>${druid.version}</version>
+			<optional>true</optional>
 		</dependency>
 		<!-- helper -->
 		<dependency>

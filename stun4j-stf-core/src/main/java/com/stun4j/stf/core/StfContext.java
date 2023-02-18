@@ -104,7 +104,6 @@ public final class StfContext {
   static String getBizObjId(Class<?> bizClass) {
     return (String)_bizReg.getObj(bizClass);
   }
-
   static void markLastCommitted() {
     LAST_COMMITTED.set(true);
   }

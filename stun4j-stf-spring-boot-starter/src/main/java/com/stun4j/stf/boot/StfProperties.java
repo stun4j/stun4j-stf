@@ -38,7 +38,7 @@ public class StfProperties extends BaseVo {
   private StfRunMode runMode = StfRunMode.DEFAULT;
 
   /**
-   * The spring bean name of underlying sql datasource
+   * The default spring bean name of underlying datasource
    * <p>
    * Default: dataSource
    */
@@ -89,10 +89,10 @@ public class StfProperties extends BaseVo {
   private final DefaultExecutor defaultExecutor = new DefaultExecutor();
 
   @NestedConfigurationProperty
-  private final Core core = new Core();
+  private final Core core = new Core(this);
 
   @NestedConfigurationProperty
-  private final DelayQueue delayQueue = new DelayQueue();
+  private final DelayQueue delayQueue = new DelayQueue(core);
 
   public void setConfRootPath(String confRootPath) {
     argument(confRootPath.indexOf("*") == -1, "'*' is not supported in root path of stf-flow configurations");
@@ -107,7 +107,7 @@ public class StfProperties extends BaseVo {
   }
 
   public void setDatasourceBeanName(String datasourceBeanName) {
-    this.datasourceBeanName = datasourceBeanName;
+    this.datasourceBeanName = (datasourceBeanName == null ? datasourceBeanName : datasourceBeanName.trim());
   }
 
   public StfRunMode getRunMode() {

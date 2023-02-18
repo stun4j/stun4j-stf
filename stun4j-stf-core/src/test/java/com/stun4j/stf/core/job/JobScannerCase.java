@@ -32,7 +32,6 @@ import com.stun4j.stf.core.Stf;
 import com.stun4j.stf.core.StfContext;
 import com.stun4j.stf.core.StfCore;
 import com.stun4j.stf.core.support.JdbcAware;
-import com.stun4j.stf.core.support.persistence.StfDefaultSpringJdbcOps;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public abstract class JobScannerCase extends BaseContainerCase<JobScanner> {
@@ -41,15 +40,9 @@ public abstract class JobScannerCase extends BaseContainerCase<JobScanner> {
     LocalGuid.init(0, 0);
   }
 
-  @Override
-  public JobScanner bizBean() {
-    JdbcTemplate jdbcOps = newJdbcTemplate(db);
-    return new JobScannerJdbc(new StfDefaultSpringJdbcOps(jdbcOps), tblName);
-  }
-
   @Test
   public void _01_basicConnectivity_optRtnFields() {
-    JobScanner biz = bizBean();
+    JobScanner biz = newJobScanner(null);
     StfCore stfc = newStfCore(biz);
     stfc.newStf("foo", "bar", 1);// given a shortest timeout
     Utils.sleepSeconds(1);
@@ -68,7 +61,7 @@ public abstract class JobScannerCase extends BaseContainerCase<JobScanner> {
   }
 
   private void _02_template(State st) {
-    JobScanner biz = bizBean();
+    JobScanner biz = newJobScanner(null);
     StfCore stfc = newStfCore(biz);
     // Initialize two pieces of data, both in initial state 'I'
     stfc.newStf("foo", "bar");

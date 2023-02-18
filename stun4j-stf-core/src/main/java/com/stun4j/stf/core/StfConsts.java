@@ -18,8 +18,11 @@ package com.stun4j.stf.core;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
+
+import com.stun4j.stf.core.cluster.Heartbeat;
 
 /** @author Jay Meng */
 public interface StfConsts {
@@ -45,6 +48,10 @@ public interface StfConsts {
     public String nameLowerCase() {
       return this.name().toLowerCase();
     }
+  }
+
+  static String[] allDataSourceKeys() {
+    return ArrayUtils.add(StfMetaGroup.namesLowerCase(), Heartbeat.typeNameLowerCase());
   }
 
   @SuppressWarnings("unused")

@@ -26,6 +26,7 @@ import static com.stun4j.stf.core.StfConsts.StfDbField.ALL_FIELD_NAMES_LOWER_CAS
 import static com.stun4j.stf.core.StfConsts.StfDbField.CALLEE_BYTES;
 import static com.stun4j.stf.core.StfHelper.H;
 import static com.stun4j.stf.core.StfMetaGroup.CORE;
+import static com.stun4j.stf.core.StfMetaGroup.DELAY;
 import static com.stun4j.stf.core.YesNo.N;
 import static com.stun4j.stf.core.YesNo.Y;
 import static org.apache.commons.lang3.RegExUtils.removeFirst;
@@ -88,7 +89,8 @@ public class StfCoreJdbc extends BaseStfCore implements JdbcAware {
 
   @Override
   protected void doNewStf(Long stfId, StfCall callee, int timeoutSecs) {
-    if (H.isDataSourceClose()) {
+    StfMetaGroup dsKey;
+    if (H.isDataSourceClose(dsKey = CORE)) {
       H.logOnDataSourceClose(LOG, "doNewStf", of("stf", stfId));
       return;
     }
@@ -97,15 +99,18 @@ public class StfCoreJdbc extends BaseStfCore implements JdbcAware {
     byte[] bytesOrNull = dynaCallee.getValue();
     long now = System.currentTimeMillis();
     if (bytesOrNull != null) {
-      jdbcOps.update(INIT_SQL_FULL, stfId, metaOrBody, bytesOrNull, timeoutSecs, (now + timeoutSecs * 1000), now, now);
+      jdbcOps.update(dsKey, INIT_SQL_FULL, stfId, metaOrBody, bytesOrNull, timeoutSecs, (now + timeoutSecs * 1000), now,
+          now);
     } else {
-      jdbcOps.update(INIT_SQL_NO_CALLEE_BYTES, stfId, metaOrBody, timeoutSecs, (now + timeoutSecs * 1000), now, now);
+      jdbcOps.update(dsKey, INIT_SQL_NO_CALLEE_BYTES, stfId, metaOrBody, timeoutSecs, (now + timeoutSecs * 1000), now,
+          now);
     }
   }
 
   @Override
   protected void doNewDelayStf(Long stfId, StfCall callee, int timeoutSecs, int delaySecs) {
-    if (H.isDataSourceClose()) {
+    StfMetaGroup dsKey;
+    if (H.isDataSourceClose(dsKey = DELAY)) {
       H.logOnDataSourceClose(LOG, "doNewStfDelay", of("stfd", stfId));
       return;
     }
@@ -114,39 +119,39 @@ public class StfCoreJdbc extends BaseStfCore implements JdbcAware {
     byte[] bytesOrNull = dynaCallee.getValue();
     long now = System.currentTimeMillis();
     if (bytesOrNull != null) {
-      jdbcOps.update(INIT_DELAY_SQL_FULL, stfId, metaOrBody, bytesOrNull, timeoutSecs, (now + delaySecs * 1000), now,
-          now);
+      jdbcOps.update(dsKey, INIT_DELAY_SQL_FULL, stfId, metaOrBody, bytesOrNull, timeoutSecs, (now + delaySecs * 1000),
+          now, now);
     } else {
-      jdbcOps.update(INIT_DELAY_SQL_NO_CALLEE_BYTES, stfId, metaOrBody, timeoutSecs, (now + delaySecs * 1000), now,
-          now);
+      jdbcOps.update(dsKey, INIT_DELAY_SQL_NO_CALLEE_BYTES, stfId, metaOrBody, timeoutSecs, (now + delaySecs * 1000),
+          now, now);
     } // TODO mj:possibility batch insert?
   }
 
   @Override
   protected long doLockStf(StfMetaGroup metaGrp, Long stfId, int timeoutSecs, int lastRetryTimes, long lastTimeoutAt) {
-    if (H.isDataSourceClose()) {
+    if (H.isDataSourceClose(metaGrp)) {
       H.logOnDataSourceClose(LOG, "doLockStf", of("stf", stfId));
       return -1;
     }
     long now;
-    int cnt = jdbcOps.update(metaGrp == CORE ? LOCK_SQL : LOCK_DELAY_SQL,
+    int cnt = jdbcOps.update(metaGrp, metaGrp == CORE ? LOCK_SQL : LOCK_DELAY_SQL,
         (now = System.currentTimeMillis()) + timeoutSecs * 1000, now, stfId, lastRetryTimes, lastTimeoutAt);
     return cnt == 1 ? now : -1;
   }
 
   @Override
   protected int[] doBatchLockStfs(StfMetaGroup metaGrp, List<Object[]> batchArgs) {
-    if (H.isDataSourceClose()) {
+    if (H.isDataSourceClose(metaGrp)) {
       H.logOnDataSourceClose(LOG, "doBatchLockStfs");
       return null;
     }
-    int[] res = jdbcOps.batchUpdate(metaGrp == CORE ? LOCK_SQL : LOCK_DELAY_SQL, batchArgs);
+    int[] res = jdbcOps.batchUpdate(metaGrp, metaGrp == CORE ? LOCK_SQL : LOCK_DELAY_SQL, batchArgs);
     return res;
   }
 
   @Override
   protected boolean doMarkDone(StfMetaGroup metaGrp, Long stfId, boolean batch) {
-    if (H.isDataSourceClose()) {
+    if (H.isDataSourceClose(metaGrp)) {
       H.logOnDataSourceClose(LOG, "doMarkDone", of("stf", stfId));
       return false;
     }
@@ -154,33 +159,35 @@ public class StfCoreJdbc extends BaseStfCore implements JdbcAware {
       StfEventBus.post(metaGrp == CORE ? new StfDoneEvent(stfId) : new StfDelayTriggeredEvent(stfId));
       return true;
     }
-    int cnt = jdbcOps.update(metaGrp == CORE ? MARK_DONE_SQL : MARK_DONE_DELAY_SQL, System.currentTimeMillis(), stfId);
+    int cnt = jdbcOps.update(metaGrp, metaGrp == CORE ? MARK_DONE_SQL : MARK_DONE_DELAY_SQL, System.currentTimeMillis(),
+        stfId);
     return cnt == 1;
   }
 
   @Override
   public int[] batchMarkDone(StfMetaGroup metaGrp, List<Object[]> stfIdsInfo) {
-    if (H.isDataSourceClose()) {
+    if (H.isDataSourceClose(metaGrp)) {
       H.logOnDataSourceClose(LOG, "batchMarkDone");
       return null;
     }
-    int[] res = jdbcOps.batchUpdate(metaGrp == CORE ? MARK_DONE_SQL : MARK_DONE_DELAY_SQL, stfIdsInfo);
+    int[] res = jdbcOps.batchUpdate(metaGrp, metaGrp == CORE ? MARK_DONE_SQL : MARK_DONE_DELAY_SQL, stfIdsInfo);
     return res;
   }
 
   @Override
   protected void doMarkDead(StfMetaGroup metaGrp, Long stfId) {
-    if (H.isDataSourceClose()) {
+    if (H.isDataSourceClose(metaGrp)) {
       H.logOnDataSourceClose(LOG, "doMarkDead", of("stf", stfId));
       return;
     }
-    jdbcOps.update(metaGrp == CORE ? MARK_DEAD_SQL : MARK_DEAD_DELAY_SQL, System.currentTimeMillis(), stfId);
+    jdbcOps.update(metaGrp, metaGrp == CORE ? MARK_DEAD_SQL : MARK_DEAD_DELAY_SQL, System.currentTimeMillis(), stfId);
   }
 
   @Override
   protected boolean doDelayTransfer(Stf lockedDelayStf, StfCall delayCalleePreEval) {
     Long stfId = lockedDelayStf.getId();
-    if (H.isDataSourceClose()) {
+    StfMetaGroup dsKey;
+    if (H.isDataSourceClose(dsKey = CORE)) {
       H.logOnDataSourceClose(LOG, "doDelayTransfer", of("stf", stfId));
       return false;
     }
@@ -191,7 +198,7 @@ public class StfCoreJdbc extends BaseStfCore implements JdbcAware {
     long now;
     String metaOrBody = calleeMayGotBodyFormatChanged.getLeft();
     byte[] bytesOrNull = calleeMayGotBodyFormatChanged.getRight();
-    int cnt = jdbcOps.update(DELAY_TRANSFER_FULL_SQL, stfId, metaOrBody, bytesOrNull, timeoutSecs,
+    int cnt = jdbcOps.update(dsKey, DELAY_TRANSFER_FULL_SQL, stfId, metaOrBody, bytesOrNull, timeoutSecs,
         (now = System.currentTimeMillis()) + timeoutSecs * 1000, now, now);
     return cnt == 1;
   }

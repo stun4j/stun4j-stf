@@ -44,7 +44,7 @@ public class AppService {
   @Autowired
   private StfExecutorService stfExec;
 
-  @Autowired
+  @Autowired(required = false)
   private BizServiceMultiStep svc;
 
   public void acceptReq(Req req) {
@@ -102,6 +102,6 @@ public class AppService {
   @Autowired
   MockHelper mock;
   @SuppressWarnings("unused")
-  @Autowired
+  @Autowired(required = false)
   private StfTxnOps txnOps;
 }

@@ -88,7 +88,7 @@ public abstract class JobRunnerCase extends BaseContainerCase<JobRunner> {
 
     StfJdbcOps jdbcOps = ((JobScannerJdbc)scanner).getJdbcOps();
     String sql = "select * from " + this.tblName + " where id = ?";
-    Stream<Stf> stfs = jdbcOps.queryForStream(sql, new Object[]{stfId}, STF_ROW_MAPPER);
+    Stream<Stf> stfs = jdbcOps.queryForStream(super.dftDsKey(), sql, new Object[]{stfId}, STF_ROW_MAPPER);
     Stf deadJob = stfs.findFirst().get();
     assert YesNo.Y.name().equals(deadJob.getIsDead()) : "should be dead job";
     int maxRetryTimes = retryBehav.size();
@@ -129,7 +129,7 @@ public abstract class JobRunnerCase extends BaseContainerCase<JobRunner> {
 
     StfJdbcOps jdbcOps = ((JobScannerJdbc)jobsc).getJdbcOps();
     String sql = "select * from " + this.tblName + StfConsts.DFT_DELAY_TBL_NAME_SUFFIX + " where id = ?";
-    Stream<Stf> stfDls = jdbcOps.queryForStream(sql, new Object[]{stfId}, STF_ROW_MAPPER);
+    Stream<Stf> stfDls = jdbcOps.queryForStream(super.dftDsKey(), sql, new Object[]{stfId}, STF_ROW_MAPPER);
     Stf lockedDelayJob = stfDls.findFirst().get();
     //@formatter:off
     assert State.P == State.valueOf(lockedDelayJob.getSt()) : "locked delay-job's status should be 'P";//TODO mj: move to '#mockCheckAndLock'
@@ -165,7 +165,7 @@ public abstract class JobRunnerCase extends BaseContainerCase<JobRunner> {
       assert times == 1 : "mocked delay-callee '" + mockBizObjId + "#toString' shoule be invoked";
     }
     sql = "select * from " + this.tblName + " where id = ?";
-    Stream<Stf> stfs = jdbcOps.queryForStream(sql, new Object[]{stfId}, STF_ROW_MAPPER);
+    Stream<Stf> stfs = jdbcOps.queryForStream(super.dftDsKey(), sql, new Object[]{stfId}, STF_ROW_MAPPER);
     Stf transAndTriggeredJob = stfs.findFirst().get();
     assert State.I == State
         .valueOf(transAndTriggeredJob.getSt()) : "transferred delay-job(became a stf)'s init-status should be 'I";

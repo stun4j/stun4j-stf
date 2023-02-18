@@ -51,7 +51,7 @@ public class StfDefaultSpringRegistry extends ConcurrentHashMap<Serializable, Ob
        */
       state(ArrayUtils.getLength(beanNames) == 1, lenientFormat(
           "Found multiple biz-obj with same class [class=%s, bean-names=%s]", bizKey, Arrays.toString(beanNames)));
-      return beanNames[0];
+      return beanNames[0];//TODO mj:change this...
     }
     return null;
   }

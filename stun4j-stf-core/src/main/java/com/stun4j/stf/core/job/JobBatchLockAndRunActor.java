@@ -15,8 +15,6 @@
  */
 package com.stun4j.stf.core.job;
 
-import static com.stun4j.stf.core.StfHelper.partialUpdateJobInfoWhenLocked;
-
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -48,7 +46,7 @@ class JobBatchLockAndRunActor extends BaseActor<StfReceivedEvent> {
       if ((lockedAt = core.fallbackToSingleLockStf(metaGrp, job, curTimeoutSecs)) <= 0) {
         return;
       }
-      partialUpdateJobInfoWhenLocked(job, lockedAt, curTimeoutSecs);
+      job.partialUpdateInfoWhenLocked(lockedAt, curTimeoutSecs);
       runners.execute(metaGrp, job);
       return;
     }

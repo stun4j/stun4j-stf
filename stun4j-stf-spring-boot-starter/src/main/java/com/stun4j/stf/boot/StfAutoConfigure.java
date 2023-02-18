@@ -19,6 +19,8 @@ import static com.stun4j.stf.boot.DefaultExecutor.RejectPolicy.DROP_WITH_EX_THRO
 import static com.stun4j.stf.boot.DefaultExecutor.RejectPolicy.SILENT_DROP;
 import static com.stun4j.stf.boot.DefaultExecutor.RejectPolicy.SILENT_DROP_OLDEST;
 import static com.stun4j.stf.core.StfConsts.DFT_CONF_SUFFIX;
+import static com.stun4j.stf.core.StfConsts.allDataSourceKeys;
+import static com.stun4j.stf.core.StfHelper.newHashMap;
 import static com.stun4j.stf.core.utils.executor.PoolExecutors.BACK_PRESSURE_POLICY;
 import static com.stun4j.stf.core.utils.executor.PoolExecutors.DROP_WITH_EX_THROW_POLICY;
 import static com.stun4j.stf.core.utils.executor.PoolExecutors.SILENT_DROP_OLDEST_POLICY;
@@ -32,6 +34,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Enumeration;
+import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.function.BiFunction;
@@ -49,8 +52,10 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.EnvironmentAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.FileSystemResourceLoader;
 import org.springframework.core.io.Resource;
@@ -63,7 +68,6 @@ import com.stun4j.guid.core.utils.Asserts;
 import com.stun4j.guid.core.utils.Strings;
 import com.stun4j.stf.boot.Transaction.IsolationLevel;
 import com.stun4j.stf.boot.Transaction.Propagation;
-import com.stun4j.stf.core.StfCall;
 import com.stun4j.stf.core.StfContext;
 import com.stun4j.stf.core.StfCore;
 import com.stun4j.stf.core.StfCoreJdbc;
@@ -73,6 +77,7 @@ import com.stun4j.stf.core.StfMetaGroup;
 import com.stun4j.stf.core.StfTxnOps;
 import com.stun4j.stf.core.build.StfConfig;
 import com.stun4j.stf.core.build.StfConfigs;
+import com.stun4j.stf.core.cluster.Heartbeat;
 import com.stun4j.stf.core.cluster.HeartbeatHandlerJdbc;
 import com.stun4j.stf.core.job.JobLoader;
 import com.stun4j.stf.core.job.JobManager;
@@ -97,18 +102,19 @@ import com.stun4j.stf.core.utils.Exceptions;
  */
 @Configuration
 @EnableConfigurationProperties(StfProperties.class)
-public class StfAutoConfigure implements BeanClassLoaderAware, ApplicationContextAware {
+public class StfAutoConfigure implements BeanClassLoaderAware, EnvironmentAware, ApplicationContextAware {
   private static final Logger LOG = LoggerFactory.getLogger(StfAutoConfigure.class);
 
   private final StfProperties props;
   private final BiFunction<Object, TreeMap<Integer, Object>, Boolean> flowConfFilterAndSortFn;
 
   private ClassLoader classLoader;
+  private Environment environment;
   private ApplicationContext applicationContext;
 
   @Bean
   StfTxnOps stfTxnOps() {
-    DataSource dataSource = applicationContext.getBean(props.getDatasourceBeanName(), DataSource.class);
+    DataSource dataSource = applicationContext.getBean(props.getCore().getDatasourceBeanName(), DataSource.class);
     IsolationLevel txIsolationLvl = props.getTransaction().getIsolationLevel();
     Propagation txPropagation = props.getTransaction().getPropagation();
     TransactionTemplate rawTxnOps = new TransactionTemplate(new DataSourceTransactionManager(dataSource));
@@ -140,8 +146,6 @@ public class StfAutoConfigure implements BeanClassLoaderAware, ApplicationContex
   }
 
   private void doEarlyInitialize() {
-    DataSource dataSource = applicationContext.getBean(props.getDatasourceBeanName(), DataSource.class);
-
     // the initialization
     // configure global
     Body coreBodyCfg;
@@ -152,14 +156,30 @@ public class StfAutoConfigure implements BeanClassLoaderAware, ApplicationContex
         .withGlobalStfBodyCompress(dlqBodyCfg.getCompressAlgorithm());
 
     // configure core
+    String coreDsBeanName = props.getCore().getDatasourceBeanName();
+    String delayDsBeanName = props.getDelayQueue().getDatasourceBeanName();
+    String hbDsBeanName = coreDsBeanName;// TODO mj:seperate&cfg
+    Map<String, String> allDataSourceBeanNames = newHashMap(allDataSourceKeys(), (map, type) -> {
+      if (StfMetaGroup.CORE.nameLowerCase().equals(type)) {
+        map.put(type, coreDsBeanName);
+      } else if (StfMetaGroup.DELAY.nameLowerCase().equals(type)) {
+        map.put(type, delayDsBeanName);
+      } else if (Heartbeat.typeNameLowerCase().equals(type)) {
+        map.put(type, hbDsBeanName);
+      } else {
+        // FIXME mj:ex stuff...
+      }
+      return map;
+    });
+
     StfRegistry bizReg = new StfDefaultSpringRegistry(applicationContext);
-    StfJdbcOps jdbcOps = new StfDefaultSpringJdbcOps(dataSource);
-    StfCore stfCore = new StfCoreJdbc(jdbcOps).withRunMode(props.getRunMode());
+    StfJdbcOps jdbcOps = new StfDefaultSpringJdbcOps(bizReg, allDataSourceBeanNames);
+    StfCore stfc = new StfCoreJdbc(jdbcOps).withRunMode(props.getRunMode());
 
     boolean delayQueueEnabled = props.getDelayQueue().isEnabled();
-    ((StfDelayQueueCore)stfCore).withDelayQueueEnabled(delayQueueEnabled);
+    ((StfDelayQueueCore)stfc).withDelayQueueEnabled(delayQueueEnabled);
 
-    StfContext.init(stfCore, bizReg);
+    StfContext.init(stfc, bizReg);
 
     // load, sort, and validate the stf-flow configuration
     String confPath = props.getConfRootPath();
@@ -186,7 +206,7 @@ public class StfAutoConfigure implements BeanClassLoaderAware, ApplicationContex
     // stf start
     JobScanner scanner = JobScannerJdbc.of(jdbcOps);
     JobLoader loader = new JobLoader(scanner);
-    JobRunners runners = new JobRunners(stfCore);
+    JobRunners runners = new JobRunners(stfc);
     JobManager jobMngr = new JobManager(loader, runners).withHeartbeatHandler(HeartbeatHandlerJdbc.of(jdbcOps));
 
     // configure loader
@@ -349,9 +369,18 @@ public class StfAutoConfigure implements BeanClassLoaderAware, ApplicationContex
   }
 
   @Override
+  public void setEnvironment(Environment environment) {
+    this.environment = environment;
+  }
+
+  @Override
   public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
     this.applicationContext = applicationContext;
-    applicationContext.getBean(GuidAutoConfigure.class);// the stun4j-guid module must be initialized first
+    applicationContext.getBean(GuidAutoConfigure.class);// The stun4j-guid module must be initialized first
+
+    new DelayQueueDataSourceBeanRegister(environment, applicationContext, props).tryRegister();
+
     doEarlyInitialize();
   }
+
 }

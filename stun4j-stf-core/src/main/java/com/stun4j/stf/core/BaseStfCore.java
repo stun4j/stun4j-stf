@@ -16,7 +16,6 @@
 package com.stun4j.stf.core;
 
 import static com.stun4j.stf.core.StfHelper.H;
-import static com.stun4j.stf.core.StfHelper.partialUpdateJobInfoWhenLocked;
 import static com.stun4j.stf.core.StfMetaGroup.CORE;
 import static com.stun4j.stf.core.StfMetaGroup.DELAY;
 import static com.stun4j.stf.core.support.executor.StfInternalExecutors.newWorkerOfStfCore;
@@ -113,7 +112,7 @@ abstract class BaseStfCore implements StfCore, StfDelayQueueCore {
       // locked
       } else {
         int dynaTimeoutSecs = (Integer)preBatchArgs.get(idx)[1];
-        partialUpdateJobInfoWhenLocked(job, lockedAt, dynaTimeoutSecs);
+        job.partialUpdateInfoWhenLocked(lockedAt, dynaTimeoutSecs);
       }
       //@formatter:on
       idx++;

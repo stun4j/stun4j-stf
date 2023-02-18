@@ -56,6 +56,14 @@ public class Stf extends BaseEntity<Long> implements Cloneable {
   private long ctAt;
   private long upAt;
 
+  public void partialUpdateInfoWhenLocked(long lockedAt, int dynaTimeoutSecs) {
+    this.setUpAt(lockedAt);// use 'update-time' as 'locked-time'
+    this.setTimeoutSecs(dynaTimeoutSecs);// update to job-op's current timeout-seconds
+
+    int lastRetryTimes = this.getRetryTimes();
+    this.setRetryTimes(lastRetryTimes + 1);// update to current retry-times
+  }
+
   public StfCall toCallee() {
     String restored = this.evalBody().getBody();
     StfCall res = fromJson(restored, StfCall.class);

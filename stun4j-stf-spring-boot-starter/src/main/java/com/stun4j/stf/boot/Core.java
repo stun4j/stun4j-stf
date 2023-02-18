@@ -15,6 +15,8 @@
  */
 package com.stun4j.stf.boot;
 
+import java.util.Optional;
+
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
 /**
@@ -23,12 +25,30 @@ import org.springframework.boot.context.properties.NestedConfigurationProperty;
  * @author Jay Meng
  */
 public class Core {
-
   @NestedConfigurationProperty
   private final Body body = new Body();
 
+  @NestedConfigurationProperty
+  private Datasource datasource = new Datasource(this);
+
+  private final StfProperties parentBind;
+
   public Body getBody() {
     return body;
+  }
+
+  public String getDatasourceBeanName() {
+    String coreDsBeanName = Optional.ofNullable(getDatasource().getBeanName())
+        .orElse(parentBind.getDatasourceBeanName());/*-TODO mj:Misuse can lead to escape*/
+    return coreDsBeanName;
+  }
+
+  public Datasource getDatasource() {
+    return datasource;
+  }
+
+  Core(StfProperties parentBind) {
+    this.parentBind = parentBind;
   }
 
 }

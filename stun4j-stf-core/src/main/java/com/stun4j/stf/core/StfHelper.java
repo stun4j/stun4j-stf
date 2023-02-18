@@ -19,7 +19,12 @@ import static com.google.common.base.Strings.lenientFormat;
 
 import java.lang.reflect.Method;
 import java.sql.SQLIntegrityConstraintViolationException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import javax.sql.DataSource;
 
@@ -31,12 +36,13 @@ import org.springframework.dao.DuplicateKeyException;
 
 import com.stun4j.stf.core.spi.StfJdbcOps;
 import com.stun4j.stf.core.utils.DataSourceUtils;
+import com.stun4j.stf.core.utils.Exceptions;
 
 /** @author Jay Meng */
 public class StfHelper {
-  private final DataSource ds;
-  private final String dbVendor;
-  private final Method dsCloser;
+  private final StfJdbcOps jdbcOps;
+
+  private final Map<Enum<?>, Pair<String, Method>> map;
 
   public static StfHelper H;
 
@@ -44,16 +50,18 @@ public class StfHelper {
     return H = new StfHelper(jdbcOps);
   }
 
-  public String getDbVendor() {
-    return dbVendor;
+  public String getDbVendor(Enum<?> dsKey) {
+    return map.get(dsKey).getLeft();
   }
 
-  public Method getDsCloser() {
-    return dsCloser;
+  public Method getDsCloser(Enum<?> dsKey) {
+    return map.get(dsKey).getRight();
   }
 
-  public boolean isDataSourceClose() {
-    if (dsCloser == null || ds == null) {
+  public boolean isDataSourceClose(Enum<?> dsKey) {
+    Method dsCloser = getDsCloser(dsKey);
+    DataSource ds;
+    if (dsCloser == null || (ds = jdbcOps.getDataSource(dsKey)) == null) {
       return false;
     }
     try {
@@ -94,14 +102,6 @@ public class StfHelper {
     logger.debug("[{}] The dataSource has been closed and the operation{}is cancelled.", title, msgTpl);
   }
 
-  public static void partialUpdateJobInfoWhenLocked(Stf job, long lockedAt, int dynaTimeoutSecs) {
-    job.setUpAt(lockedAt);// use 'update-time' as 'locked-time'
-    job.setTimeoutSecs(dynaTimeoutSecs);// update to job-op's current timeout-seconds
-
-    int lastRetryTimes = job.getRetryTimes();
-    job.setRetryTimes(lastRetryTimes + 1);// update to current retry-times
-  }
-
   public static StfMetaGroup determinJobMetaGroup(String type) {
     int idx;
     if ((idx = ArrayUtils.indexOf(StfMetaGroup.namesLowerCase(), type)) == StfMetaGroup.CORE.ordinal()) {
@@ -113,7 +113,33 @@ public class StfHelper {
     return null;
   }
 
-  private Method tryGetDataSourceCloser() {
+  public static <T, RT, RV> Map<RT, RV> newHashMap(T[] inArray, BiFunction<Map<RT, RV>, T, Map<RT, RV>> biFn) {
+    return newHashMap(Stream.of(inArray), biFn);
+  }
+
+  public static <T, RT, RV> Map<RT, RV> newMap(T[] inArray, BiFunction<Map<RT, RV>, T, Map<RT, RV>> biFn,
+      Supplier<Map<RT, RV>> resultInitiator) {
+    return newMap(Stream.of(inArray), biFn, resultInitiator);
+  }
+
+  public static <ST, RT, RV> Map<RT, RV> newHashMap(Stream<ST> inStream,
+      BiFunction<Map<RT, RV>, ST, Map<RT, RV>> biFn) {
+    return newMap(inStream, biFn, HashMap::new);
+  }
+
+  public static <ST, RT, RV> Map<RT, RV> newMap(Stream<ST> inStream, BiFunction<Map<RT, RV>, ST, Map<RT, RV>> biFn,
+      Supplier<Map<RT, RV>> resultInitiator) {
+    try {
+      return inStream.reduce(resultInitiator.get(), (resMap, streamType) -> {
+        return biFn.apply(resMap, streamType);
+      }, (a, b) -> null);
+    } catch (Exception e) {
+      throw Exceptions.sneakyThrow(e);
+    }
+  }
+
+  private Method tryGetDataSourceCloser(Enum<?> dsKey) {
+    DataSource ds = jdbcOps.getDataSource(dsKey);
     Method dsCloser;
     try {
       dsCloser = MethodUtils.getAccessibleMethod(ds.getClass(), "isClosed");
@@ -126,7 +152,13 @@ public class StfHelper {
   }
 
   public StfHelper(StfJdbcOps jdbcOps) {
-    this.dbVendor = DataSourceUtils.getDatabaseProductName(this.ds = jdbcOps.getDataSource());
-    this.dsCloser = tryGetDataSourceCloser();
+    this.jdbcOps = jdbcOps;
+
+    this.map = newHashMap(jdbcOps.getAllDataSourceKeys(), (map, dsKey) -> {
+      String dbVendor = DataSourceUtils.getDatabaseProductName(jdbcOps.getDataSource(dsKey));
+      Method dsCloser = tryGetDataSourceCloser(dsKey);
+      map.put(dsKey, Pair.of(dbVendor, dsCloser));
+      return map;
+    });
   }
 }

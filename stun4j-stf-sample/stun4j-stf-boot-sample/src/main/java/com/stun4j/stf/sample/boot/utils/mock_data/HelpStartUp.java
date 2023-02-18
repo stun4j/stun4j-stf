@@ -17,6 +17,8 @@ package com.stun4j.stf.sample.boot.utils.mock_data;
 
 import java.util.stream.Stream;
 
+import javax.sql.DataSource;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -29,6 +31,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
+import com.stun4j.stf.boot.StfProperties;
 import com.stun4j.stf.core.StfTxnOps;
 import com.stun4j.stf.sample.boot.application.AppService;
 import com.stun4j.stf.sample.boot.domain.BizServiceOrphanStep;
@@ -44,6 +47,9 @@ public class HelpStartUp implements ApplicationContextAware, ApplicationRunner {
   private StfTxnOps txnOps;
   private ApplicationContext applicationContext;
 
+  @Autowired
+  private StfProperties props;
+
   @Override
   public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
     this.applicationContext = applicationContext;
@@ -58,13 +64,21 @@ public class HelpStartUp implements ApplicationContextAware, ApplicationRunner {
     if (!freshStart) {
       return;
     }
+    String coreDsBeanName = props.getCore().getDatasourceBeanName();
+    String dlqDsBeanName = props.getDelayQueue().getDatasourceBeanName();
     // Clean business related datas(include mock datas),comment out the following code block if you don't need it//->
     LOG.info("To give this example a fresh start, we are cleaning up the data associated with...");
     JdbcTemplate jdbc = applicationContext.getBean(JdbcTemplate.class);
     Stream.of(
         new String[]{"stn_stf", "stn_stf_delay", "stn_stf_sample_req", "stn_stf_sample_tx", "stn_stf_sample_acct_op"})
         .forEach((tbl) -> {
-          jdbc.update("delete from " + tbl);
+          if (tbl.equals("stn_stf")) {
+            new JdbcTemplate(applicationContext.getBean(coreDsBeanName, DataSource.class)).update("delete from " + tbl);
+          } else if (tbl.equals("stn_stf_delay")) {
+            new JdbcTemplate(applicationContext.getBean(dlqDsBeanName, DataSource.class)).update("delete from " + tbl);
+          } else {
+            jdbc.update("delete from " + tbl);
+          }
         });
 
     txnOps.rawExecuteWithoutResult(st -> {

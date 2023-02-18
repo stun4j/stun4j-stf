@@ -27,13 +27,11 @@ import javax.sql.DataSource;
  * @author Jay Meng
  */
 public interface StfJdbcOps {
-  DataSource getDataSource();
+  <T> Stream<T> queryForStream(Enum<?> dataSourceKey, String sql, Object[] args, StfJdbcRowMapper<T> rowMapper);
 
-  <T> Stream<T> queryForStream(String sql, Object[] args, StfJdbcRowMapper<T> rowMapper);
+  int update(Enum<?> dataSourceKey, String sql, Object... args);
 
-  int update(String sql, Object... args);
-
-  int[] batchUpdate(String sql, List<Object[]> batchArgs);
+  int[] batchUpdate(Enum<?> dataSourceKey, String sql, List<Object[]> batchArgs);
 
   /**
    * @param <T> the result type
@@ -42,4 +40,8 @@ public interface StfJdbcOps {
   interface StfJdbcRowMapper<T> {
     T mapRow(ResultSet rs, int rowNum) throws SQLException;
   }
+  
+  DataSource getDataSource(Enum<?> dsKey);
+  
+  Stream<Enum<?>> getAllDataSourceKeys();
 }

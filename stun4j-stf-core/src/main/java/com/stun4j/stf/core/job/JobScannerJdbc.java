@@ -86,7 +86,7 @@ public class JobScannerJdbc implements JobScanner, JdbcAware {
 
   public Stream<Stf> doScanStillAlive(StfMetaGroup metaGrp, int limit, int pageNo,
       String... includeFields) {/*- pageNo start with 0*/
-    if (H.isDataSourceClose()) {
+    if (H.isDataSourceClose(metaGrp)) {
       H.logOnDataSourceClose(LOG, "doScanStillAlive");
       return Stream.empty();
     }
@@ -94,7 +94,7 @@ public class JobScannerJdbc implements JobScanner, JdbcAware {
     String sql;
     String dbVendor;
     if (metaGrp == CORE) {
-      if (DB_VENDOR_MY_SQL.equals(dbVendor = H.getDbVendor())) {
+      if (DB_VENDOR_MY_SQL.equals(dbVendor = H.getDbVendor(metaGrp))) {
         sql = SQL_CORE_MYSQL;
       } else if (DB_VENDOR_POSTGRE_SQL.equals(dbVendor)) {
         sql = SQL_CORE_POSTGRES;
@@ -102,7 +102,7 @@ public class JobScannerJdbc implements JobScanner, JdbcAware {
         sql = SQL_CORE_ORACLE;
       }
     } else {
-      if (DB_VENDOR_MY_SQL.equals(dbVendor = H.getDbVendor())) {
+      if (DB_VENDOR_MY_SQL.equals(dbVendor = H.getDbVendor(metaGrp))) {
         sql = SQL_DELAY_MYSQL;
       } else if (DB_VENDOR_POSTGRE_SQL.equals(dbVendor)) {
         sql = SQL_DELAY_POSTGRES;
@@ -155,7 +155,7 @@ public class JobScannerJdbc implements JobScanner, JdbcAware {
       }
       checkFlds = true;
     }
-    Stream<Stf> stfs = jdbcOps.queryForStream(sql, args, STF_ROW_MAPPER_FN.apply(checkFlds, includeFields));
+    Stream<Stf> stfs = jdbcOps.queryForStream(metaGrp, sql, args, STF_ROW_MAPPER_FN.apply(checkFlds, includeFields));
     return stfs;
   }
 
@@ -206,13 +206,13 @@ public class JobScannerJdbc implements JobScanner, JdbcAware {
     this.jdbcOps = jdbcOps;
     this.includeHowManyDaysAgo = DFT_INCLUDE_HOW_MANY_DAYS_AGO;
 
-    String mainClauseTpl = "select a.* from %s a inner join (select id from %s where timeout_at between ? and ? and st in (?, ?) and is_dead = ?%s) b on a.id = b.id";
+    String mainSqlTpl = "select a.* from %s a inner join (select id from %s where timeout_at between ? and ? and st in (?, ?) and is_dead = ?%s) b on a.id = b.id";
     String orderClauseTpl = " order by %stimeout_at, %sid";// To get certain order
     String limitClause = " limit ?";
     Stream.of(tblName, tblName + DFT_DELAY_TBL_NAME_SUFFIX).forEach(tbl -> {
-      String mysql = lenientFormat(mainClauseTpl, tbl, tbl, lenientFormat(orderClauseTpl + limitClause, "", ""));
+      String mysql = lenientFormat(mainSqlTpl, tbl, tbl, lenientFormat(orderClauseTpl + limitClause, "", ""));
       String mainClauseNoLimit;
-      String postgres = (mainClauseNoLimit = lenientFormat(mainClauseTpl, tbl, tbl, ""))
+      String postgres = (mainClauseNoLimit = lenientFormat(mainSqlTpl, tbl, tbl, ""))
           + lenientFormat(orderClauseTpl + limitClause, "a.", "a.");// To get certain order on PG
       String mainClauseNoLimitNoJoin = mainClauseNoLimit
           .substring(mainClauseNoLimit.indexOf("(") + 1, mainClauseNoLimit.lastIndexOf(")"))

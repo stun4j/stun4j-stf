@@ -37,6 +37,7 @@ public class HeartbeatHandlerJdbc extends HeartbeatHandler {
   private final String HB_DELETE_SQL;
 
   private final StfJdbcOps jdbcOps;
+  private final Heartbeat dsKey;
 
   @Override
   protected void onStartup() {
@@ -51,13 +52,13 @@ public class HeartbeatHandlerJdbc extends HeartbeatHandler {
 
   @Override
   protected void doSendHeartbeat() {
-    if (H.isDataSourceClose()) {
+    if (H.isDataSourceClose(dsKey)) {
       H.logOnDataSourceClose(LOG, "doSendHeartbeat");
       return;
     }
     String memberId;
     long now;
-    int cnt = jdbcOps.update(HB_KEEP_ALIVE_SQL, now = System.currentTimeMillis(),
+    int cnt = jdbcOps.update(dsKey, HB_KEEP_ALIVE_SQL, now = System.currentTimeMillis(),
         memberId = StfClusterMember.calculateId());
     if (cnt != 1) {
       LOG.warn("Found invalid heartbeat sending [memberId={}] > Stf member-id changes?", memberId);
@@ -68,7 +69,7 @@ public class HeartbeatHandlerJdbc extends HeartbeatHandler {
   }
 
   private void refreshAllMembers() {
-    try (Stream<StfClusterMember> members = jdbcOps.queryForStream(HB_ALL_SQL, new Object[]{1024},
+    try (Stream<StfClusterMember> members = jdbcOps.queryForStream(dsKey, HB_ALL_SQL, new Object[]{1024},
         (rs, arg) -> {/*-TODO mj:1024,to be configured*/
           StfClusterMember member = new StfClusterMember(rs.getString("id")/* mayTheReuseMemberId */,
               rs.getLong("up_at"));
@@ -82,25 +83,25 @@ public class HeartbeatHandlerJdbc extends HeartbeatHandler {
   private void registerSelf() {
     String memberId;
     long now = System.currentTimeMillis();
-    if (DB_VENDOR_ORACLE.equals(H.getDbVendor())) {
-      jdbcOps.update(HB_UPSERT_SQL, memberId = StfClusterMember.calculateId(), now, now, memberId, now, now);
+    if (DB_VENDOR_ORACLE.equals(H.getDbVendor(dsKey))) {
+      jdbcOps.update(dsKey, HB_UPSERT_SQL, memberId = StfClusterMember.calculateId(), now, now, memberId, now, now);
     } else {
-      jdbcOps.update(HB_UPSERT_SQL, memberId = StfClusterMember.calculateId(), now, now);
+      jdbcOps.update(dsKey, HB_UPSERT_SQL, memberId = StfClusterMember.calculateId(), now, now);
     }
     localMemberTracingMemo.put(memberId, now);
   }
 
   private void deregisterSelf(String memberId) {
-    if (H.isDataSourceClose()) {
+    if (H.isDataSourceClose(dsKey)) {
       H.logOnDataSourceClose(LOG, "deregisterSelf");
       return;
     }
     localMemberTracingMemo.forEach((everGeneratedMemberIdOfCurrentProcess, lastUpAt) -> {
       if (Objects.equals(memberId, everGeneratedMemberIdOfCurrentProcess)) {// Check for safe deregister
-        jdbcOps.update(HB_DELETE_SQL, memberId);
+        jdbcOps.update(dsKey, HB_DELETE_SQL, memberId);
       } else {
         if (System.currentTimeMillis() - lastUpAt > this.getTimeoutMs()) {// Just expect relative safe here
-          jdbcOps.update(HB_DELETE_SQL, everGeneratedMemberIdOfCurrentProcess);
+          jdbcOps.update(dsKey, HB_DELETE_SQL, everGeneratedMemberIdOfCurrentProcess);
         }
       }
     });
@@ -112,12 +113,13 @@ public class HeartbeatHandlerJdbc extends HeartbeatHandler {
 
   public HeartbeatHandlerJdbc(StfJdbcOps jdbcOps, String tblName) {
     this.jdbcOps = jdbcOps;
+    this.dsKey = Heartbeat.SIGNAL;
 
     HB_KEEP_ALIVE_SQL = lenientFormat("update %s set up_at = ? where id = ?", tblName);
 
     String dbVendor;
     String hbAllSqlTpl = lenientFormat("select id, up_at from %s", tblName);
-    if (!DB_VENDOR_ORACLE.equals(dbVendor = H.getDbVendor())) {
+    if (!DB_VENDOR_ORACLE.equals(dbVendor = H.getDbVendor(dsKey))) {
       HB_ALL_SQL = lenientFormat("%s limit ?", hbAllSqlTpl);/*-TODO mj:what is the upper limit,this may change*/
     } else {
       HB_ALL_SQL = lenientFormat(

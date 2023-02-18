@@ -15,6 +15,8 @@
  */
 package com.stun4j.stf.boot;
 
+import java.util.Optional;
+
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
 /**
@@ -33,6 +35,17 @@ public class DelayQueue {
   @NestedConfigurationProperty
   private final Body body = new Body();
 
+  @NestedConfigurationProperty
+  private Datasource datasource = new Datasource(this);
+
+  private final Core parentBind;
+
+  public String getDatasourceBeanName() {
+    String dlqDsBeanName = Optional.ofNullable(getDatasource().getBeanName())
+        .orElse(parentBind.getDatasourceBeanName());
+    return dlqDsBeanName;
+  }
+
   public boolean isEnabled() {
     return enabled;
   }
@@ -43,6 +56,14 @@ public class DelayQueue {
 
   public Body getBody() {
     return body;
+  }
+
+  public Datasource getDatasource() {
+    return datasource;
+  }
+
+  public DelayQueue(Core parentBind) {
+    this.parentBind = parentBind;
   }
 
 }
