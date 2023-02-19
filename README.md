@@ -4,6 +4,7 @@
 ### 柔性事务、延时队列、可编排、自适应批处理、异步任务链、分布式、极简设计、高可用、高性能、易于使用
 | 稳定版 | 主要变动 | 发布日期 |
 | ------------- | ------------- | ------------|
+| 1.1.0 | 引擎重构和优化、支持body的二进制存储和压缩、支持Core和DelayQueue的数据源分离 | 2023/02/19 |
 | 1.0.1 | 兼容较低版本的Spring | 2022/06/06 |
 | 1.0.0 | 初版发布 | 2022/06/03 |
 ## 功能特性
@@ -26,7 +27,7 @@
 <dependency>
   <groupId>com.stun4j.boot</groupId>
   <artifactId>stun4j-stf-spring-boot-starter</artifactId>
-  <version>1.0.1</version>
+  <version>1.1.0</version>
 </dependency>
 ```
 #### 或者
@@ -35,7 +36,7 @@
 <dependency>
   <groupId>com.stun4j</groupId>
   <artifactId>stun4j-stf-core</artifactId>
-  <version>1.0.1</version>
+  <version>1.1.0</version>
 </dependency>
 ```
 ### 方式2：通过源码构建
