@@ -167,11 +167,11 @@ stun4j:
     core: #可选(如不出现,采用默认配置)
       body: #核心引擎运行时的body存储(可选,如不出现,采用默认配置)
         bytes-enabled: false #是否以二进制格式存储(可选,默认值:false)
-        compress-algorithm: none #压缩存储使用的算法(可选,默认值:none,其它取值zstd,snappy 注意,启用任何非none的压缩算法,bytes-enabled将被强制设为true,这个行为有别于一般的开关配置)
+        compress-algorithm: none #压缩存储使用的算法(可选,默认值:none,其它取值zstd,snappy 注意,启用任何非none的压缩算法,bytes-enabled将被强制设为true,该行为有别于一般的开关配置)
     delay-queue: #可选(如不出现,采用默认配置)
       body: #延时队列运行时的body存储(可选,如不出现,采用默认配置)
         bytes-enabled: false #是否以二进制格式存储(可选,默认值:false)
-        compress-algorithm: none #压缩存储使用的算法(可选,默认值:none,其它取值zstd,snappy 注意,启用任何非none的压缩算法,bytes-enabled将被强制设为true,这个行为有别于一般的开关配置)
+        compress-algorithm: none #压缩存储使用的算法(可选,默认值:none,其它取值zstd,snappy 注意,启用任何非none的压缩算法,bytes-enabled将被强制设为true,该行为有别于一般的开关配置)
 ```
 ### 2.10 **GUID** 相关配置
 Stf及其集群的正确工作必须确保内置的GUID也是正确工作的，开箱即用的GUID策略是基于**本地IP**的，关于这块的详细介绍和讨论可从这个[教程](../../../../stun4j-guid/blob/master/stun4j-guid-spring-boot-starter/README.md#2-applicationyml%E9%85%8D%E7%BD%AE%E8%AF%A6%E8%A7%A3)入手
