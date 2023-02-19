@@ -18,6 +18,7 @@ package com.stun4j.stf.core.job;
 import static com.stun4j.stf.core.StfConsts.allDataSourceKeys;
 import static com.stun4j.stf.core.StfHelper.determinJobMetaGroup;
 import static com.stun4j.stf.core.StfHelper.newHashMap;
+import static com.stun4j.stf.core.StfHelper.registerGracefulShutdown;
 import static com.stun4j.stf.core.StfRunMode.DEFAULT;
 import static com.stun4j.stf.core.support.executor.StfInternalExecutors.newWatcherOfJobManager;
 
@@ -25,7 +26,6 @@ import java.util.Map;
 
 import org.apache.commons.lang3.tuple.Pair;
 
-import com.stun4j.guid.core.utils.Utils;
 import com.stun4j.stf.core.Stf;
 import com.stun4j.stf.core.StfCore;
 import com.stun4j.stf.core.StfDelayQueueCore;
@@ -39,8 +39,7 @@ import com.stun4j.stf.core.support.BaseLifecycle;
 import com.stun4j.stf.core.support.event.StfEventBus;
 import com.stun4j.stf.core.support.event.StfReceivedEvent;
 import com.stun4j.stf.core.utils.Exceptions;
-
-import sun.misc.Signal;
+import com.stun4j.stf.core.utils.Utils;
 
 /**
  * The core coordinator of the stf-job microkernel
@@ -146,19 +145,6 @@ public class JobManager extends BaseLifecycle {
     return lockedAt;
   }
 
-  private void registerGracefulShutdown() {
-    try {
-      Signal.handle(new Signal(getOSSignalType()), s -> {
-        shutdownGracefully();
-      });
-    } catch (Throwable e) {
-      Exceptions.swallow(e, LOG, e.getMessage());
-    }
-    Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-      shutdownGracefully();
-    }));
-  }
-
   private void shutdownGracefully() {
     // Never use 'System.exit' here!!!
     try {
@@ -166,10 +152,6 @@ public class JobManager extends BaseLifecycle {
     } catch (Throwable e) {
       Exceptions.swallow(e, LOG, "[on jvm-shutdown] An error occurred while shutting down stf-job-manager");
     }
-  }
-
-  private static String getOSSignalType() {
-    return System.getProperties().getProperty("os.name").toLowerCase().startsWith("win") ? "INT" : "TERM";
   }
 
   public JobManager(JobLoader loader, JobRunners runners) {
@@ -315,6 +297,9 @@ public class JobManager extends BaseLifecycle {
   }
 
   {
-    registerGracefulShutdown();
+    registerGracefulShutdown(LOG, () -> {
+      shutdownGracefully();
+      return null;
+    });
   }
 }

@@ -167,7 +167,7 @@ public class StfAutoConfigure implements BeanClassLoaderAware, EnvironmentAware,
       } else if (Heartbeat.typeNameLowerCase().equals(type)) {
         map.put(type, hbDsBeanName);
       } else {
-        // FIXME mj:ex stuff...
+        Asserts.argument(false, "Not supported datasource-type: '%s'", type);
       }
       return map;
     });

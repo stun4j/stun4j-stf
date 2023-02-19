@@ -37,8 +37,12 @@ import org.springframework.dao.DuplicateKeyException;
 import com.stun4j.stf.core.spi.StfJdbcOps;
 import com.stun4j.stf.core.utils.DataSourceUtils;
 import com.stun4j.stf.core.utils.Exceptions;
+import com.stun4j.stf.core.utils.Utils;
+
+import sun.misc.Signal;
 
 /** @author Jay Meng */
+@SuppressWarnings("restriction")
 public class StfHelper {
   private final StfJdbcOps jdbcOps;
 
@@ -100,6 +104,21 @@ public class StfHelper {
     }
     String msgTpl = opTarget == null ? " " : lenientFormat(" on %s:%s ", opTarget.getKey(), opTarget.getValue());
     logger.debug("[{}] The dataSource has been closed and the operation{}is cancelled.", title, msgTpl);
+  }
+
+  public static void registerGracefulShutdown(Logger logger, Supplier<?> shutdownGracefully) {
+    try {
+      Signal.handle(new Signal(Utils.getOSSignalType()), s -> {
+        // Never use 'System.exit' within shutdownGracefully!!!
+        shutdownGracefully.get();
+      });
+    } catch (Throwable e) {
+      Exceptions.swallow(e, logger, e.getMessage());
+    }
+    Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+      // Never use 'System.exit' within shutdownGracefully!!!
+      shutdownGracefully.get();
+    }));
   }
 
   public static StfMetaGroup determinJobMetaGroup(String type) {

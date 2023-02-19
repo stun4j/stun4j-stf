@@ -15,9 +15,9 @@
  */
 package com.stun4j.stf.core.job;
 
+import static com.stun4j.stf.core.StfHelper.newHashMap;
 import static com.stun4j.stf.core.support.executor.StfInternalExecutors.newWorkerOfJobRunner;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -69,10 +69,10 @@ public class JobRunners extends BaseLifecycle {
   public JobRunners(StfCore stfCore, Map<Integer, Integer> retryBehavior) {
     this.stfCore = stfCore;
     this.runner = JobRunner.init(retryBehavior);
-    this.workers = StfMetaGroup.stream().reduce(new HashMap<>(), (map, metaGrp) -> {
+    this.workers = newHashMap(StfMetaGroup.stream(), (map, metaGrp) -> {
       map.put(metaGrp, newWorkerOfJobRunner(metaGrp));
       return map;
-    }, (a, b) -> null);// TODO mj:abstraction to hide last piece shit
+    });
   }
 
   public StfCore getStfCore() {

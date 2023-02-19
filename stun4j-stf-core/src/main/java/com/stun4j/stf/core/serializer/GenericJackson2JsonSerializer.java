@@ -63,7 +63,7 @@ import com.stun4j.stf.core.utils.shaded.org.springframework.core.KotlinDetector;
  * @author Mao Shuai
  * @author Jay Meng
  *         <p>
- *         From spring-data-redis:2.7.7,changes listed below
+ *         From spring-data-redis:2.7.8,changes listed below
  *         <ul>
  *         <li>Disable all Spring dependency, disable @Nullable, use Asserts#notNull/shaded ClassUtils/commons-lang3
  *         instead</li>

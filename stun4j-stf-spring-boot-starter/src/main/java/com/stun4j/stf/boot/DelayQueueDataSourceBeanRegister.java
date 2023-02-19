@@ -17,6 +17,7 @@ package com.stun4j.stf.boot;
 
 import static com.google.common.base.Strings.lenientFormat;
 import static com.stun4j.stf.core.StfHelper.newHashMap;
+import static com.stun4j.stf.core.StfHelper.registerGracefulShutdown;
 
 import java.lang.reflect.Field;
 import java.util.Collection;
@@ -57,6 +58,8 @@ class DelayQueueDataSourceBeanRegister {
 
   private final StfProperties props;
 
+  private DataSource dlqDs;
+
   void tryRegister() {
     String coreDsBeanName = props.getCore().getDatasourceBeanName();
     DelayQueue dlqCfg;
@@ -80,12 +83,12 @@ class DelayQueueDataSourceBeanRegister {
     GenericApplicationContext ctx = (GenericApplicationContext)appCtx;// TODO mj:Support other type ctx
     ctx.registerBean(dlqDsBeanName, DataSource.class, () -> {
       DataSource coreDs = ctx.getBean(coreDsBeanName, DataSource.class);
-      return dsDlq(coreDs, appCtx);
+      return dlqDs = newDlqDs(coreDs, appCtx);
     });
   }
 
   @SuppressWarnings("unchecked")
-  private DataSource dsDlq(DataSource tplDs, ApplicationContext appCtx) {
+  private DataSource newDlqDs(DataSource tplDs, ApplicationContext appCtx) {
     String prefix = "stun4j.stf.delay-queue.datasource";
     Datasource dsCfg = props.getDelayQueue().getDatasource();
     BindResult<?> res;
@@ -303,6 +306,15 @@ class DelayQueueDataSourceBeanRegister {
     this.env = env;
     this.appCtx = appCtx;
     this.props = props;
+
+    registerGracefulShutdown(LOG, () -> {
+      if (dlqDs instanceof HikariDataSource) {
+        ((HikariDataSource)dlqDs).close();
+      } else if (dlqDs instanceof DruidDataSource) {
+        ((DruidDataSource)dlqDs).close();
+      }
+      return null;
+    });
   }
 
   private static class SafeHikariConfig extends HikariConfig {

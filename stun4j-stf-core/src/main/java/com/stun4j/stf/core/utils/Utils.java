@@ -19,6 +19,7 @@ import static com.stun4j.stf.core.utils.Asserts.argument;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.concurrent.locks.LockSupport;
 import java.util.stream.Stream;
 import java.util.stream.Stream.Builder;
 
@@ -26,6 +27,17 @@ import org.apache.commons.lang3.ArrayUtils;
 
 /** @author Jay Meng */
 public final class Utils {
+
+  private static final int NANOS_PER_MS = 1000 * 1000;
+  private static final int NANOS_PER_SECONDS = 1000 * NANOS_PER_MS;
+
+  public static void sleepMs(long ms) {
+    LockSupport.parkNanos(ms * NANOS_PER_MS);
+  }
+
+  public static void sleepSeconds(int seconds) {
+    LockSupport.parkNanos((long)seconds * NANOS_PER_SECONDS);
+  }
 
   public static Class<?> pickGenericSuperTypeOf(Class<?> childClass, int typeIndex) {
     Type genericSuperType;
@@ -68,6 +80,10 @@ public final class Utils {
       return sum;
     }
     return fib(y, sum, estimatedMax, builder);
+  }
+
+  public static String getOSSignalType() {
+    return System.getProperties().getProperty("os.name").toLowerCase().startsWith("win") ? "INT" : "TERM";
   }
 
   private Utils() {

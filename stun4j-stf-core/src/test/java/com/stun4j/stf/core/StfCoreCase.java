@@ -10,10 +10,10 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.testcontainers.containers.GenericContainer;
 
+import com.google.common.base.Strings;
 import com.stun4j.guid.core.LocalGuid;
-import com.stun4j.guid.core.utils.Strings;
-import com.stun4j.guid.core.utils.Utils;
 import com.stun4j.stf.core.job.JobScanner;
+import com.stun4j.stf.core.utils.Utils;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public abstract class StfCoreCase extends BaseContainerCase<StfCore> {

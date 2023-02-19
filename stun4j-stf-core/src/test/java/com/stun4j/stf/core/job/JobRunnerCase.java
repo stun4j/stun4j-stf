@@ -17,7 +17,6 @@ import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
 
 import com.stun4j.guid.core.LocalGuid;
-import com.stun4j.guid.core.utils.Utils;
 import com.stun4j.stf.core.BaseContainerCase;
 import com.stun4j.stf.core.State;
 import com.stun4j.stf.core.Stf;
@@ -32,6 +31,7 @@ import com.stun4j.stf.core.YesNo;
 import com.stun4j.stf.core.spi.StfJdbcOps;
 import com.stun4j.stf.core.spi.StfJdbcOps.StfJdbcRowMapper;
 import com.stun4j.stf.core.support.registry.StfDefaultPOJORegistry;
+import com.stun4j.stf.core.utils.Utils;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public abstract class JobRunnerCase extends BaseContainerCase<JobRunner> {

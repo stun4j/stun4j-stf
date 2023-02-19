@@ -12,9 +12,9 @@ import org.junit.runners.MethodSorters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.stun4j.guid.core.utils.Exceptions;
-import com.stun4j.guid.core.utils.Utils;
 import com.stun4j.stf.core.Stf;
+import com.stun4j.stf.core.utils.Exceptions;
+import com.stun4j.stf.core.utils.Utils;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class JobQueueTest {

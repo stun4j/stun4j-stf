@@ -25,13 +25,13 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.testcontainers.containers.GenericContainer;
 
 import com.stun4j.guid.core.LocalGuid;
-import com.stun4j.guid.core.utils.Utils;
 import com.stun4j.stf.core.BaseContainerCase;
 import com.stun4j.stf.core.State;
 import com.stun4j.stf.core.Stf;
 import com.stun4j.stf.core.StfContext;
 import com.stun4j.stf.core.StfCore;
 import com.stun4j.stf.core.support.JdbcAware;
+import com.stun4j.stf.core.utils.Utils;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public abstract class JobScannerCase extends BaseContainerCase<JobScanner> {
