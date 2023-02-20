@@ -378,7 +378,9 @@ public class StfAutoConfigure implements BeanClassLoaderAware, EnvironmentAware,
     this.applicationContext = applicationContext;
     applicationContext.getBean(GuidAutoConfigure.class);// The stun4j-guid module must be initialized first
 
-    new DelayQueueDataSourceBeanRegister(environment, applicationContext, props).tryRegister();
+    if (props.getDelayQueue().isEnabled()) {
+      new DelayQueueDataSourceBeanRegister(environment, applicationContext, props).tryRegister();
+    }
 
     doEarlyInitialize();
   }

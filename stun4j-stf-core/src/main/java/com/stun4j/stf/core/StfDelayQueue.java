@@ -55,7 +55,6 @@ public final class StfDelayQueue {
   @SuppressWarnings("unchecked")
   public final Long offer(String taskObjId, String taskMethodName, int timeoutSecs, int delaySecs,
       Stream<Pair<?/* arg-value */, Class<?>/* arg-type */>> taskParams) {
-    state(core.isDelayQueueEnabled(), DLQ_DISABLE_MSG);
     // Inspired from ActionMethodChecker->
     Pair<?, Class<?>>[] taskParamsPair = taskParams.toArray(Pair[]::new);
     Class<?>[] taskMethodArgClzs = Stream.of(taskParamsPair).map(argPair -> {// re-stream:(

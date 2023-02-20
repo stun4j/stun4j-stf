@@ -58,7 +58,7 @@
 	</modules>
 
 	<properties>
-		<revision>1.1.0</revision>
+		<revision>1.1.1-SNAPSHOT</revision>
 		<!-- sdk -->
 		<java.version>1.8</java.version>
 
