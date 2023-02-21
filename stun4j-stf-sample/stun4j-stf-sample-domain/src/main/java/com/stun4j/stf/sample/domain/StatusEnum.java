@@ -13,29 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.stun4j.stf.sample.boot.facade;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import com.stun4j.stf.sample.boot.application.AppService;
-import com.stun4j.stf.sample.domain.Req;
-import com.stun4j.stf.sample.utils.mock_data.Data;
+package com.stun4j.stf.sample.domain;
 
 /**
  * @author Jay Meng
  */
-@RestController
-@RequestMapping("basic")
-public class BasicUsage {
-  @Autowired
-  private AppService svc;
-
-  @RequestMapping
-  String index() {
-    Req req = Data.generateReq();
-    svc.acceptReq(req);
-    return req.getId();
-  }
+public enum StatusEnum {
+  /** Initialized(waiting to be handled) */
+  I,
+  /** In progress(handling) */
+  P,
+  /** Success(the final state) */
+  S,
+  /** Fail(the final state) */
+  F;
 }

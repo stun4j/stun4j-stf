@@ -27,11 +27,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.stun4j.stf.core.StfTxnOps;
 import com.stun4j.stf.core.support.executor.StfExecutorService;
-import com.stun4j.stf.sample.boot.domain.BizServiceMultiStep;
-import com.stun4j.stf.sample.boot.domain.Req;
-import com.stun4j.stf.sample.boot.domain.Tx;
-import com.stun4j.stf.sample.boot.domain.TxResult;
-import com.stun4j.stf.sample.boot.utils.mock_data.MockHelper;
+import com.stun4j.stf.sample.domain.BizServiceMultiStep;
+import com.stun4j.stf.sample.domain.Req;
+import com.stun4j.stf.sample.domain.Tx;
+import com.stun4j.stf.sample.domain.TxResult;
+import com.stun4j.stf.sample.utils.mock_data.MockHelper;
 
 /**
  * @author Jay Meng

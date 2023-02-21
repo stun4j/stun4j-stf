@@ -21,9 +21,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.stun4j.stf.core.StfTxnOps;
 import com.stun4j.stf.core.support.executor.StfRunnable;
-import com.stun4j.stf.sample.boot.domain.BizServiceOrphanStep;
-import com.stun4j.stf.sample.boot.domain.Req;
-import com.stun4j.stf.sample.boot.utils.mock_data.Data;
+import com.stun4j.stf.sample.domain.BizServiceOrphanStep;
+import com.stun4j.stf.sample.domain.Req;
+import com.stun4j.stf.sample.utils.mock_data.Data;
 
 /**
  * @author Jay Meng

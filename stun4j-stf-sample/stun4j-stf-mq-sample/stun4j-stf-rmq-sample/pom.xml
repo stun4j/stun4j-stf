@@ -1,0 +1,16 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>com.stun4j</groupId>
+		<artifactId>stun4j-stf-mq-sample</artifactId>
+		<version>${revision}</version>
+	</parent>
+	<artifactId>stun4j-stf-rmq-sample</artifactId>
+	<name>Stun4j Stf RocketMQ Sample</name>
+	<packaging>pom</packaging>
+	<modules>
+		<module>stun4j-stf-rmq-producer-sample</module>
+		<module>stun4j-stf-rmq-consumer-sample</module>
+	</modules>
+</project>

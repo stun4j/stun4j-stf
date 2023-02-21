@@ -19,7 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.stun4j.stf.sample.boot.application.AppService;
+import com.stun4j.stf.sample.boot.application.AppServiceWithMq;
 import com.stun4j.stf.sample.domain.Req;
 import com.stun4j.stf.sample.utils.mock_data.Data;
 
@@ -27,10 +27,10 @@ import com.stun4j.stf.sample.utils.mock_data.Data;
  * @author Jay Meng
  */
 @RestController
-@RequestMapping("basic")
-public class BasicUsage {
+@RequestMapping("rmq")
+public class RmqUsage {
   @Autowired
-  private AppService svc;
+  private AppServiceWithMq svc;
 
   @RequestMapping
   String index() {

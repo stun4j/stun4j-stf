@@ -34,7 +34,7 @@ import org.springframework.stereotype.Component;
 import com.stun4j.stf.boot.StfProperties;
 import com.stun4j.stf.core.StfTxnOps;
 import com.stun4j.stf.sample.boot.application.AppService;
-import com.stun4j.stf.sample.boot.domain.BizServiceOrphanStep;
+import com.stun4j.stf.sample.domain.BizServiceOrphanStep;
 
 /**
  * @author Jay Meng

@@ -6,8 +6,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.stun4j.stf.sample.boot.application.AppService;
 import com.stun4j.stf.sample.boot.application.AppServiceTraditional;
-import com.stun4j.stf.sample.boot.domain.Req;
-import com.stun4j.stf.sample.boot.utils.mock_data.Data;
+import com.stun4j.stf.sample.domain.Req;
+import com.stun4j.stf.sample.utils.mock_data.Data;
 
 @RestController
 @RequestMapping("sync")

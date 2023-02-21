@@ -1,0 +1,17 @@
+server:
+  shutdown: graceful
+spring:
+  datasource:
+    url: jdbc:mysql://localhost/test #username: root
+    #url: jdbc:postgresql://localhost/test #username: root
+    #url: jdbc:oracle:thin:@localhost:1521:xe #username: SYSTEM
+    username: root
+    password: 1111
+    hikari:
+      maximum-pool-size: 20
+stun4j:
+  stf:
+    conf-full-load-order: bizMultiStep-flow
+#rocketmq:
+#  name-server: localhost:9876
+#  producer.group: foo

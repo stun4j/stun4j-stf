@@ -41,6 +41,7 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 import com.alibaba.druid.filter.Filter;
 import com.alibaba.druid.pool.DruidDataSource;
+import com.alibaba.druid.stat.JdbcDataSourceStat;
 import com.google.common.base.CaseFormat;
 import com.stun4j.stf.core.support.JsonHelper;
 import com.stun4j.stf.core.utils.Exceptions;
@@ -176,7 +177,7 @@ class DelayQueueDataSourceBeanRegister {
   }
 
   private void copyAdvancedDataSourcePropertiesTo(DruidDataSource fromDsCfg, DruidDataSource toDsCfg) {
-    // based on druid:1.2.15
+    // based on druid:1.2.16
     String tmpStr;
     boolean tmpBool;
     int tmpInt;
@@ -212,6 +213,17 @@ class DelayQueueDataSourceBeanRegister {
     List<Filter> filters;
     filters = fromDsCfg.getProxyFilters();
     toDsCfg.setProxyFilters(filters);
+    // <-
+
+    tmpLong = fromDsCfg.getTimeBetweenLogStatsMillis();// Constants.DRUID_TIME_BETWEEN_LOG_STATS_MILLIS(druid.timeBetweenLogStatsMillis)
+    toDsCfg.setTimeBetweenLogStatsMillis(tmpLong);
+
+    // Constants.DRUID_STAT_SQL_MAX_SIZE(druid.stat.sql.MaxSize)->
+    JdbcDataSourceStat fromDsStat = fromDsCfg.getDataSourceStat();
+    JdbcDataSourceStat toDsStat;
+    if (fromDsStat != null && (toDsStat = toDsCfg.getDataSourceStat()) != null) {
+      toDsStat.setMaxSqlSize(fromDsStat.getMaxSqlSize());
+    }
     // <-
 
     tmpBool = fromDsCfg.isClearFiltersEnable();// druid.clearFiltersEnable

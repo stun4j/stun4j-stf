@@ -10,6 +10,28 @@
 	<name>Stun4j Stf Sample</name>
 	<packaging>pom</packaging>
 	<modules>
+		<module>stun4j-stf-sample-domain</module>
 		<module>stun4j-stf-boot-sample</module>
+		<module>stun4j-stf-mq-sample</module>
 	</modules>
+
+	<properties>
+		<mybatis-plus.verion>3.5.3.1</mybatis-plus.verion>
+	</properties>
+
+	<dependencyManagement>
+		<dependencies>
+			<!-- db -->
+			<dependency>
+				<groupId>com.baomidou</groupId>
+				<artifactId>mybatis-plus-core</artifactId>
+				<version>${mybatis-plus.verion}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.baomidou</groupId>
+				<artifactId>mybatis-plus-boot-starter</artifactId>
+				<version>${mybatis-plus.verion}</version>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 </project>

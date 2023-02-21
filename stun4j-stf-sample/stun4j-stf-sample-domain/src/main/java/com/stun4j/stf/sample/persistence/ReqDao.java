@@ -13,29 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.stun4j.stf.sample.boot.facade;
+package com.stun4j.stf.sample.persistence;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import com.stun4j.stf.sample.boot.application.AppService;
-import com.stun4j.stf.sample.domain.Req;
-import com.stun4j.stf.sample.utils.mock_data.Data;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**
  * @author Jay Meng
  */
-@RestController
-@RequestMapping("basic")
-public class BasicUsage {
-  @Autowired
-  private AppService svc;
-
-  @RequestMapping
-  String index() {
-    Req req = Data.generateReq();
-    svc.acceptReq(req);
-    return req.getId();
-  }
+public interface ReqDao extends BaseMapper<ReqPo> {
 }

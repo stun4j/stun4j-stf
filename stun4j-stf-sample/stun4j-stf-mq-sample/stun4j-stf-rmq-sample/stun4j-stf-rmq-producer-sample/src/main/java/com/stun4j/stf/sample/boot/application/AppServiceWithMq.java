@@ -15,19 +15,24 @@
  */
 package com.stun4j.stf.sample.boot.application;
 
-import static com.stun4j.stf.core.StfContext.commitLastDoneWithoutTx;
 import static com.stun4j.stf.core.utils.Asserts.raiseIllegalStateException;
-import static com.stun4j.stf.sample.utils.mock_data.MockHelper.MockErrorTypeEnum.THROW_EX;
 
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
+import javax.annotation.Resource;
+
+//import org.apache.rocketmq.common.message.Message;
+//import org.apache.rocketmq.common.message.MessageConst;
+import org.apache.rocketmq.spring.core.RocketMQTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Service;
 
-import com.stun4j.stf.core.StfTxnOps;
+import com.stun4j.stf.core.StfContext;
 import com.stun4j.stf.core.support.executor.StfExecutorService;
 import com.stun4j.stf.sample.domain.BizServiceMultiStep;
 import com.stun4j.stf.sample.domain.Req;
@@ -37,15 +42,18 @@ import com.stun4j.stf.sample.utils.mock_data.MockHelper;
 /**
  * @author Jay Meng
  */
-@Service("bizApp")
-public class AppService {
-  private static final Logger LOG = LoggerFactory.getLogger(AppService.class);
+@Service("bizAppWithMq")
+public class AppServiceWithMq {
+  private static final Logger LOG = LoggerFactory.getLogger(AppServiceWithMq.class);
 
   @Autowired
   private StfExecutorService stfExec;
 
-  @Autowired(required = false)
+  @Autowired
   private BizServiceMultiStep svc;
+
+  @Resource
+  private RocketMQTemplate rmqOps;
 
   public void acceptReq(Req req) {
     Tx txBegin = svc.acceptReq(req);
@@ -77,31 +85,21 @@ public class AppService {
   }
 
   public void sendNotification(String reqId) {
-    if (mock.newError(this.getClass(), THROW_EX, LOG, "Notification of request#%s will be timed out...", reqId)
-        .has()) {/*- Here we simply simulated multiple timeouts.You can clearly see the ladder of retry intervals. */
-      return;
-    }
-    LOG.info("Notification of request#{} is sent successfully.", reqId);
-    commitLastDoneWithoutTx();
-
-    /*
-     * An equivalent code block is written as follows:
-     * (More transparent, but the code above is better in performance)
-     * (Furthermore,the code above can't be used in an active transaction)
-     */
-    // You can comment out the above block and uncomment the following block->
-    // if (mock.newError(this.getClass(), THROW_EX, LOG, "Notification of request#%s has timed out...", reqId).has()) {
+    // if (mock.newError(this.getClass(), THROW_EX, LOG, "Notification of request#%s will be timed out...", reqId)
+    // .has()) {/*- Here we simply simulated multiple timeouts.You can clearly see the ladder of retry intervals. */
     // return;
     // }
-    // txnOps.executeWithoutResult(st -> {
-    // LOG.info("Notification of request#{} is sent successfully.", reqId);
-    // });
-    // <-
+    Long laStfId = StfContext.safeGetLaStfIdValue();
+    LOG.info("Notification of request#{} is sending...[laStfId={}]", reqId, laStfId);
+    // commitLastDoneWithoutTx();
+    // Message msg = new Message("TopicTest", ("Hi-" + reqId).getBytes(StandardCharsets.UTF_8));
+    // msg.getProperties().put("_stn_stf_msgId", laStfId + "");
+    Message<?> msg = MessageBuilder.withPayload(("Hi-" + reqId)).setHeader("__stn_laStfId", laStfId).build();
+    // msg.putUserProperty("_stn_stf_msgId", laStfId + "");
+    // rmqOps.sendOneWay("TopicTest", msg);
+    rmqOps.sendOneWay("bar", msg);
   }
 
   @Autowired
   MockHelper mock;
-  @SuppressWarnings("unused")
-  @Autowired(required = false)
-  private StfTxnOps txnOps;
 }

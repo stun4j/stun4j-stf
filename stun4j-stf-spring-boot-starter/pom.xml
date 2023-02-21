@@ -15,7 +15,7 @@
 
 	<properties>
 		<!-- core -->
-		<druid.version>1.2.15</druid.version>
+		<druid.version>1.2.16</druid.version>
 	</properties>
 
 	<dependencies>
