@@ -16,13 +16,17 @@
 package com.stun4j.stf.sample.boot.application;
 
 import static com.stun4j.stf.core.StfThinContext.directCommitLastDone;
+import static com.stun4j.stf.sample.boot.utils.mock_data.MockHelper.MockErrorTypeEnum.RETURN;
 
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.spring.annotation.RocketMQMessageListener;
 import org.apache.rocketmq.spring.core.RocketMQListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import com.stun4j.stf.sample.boot.utils.mock_data.MockHelper;
 
 //import org.apache.rocketmq.common.message.Message;
 //import org.apache.rocketmq.common.message.MessageConst;
@@ -37,9 +41,16 @@ public class AppServiceConsumer implements RocketMQListener<MessageExt> {
 
   @Override
   public void onMessage(MessageExt msg) {
-    LOG.info("received message: {}", msg);
+    String reqId = msg.getUserProperty("bizReqId");
+    if (mock.newError(this.getClass(), RETURN, LOG, "Notification of request#%s will be timed out...", reqId)
+        .has()) {/*- Here we simply simulated multiple timeouts.You can clearly see the ladder of retry intervals. */
+      return;
+    }
+    LOG.info("Received message: {}", msg);
     Long laStfId = Long.valueOf(msg.getUserProperty("__stn_laStfId"));
     directCommitLastDone(laStfId);
   }
 
+  @Autowired
+  MockHelper mock;
 }

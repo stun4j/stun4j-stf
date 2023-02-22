@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.stun4j.stf.sample.utils.mock_data;
+package com.stun4j.stf.sample.boot.utils.mock_data;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -66,7 +66,7 @@ public class MockHelper {
             if (logger.isErrorEnabled()) {
               logger.error(exitMsg);
             } else {
-              System.out.println(exitMsg);
+              System.err.println(exitMsg);
             }
             System.exit(-1);
           } else if (errorType == MockErrorTypeEnum.RETURN) {

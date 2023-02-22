@@ -94,7 +94,7 @@ public class AppServiceWithMq {
     // commitLastDoneWithoutTx();
     // Message msg = new Message("TopicTest", ("Hi-" + reqId).getBytes(StandardCharsets.UTF_8));
     // msg.getProperties().put("_stn_stf_msgId", laStfId + "");
-    Message<?> msg = MessageBuilder.withPayload(("Hi-" + reqId)).setHeader("__stn_laStfId", laStfId).build();
+    Message<?> msg = MessageBuilder.withPayload(("Hi-" + reqId)).setHeader("bizReqId", reqId).setHeader("__stn_laStfId", laStfId).build();
     // msg.putUserProperty("_stn_stf_msgId", laStfId + "");
     // rmqOps.sendOneWay("TopicTest", msg);
     rmqOps.sendOneWay("bar", msg);
