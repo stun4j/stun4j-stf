@@ -60,7 +60,7 @@ $ mvn clean package -Dmaven.test.skip=true
 ```yml
 stfs {
   local-vars {
-    dp = com.stun4j.stf.sample.boot.domain
+    dp = com.stun4j.stf.sample.domain
   }
   actions {
     acceptReq {

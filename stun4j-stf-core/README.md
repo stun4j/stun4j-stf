@@ -10,11 +10,11 @@
 ```yml
 stfs {
   local-vars { #允许自定义本地变量
-    dp = com.stun4j.stf.sample.boot.domain
+    dp = com.stun4j.stf.sample.domain
   }
   actions { #动作定义(亦即,方法定义)
     acceptReq { #动作名,即方法名
-      args = [{use-in:{class:${dp}.Req}}] #方法参数 use-in表示入参类型为com.stun4j.stf.sample.boot.domain.Req,dp变量简化了表达
+      args = [{use-in:{class:${dp}.Req}}] #方法参数 use-in表示入参类型为com.stun4j.stf.sample.domain.Req,dp变量简化了表达
     }
     step1Tx {
       args = [{invoke-on-in:{method:getId, class:Long}}, {invoke-on-in:{method:getReqId, class:String}}] #invoke-on-in表示入参取值会通过施加在入参对象上的反射来获得,method和class是反射的必要元素,其义自现
@@ -50,7 +50,7 @@ stfs {
   actions {
     handle {
       oid = bizOrphanStep
-      args = [{use-in:{class:com.stun4j.stf.sample.boot.domain.Req}}]
+      args = [{use-in:{class:com.stun4j.stf.sample.domain.Req}}]
       timeout = 15s
     }
   }
