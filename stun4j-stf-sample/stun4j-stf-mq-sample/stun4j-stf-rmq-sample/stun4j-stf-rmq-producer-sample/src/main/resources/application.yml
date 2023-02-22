@@ -9,9 +9,10 @@ spring:
     password: 1111
     hikari:
       maximum-pool-size: 20
+rocketmq:
+  name-server: localhost:9876
+  producer:
+    group: foo
 stun4j:
   stf:
     conf-full-load-order: bizMultiStep-flow
-#rocketmq:
-#  name-server: localhost:9876
-#  producer.group: foo

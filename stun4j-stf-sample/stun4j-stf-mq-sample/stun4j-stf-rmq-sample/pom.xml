@@ -13,4 +13,44 @@
 		<module>stun4j-stf-rmq-producer-sample</module>
 		<module>stun4j-stf-rmq-consumer-sample</module>
 	</modules>
+
+	<properties>
+		<!-- mq -->
+		<rocketmq.version>4.9.4</rocketmq.version>
+		<rocketmq-boot-starter.verion>2.2.2</rocketmq-boot-starter.verion>
+	</properties>
+
+	<dependencyManagement>
+		<dependencies>
+			<!-- mq -->
+			<dependency>
+				<groupId>org.apache.rocketmq</groupId>
+				<artifactId>rocketmq-client</artifactId>
+				<version>${rocketmq.version}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>commons-logging</groupId>
+						<artifactId>commons-logging</artifactId>
+					</exclusion>
+				</exclusions>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.rocketmq</groupId>
+				<artifactId>rocketmq-spring-boot-starter</artifactId>
+				<version>${rocketmq-boot-starter.verion}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>org.springframework.boot</groupId>
+						<artifactId>spring-boot-starter-logging</artifactId>
+					</exclusion>
+				</exclusions>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
+	<!-- log -->
+	<dependency>
+		<groupId>org.slf4j</groupId>
+		<artifactId>jcl-over-slf4j</artifactId>
+	</dependency>
 </project>

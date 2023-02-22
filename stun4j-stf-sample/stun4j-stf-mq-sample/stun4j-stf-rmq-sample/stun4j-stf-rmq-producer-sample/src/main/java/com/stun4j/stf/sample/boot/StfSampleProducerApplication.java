@@ -18,6 +18,7 @@ package com.stun4j.stf.sample.boot;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.ComponentScan;
 
 import com.stun4j.stf.boot.EnableStf;
 
@@ -25,7 +26,8 @@ import com.stun4j.stf.boot.EnableStf;
  * @author Jay Meng
  */
 @SpringBootApplication
-@MapperScan("com.stun4j.stf.sample.boot.persistence")
+@ComponentScan("com.stun4j.stf.sample")
+@MapperScan("com.stun4j.stf.sample.persistence")
 @EnableStf
 public class StfSampleProducerApplication {
   public static void main(String[] args) {
