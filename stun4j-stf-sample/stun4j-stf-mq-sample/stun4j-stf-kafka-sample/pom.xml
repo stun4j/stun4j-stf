@@ -1,21 +1,21 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<parent>
-		<groupId>com.stun4j</groupId>
-		<artifactId>stun4j-stf-mq-sample</artifactId>
-		<version>${revision}</version>
-	</parent>
-	<artifactId>stun4j-stf-kafka-sample</artifactId>
-	<packaging>pom</packaging>
-	<modules>
-		<module>stun4j-stf-kafka-producer-sample</module>
-		<module>stun4j-stf-kafka-consumer-sample</module>
-	</modules>
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.stun4j</groupId>
+    <artifactId>stun4j-stf-mq-sample</artifactId>
+    <version>${revision}</version>
+  </parent>
+  <artifactId>stun4j-stf-kafka-sample</artifactId>
+  <packaging>pom</packaging>
+  <modules>
+    <module>stun4j-stf-kafka-producer-sample</module>
+    <module>stun4j-stf-kafka-consumer-sample</module>
+  </modules>
 
-	<properties>
-		<!-- mq -->
-<!-- 		<kafka.version>2.8.2</kafka.version> -->
-<!-- 		<spring-kafka.version>2.7.14</spring-kafka.version> -->
-	</properties>
+  <properties>
+    <!-- mq -->
+    <!-- <kafka.version>2.8.2</kafka.version> -->
+    <!-- <spring-kafka.version>2.7.14</spring-kafka.version> -->
+  </properties>
 </project>

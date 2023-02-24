@@ -1,78 +1,78 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<parent>
-		<groupId>com.stun4j</groupId>
-		<artifactId>stun4j-stf-parent</artifactId>
-		<version>${revision}</version>
-	</parent>
-	<artifactId>stun4j-stf-sample</artifactId>
-	<name>Stun4j Stf Sample</name>
-	<packaging>pom</packaging>
-	<modules>
-		<module>stun4j-stf-sample-domain</module>
-		<module>stun4j-stf-boot-sample</module>
-		<module>stun4j-stf-mq-sample</module>
-	</modules>
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.stun4j</groupId>
+    <artifactId>stun4j-stf-parent</artifactId>
+    <version>${revision}</version>
+  </parent>
+  <artifactId>stun4j-stf-sample</artifactId>
+  <name>Stun4j Stf Sample</name>
+  <packaging>pom</packaging>
+  <modules>
+    <module>stun4j-stf-sample-domain</module>
+    <module>stun4j-stf-boot-sample</module>
+    <module>stun4j-stf-mq-sample</module>
+  </modules>
 
-	<properties>
-		<mybatis-plus.verion>3.5.3.1</mybatis-plus.verion>
-	</properties>
+  <properties>
+    <mybatis-plus.verion>3.5.3.1</mybatis-plus.verion>
+  </properties>
 
-	<dependencyManagement>
-		<dependencies>
-			<!-- module -->
-			<dependency>
-				<groupId>com.stun4j</groupId>
-				<artifactId>stun4j-stf-sample-domain</artifactId>
-				<version>${project.version}</version>
-			</dependency>
+  <dependencyManagement>
+    <dependencies>
+      <!-- module -->
+      <dependency>
+        <groupId>com.stun4j</groupId>
+        <artifactId>stun4j-stf-sample-domain</artifactId>
+        <version>${project.version}</version>
+      </dependency>
 
-			<!-- core -->
-			<dependency>
-				<groupId>com.stun4j</groupId>
-				<artifactId>stun4j-stf-core</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>com.stun4j.boot</groupId>
-				<artifactId>stun4j-stf-spring-boot-starter</artifactId>
-				<version>${project.version}</version>
-			</dependency>
+      <!-- core -->
+      <dependency>
+        <groupId>com.stun4j</groupId>
+        <artifactId>stun4j-stf-core</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.stun4j.boot</groupId>
+        <artifactId>stun4j-stf-spring-boot-starter</artifactId>
+        <version>${project.version}</version>
+      </dependency>
 
-			<!-- db -->
-			<dependency>
-				<groupId>com.baomidou</groupId>
-				<artifactId>mybatis-plus-core</artifactId>
-				<version>${mybatis-plus.verion}</version>
-			</dependency>
-			<dependency>
-				<groupId>com.baomidou</groupId>
-				<artifactId>mybatis-plus-boot-starter</artifactId>
-				<version>${mybatis-plus.verion}</version>
-			</dependency>
-		</dependencies>
-	</dependencyManagement>
+      <!-- db -->
+      <dependency>
+        <groupId>com.baomidou</groupId>
+        <artifactId>mybatis-plus-core</artifactId>
+        <version>${mybatis-plus.verion}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.baomidou</groupId>
+        <artifactId>mybatis-plus-boot-starter</artifactId>
+        <version>${mybatis-plus.verion}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
-	<build>
-		<resources>
-			<resource>
-				<directory>src/main/resources</directory>
-				<includes>
-					<include>**/*.conf</include>
-					<include>*.yml</include>
-					<include>*.xml</include>
-				</includes>
-			</resource>
-		</resources>
-		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-deploy-plugin</artifactId>
-				<configuration>
-					<skip>true</skip>
-				</configuration>
-			</plugin>
-		</plugins>
-	</build>
+  <build>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <includes>
+          <include>**/*.conf</include>
+          <include>*.yml</include>
+          <include>*.xml</include>
+        </includes>
+      </resource>
+    </resources>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <configuration>
+          <skip>true</skip>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>

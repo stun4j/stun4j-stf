@@ -1,57 +1,57 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<parent>
-		<groupId>com.stun4j</groupId>
-		<artifactId>stun4j-stf-parent</artifactId>
-		<version>${revision}</version>
-	</parent>
-	<groupId>com.stun4j.boot</groupId>
-	<artifactId>stun4j-stf-spring-boot-starter</artifactId>
-	<name>Starter for using Stun4J Stf</name>
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.stun4j</groupId>
+    <artifactId>stun4j-stf-parent</artifactId>
+    <version>${revision}</version>
+  </parent>
+  <groupId>com.stun4j.boot</groupId>
+  <artifactId>stun4j-stf-spring-boot-starter</artifactId>
+  <name>Starter for using Stun4J Stf</name>
 
-	<description>Starter for using Stun4J Stf</description>
-	<url>https://github.com/stun4j/stun4j-stf</url>
+  <description>Starter for using Stun4J Stf</description>
+  <url>https://github.com/stun4j/stun4j-stf</url>
 
-	<properties>
-		<!-- core -->
-		<druid.version>1.2.16</druid.version>
-	</properties>
+  <properties>
+    <!-- core -->
+    <druid.version>1.2.16</druid.version>
+  </properties>
 
-	<dependencies>
-		<!-- module -->
-		<dependency>
-			<groupId>com.stun4j</groupId>
-			<artifactId>stun4j-stf-core</artifactId>
-			<version>${project.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>com.stun4j.boot</groupId>
-			<artifactId>stun4j-guid-spring-boot-starter</artifactId>
-			<version>${stun4j-guid.version}</version>
-		</dependency>
-		<!-- core -->
-		<dependency>
-			<groupId>com.zaxxer</groupId>
-			<artifactId>HikariCP</artifactId>
-			<optional>true</optional>
-		</dependency>
-		<dependency>
-			<groupId>com.alibaba</groupId>
-			<artifactId>druid</artifactId>
-			<version>${druid.version}</version>
-			<optional>true</optional>
-		</dependency>
-		<!-- helper -->
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter</artifactId>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-configuration-processor</artifactId>
-			<optional>true</optional>
-		</dependency>
-	</dependencies>
+  <dependencies>
+    <!-- module -->
+    <dependency>
+      <groupId>com.stun4j</groupId>
+      <artifactId>stun4j-stf-core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.stun4j.boot</groupId>
+      <artifactId>stun4j-guid-spring-boot-starter</artifactId>
+      <version>${stun4j-guid.version}</version>
+    </dependency>
+    <!-- core -->
+    <dependency>
+      <groupId>com.zaxxer</groupId>
+      <artifactId>HikariCP</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>com.alibaba</groupId>
+      <artifactId>druid</artifactId>
+      <version>${druid.version}</version>
+      <optional>true</optional>
+    </dependency>
+    <!-- helper -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-configuration-processor</artifactId>
+      <optional>true</optional>
+    </dependency>
+  </dependencies>
 </project>
