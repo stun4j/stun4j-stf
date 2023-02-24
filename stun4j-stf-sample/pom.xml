@@ -24,12 +24,14 @@
 			<!-- module -->
 			<dependency>
 				<groupId>com.stun4j</groupId>
-				<artifactId>stun4j-stf-core</artifactId>
+				<artifactId>stun4j-stf-sample-domain</artifactId>
 				<version>${project.version}</version>
 			</dependency>
+
+			<!-- core -->
 			<dependency>
 				<groupId>com.stun4j</groupId>
-				<artifactId>stun4j-stf-sample-domain</artifactId>
+				<artifactId>stun4j-stf-core</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
@@ -37,6 +39,7 @@
 				<artifactId>stun4j-stf-spring-boot-starter</artifactId>
 				<version>${project.version}</version>
 			</dependency>
+
 			<!-- db -->
 			<dependency>
 				<groupId>com.baomidou</groupId>

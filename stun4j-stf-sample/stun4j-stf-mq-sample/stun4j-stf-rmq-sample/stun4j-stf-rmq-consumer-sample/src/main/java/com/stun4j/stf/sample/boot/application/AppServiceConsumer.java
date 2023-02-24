@@ -35,7 +35,7 @@ import com.stun4j.stf.sample.boot.utils.mock_data.MockHelper;
  * @author Jay Meng
  */
 @Component
-@RocketMQMessageListener(topic = "bar", consumerGroup = "foo")
+@RocketMQMessageListener(consumerGroup = "foo", topic = "bar")
 public class AppServiceConsumer implements RocketMQListener<MessageExt> {
   private static final Logger LOG = LoggerFactory.getLogger(AppServiceConsumer.class);
 

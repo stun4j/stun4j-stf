@@ -3,12 +3,11 @@
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>com.stun4j</groupId>
-		<artifactId>stun4j-stf-rmq-sample</artifactId>
+		<artifactId>stun4j-stf-kafka-sample</artifactId>
 		<version>${revision}</version>
 	</parent>
-	<groupId>com.stun4j.boot</groupId>
-	<artifactId>stun4j-stf-rmq-producer-sample</artifactId>
-	<name>Stun4j Stf RocketMQ Producer Sample</name>
+	<artifactId>stun4j-stf-kafka-producer-sample</artifactId>
+	<name>Stun4j Stf Kafka Producer Sample</name>
 
 	<dependencies>
 		<!-- module -->
@@ -31,18 +30,24 @@
 
 		<!-- mq -->
 		<dependency>
-			<groupId>org.apache.rocketmq</groupId>
-			<artifactId>rocketmq-client</artifactId>
+			<groupId>org.apache.kafka</groupId>
+			<artifactId>kafka-clients</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>org.apache.rocketmq</groupId>
-			<artifactId>rocketmq-spring-boot-starter</artifactId>
+			<groupId>org.springframework.kafka</groupId>
+			<artifactId>spring-kafka</artifactId>
 		</dependency>
 
 		<!-- web -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
+			<exclusions>
+				<exclusion>
+					<groupId>org.springframework.boot</groupId>
+					<artifactId>spring-boot-starter-logging</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 	</dependencies>
 

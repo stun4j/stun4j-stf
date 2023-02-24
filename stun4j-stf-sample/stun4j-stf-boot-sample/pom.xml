@@ -16,10 +16,6 @@
 			<groupId>com.stun4j</groupId>
 			<artifactId>stun4j-stf-sample-domain</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>com.stun4j.boot</groupId>
-			<artifactId>stun4j-stf-spring-boot-starter</artifactId>
-		</dependency>
 
 		<!-- core -->
 		<dependency>
@@ -29,6 +25,10 @@
 		<dependency>
 			<groupId>org.xerial.snappy</groupId>
 			<artifactId>snappy-java</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.stun4j.boot</groupId>
+			<artifactId>stun4j-stf-spring-boot-starter</artifactId>
 		</dependency>
 
 		<!-- db -->
@@ -63,12 +63,6 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
-		</dependency>
-
-		<!-- helper -->
-		<dependency>
-			<groupId>com.google.guava</groupId>
-			<artifactId>guava</artifactId>
 		</dependency>
 
 		<!-- log -->

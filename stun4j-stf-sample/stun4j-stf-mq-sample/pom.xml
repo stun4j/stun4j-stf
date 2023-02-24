@@ -11,6 +11,7 @@
 	<packaging>pom</packaging>
 	<modules>
 		<module>stun4j-stf-rmq-sample</module>
+		<module>stun4j-stf-kafka-sample</module>
 	</modules>
 
 	<dependencies>

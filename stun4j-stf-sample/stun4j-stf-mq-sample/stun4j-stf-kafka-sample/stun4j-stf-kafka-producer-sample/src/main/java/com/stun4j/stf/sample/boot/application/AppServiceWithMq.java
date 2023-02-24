@@ -22,12 +22,11 @@ import java.util.concurrent.CompletableFuture;
 
 import javax.annotation.Resource;
 
-//import org.apache.rocketmq.common.message.Message;
-//import org.apache.rocketmq.common.message.MessageConst;
-import org.apache.rocketmq.spring.core.RocketMQTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.Message;
 import org.springframework.stereotype.Service;
 
@@ -52,7 +51,7 @@ public class AppServiceWithMq {
   private BizServiceMultiStep svc;
 
   @Resource
-  private RocketMQTemplate rmqOps;
+  private KafkaTemplate<?, ?> mqOps;
 
   public void acceptReq(Req req) {
     Tx txBegin = svc.acceptReq(req);
@@ -89,8 +88,9 @@ public class AppServiceWithMq {
     // return;
     // }
     LOG.info("Notification of request#{} is sending...]", reqId);
-    Message<?> msg = StfMessageBuilder.withPayload("Hi-" + reqId).setHeader("bizReqId", reqId).build();
-    rmqOps.sendOneWay("bar", msg);
+    Message<?> msg = StfMessageBuilder.withPayload("Hi-" + reqId).setHeader(KafkaHeaders.TOPIC, "bar")
+        .setHeader("bizReqId", reqId).build();
+    mqOps.send(msg);
   }
 
   @Autowired
