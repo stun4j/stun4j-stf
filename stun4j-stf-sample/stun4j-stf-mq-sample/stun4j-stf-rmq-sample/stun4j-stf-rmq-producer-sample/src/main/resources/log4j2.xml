@@ -1,25 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="WARN">
-	<Properties>
-		<Property name="append">false</Property>
-		<Property name="pattern">[%d] %p (%c{1.}) %m %n</Property>
-		<Property name="verbosePattern">[%d] %p (%c{1.}) [%t] %m%n</Property>
-	</Properties>
+  <Properties>
+    <Property name="append">false</Property>
+    <Property name="pattern">[%d] %p (%c{1.}) %m %n</Property>
+    <Property name="verbosePattern">[%d] %p (%c{1.}) [%t] %m%n</Property>
+  </Properties>
 
-	<Appenders>
-		<Console name="CONSOLE-INFO" target="SYSTEM_OUT">
-			<ThresholdFilter level="INFO" />
-			<PatternLayout pattern="${pattern}" />
-		</Console>
-		<Console name="CONSOLE-DEBUG" target="SYSTEM_OUT">
-			<ThresholdFilter level="DEBUG" />
-			<PatternLayout pattern="${verbosePattern}" />
-		</Console>
-	</Appenders>
+  <Appenders>
+    <Console name="CONSOLE-INFO" target="SYSTEM_OUT">
+      <ThresholdFilter level="INFO" />
+      <PatternLayout pattern="${pattern}" />
+    </Console>
+    <Console name="CONSOLE-DEBUG" target="SYSTEM_OUT">
+      <ThresholdFilter level="DEBUG" />
+      <PatternLayout pattern="${verbosePattern}" />
+    </Console>
+  </Appenders>
 
-	<Loggers>
-		<Root level="INFO" includeLocation="false">
-			<AppenderRef ref="CONSOLE-INFO" />
-		</Root>
-	</Loggers>
+  <Loggers>
+    <Root level="INFO" includeLocation="false">
+      <AppenderRef ref="CONSOLE-INFO" />
+    </Root>
+  </Loggers>
 </Configuration> 
