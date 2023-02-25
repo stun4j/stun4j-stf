@@ -203,7 +203,8 @@ class DelayQueueDataSourceBeanRegister {
     tmpBool = fromDsCfg.isUseGlobalDataSourceStat();// druid.useGlobalDataSourceStat
     toDsCfg.setUseGlobalDataSourceStat(tmpBool);
 
-    // druid.useGloalDataSourceStat// compatible for early versions mj:typo problem not exist during direct copy from
+    // druid.useGloalDataSourceStat// compatible for early versions mj:typo problem not exist during
+    // direct copy from
     // normalized template ds
 
     tmpBool = fromDsCfg.isAsyncInit();// druid.asyncInit// compatible for early versions

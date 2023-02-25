@@ -22,6 +22,7 @@ import org.springframework.boot.context.properties.NestedConfigurationProperty;
 /**
  * Stf Core global configuration
  * <p>
+ * 
  * @author Jay Meng
  */
 public class Core {

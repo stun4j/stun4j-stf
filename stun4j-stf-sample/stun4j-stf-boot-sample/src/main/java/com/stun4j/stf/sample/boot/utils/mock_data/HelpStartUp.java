@@ -66,7 +66,8 @@ public class HelpStartUp implements ApplicationContextAware, ApplicationRunner {
     }
     String coreDsBeanName = props.getCore().getDatasourceBeanName();
     String dlqDsBeanName = props.getDelayQueue().getDatasourceBeanName();
-    // Clean business related datas(include mock datas),comment out the following code block if you don't need it//->
+    // Clean business related datas(include mock datas),comment out the following code block if you
+    // don't need it//->
     LOG.info("To give this example a fresh start, we are cleaning up the data associated with...");
     JdbcTemplate jdbc = applicationContext.getBean(JdbcTemplate.class);
     Stream.of(

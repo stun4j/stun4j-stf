@@ -23,6 +23,7 @@ import java.util.Map;
 /**
  * Stf global job configuration
  * <p>
+ * 
  * @author Jay Meng
  */
 public class Job {

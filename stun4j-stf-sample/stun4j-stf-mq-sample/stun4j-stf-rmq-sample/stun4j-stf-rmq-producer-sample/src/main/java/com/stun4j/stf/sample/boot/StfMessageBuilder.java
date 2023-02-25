@@ -30,8 +30,8 @@ public final class StfMessageBuilder<T> {
   private final MessageBuilder<T> builder;
 
   /**
-   * Set the value for the given header name. If the provided value is {@code null},
-   * the header will be removed.
+   * Set the value for the given header name. If the provided value is {@code null}, the header will
+   * be removed.
    */
   public StfMessageBuilder<T> setHeader(String headerName, Object headerValue) {// @Nullable Object headerValue
     Asserts.argument(!LA_STF_ID_KEY.equalsIgnoreCase(headerName), "'%s' is reserved，not allowed to use", headerName);
@@ -45,6 +45,7 @@ public final class StfMessageBuilder<T> {
 
   /**
    * Create a new builder for a message with the given payload.
+   * 
    * @param payload the payload
    */
   public static <T> StfMessageBuilder<T> withPayload(T payload) {

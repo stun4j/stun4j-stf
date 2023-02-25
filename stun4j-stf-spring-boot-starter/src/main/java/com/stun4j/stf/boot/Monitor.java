@@ -18,11 +18,13 @@ package com.stun4j.stf.boot;
 /**
  * Stf monitor configuration
  * <p>
+ * 
  * @author Jay Meng
  */
 public class Monitor {
   /**
-   * Is vm resource check enabled(vm-resource refers to cpu-rate, memory consumption, system-load, and so on)
+   * Is vm resource check enabled(vm-resource refers to cpu-rate, memory consumption, system-load, and
+   * so on)
    * <p>
    * Default: true
    */

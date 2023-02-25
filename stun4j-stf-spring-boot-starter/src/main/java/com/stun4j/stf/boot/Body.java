@@ -20,6 +20,7 @@ import com.stun4j.stf.core.support.CompressAlgorithm;
 /**
  * Stf body(aka. callee) configuration
  * <p>
+ * 
  * @author Jay Meng
  */
 public class Body {

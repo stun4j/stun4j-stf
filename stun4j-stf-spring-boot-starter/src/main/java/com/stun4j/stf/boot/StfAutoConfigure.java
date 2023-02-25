@@ -100,6 +100,7 @@ import com.stun4j.stf.core.utils.Exceptions;
 
 /**
  * Responsible for loading, starting, and initializing Stf from its boot configuration files.
+ * 
  * @author Jay Meng
  */
 @Configuration
@@ -280,7 +281,8 @@ public class StfAutoConfigure implements BeanClassLoaderAware, EnvironmentAware,
       boolean isFound = false;
       String[] fullLoadOrder = props.getConfFullLoadOrder();
       TreeMap<Integer, Object> filesOfSpecifizedLoadOrder = fullLoadOrder != null ? new TreeMap<>() : null;
-      // pick only the stf-flow configurations, will skip all subsequent files once the relevant fragment is found
+      // pick only the stf-flow configurations, will skip all subsequent files once the relevant fragment
+      // is found
       while (entries.hasMoreElements()) {
         JarEntry entry = entries.nextElement();
         String name = entry.getName();

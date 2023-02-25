@@ -85,12 +85,12 @@ public class AppService {
     commitLastDoneWithoutTx();
 
     /*
-     * An equivalent code block is written as follows:
-     * (More transparent, but the code above is better in performance)
-     * (Furthermore,the code above can't be used in an active transaction)
+     * An equivalent code block is written as follows: (More transparent, but the code above is better
+     * in performance) (Furthermore,the code above can't be used in an active transaction)
      */
     // You can comment out the above block and uncomment the following block->
-    // if (mock.newError(this.getClass(), THROW_EX, LOG, "Notification of request#%s has timed out...", reqId).has()) {
+    // if (mock.newError(this.getClass(), THROW_EX, LOG, "Notification of request#%s has timed out...",
+    // reqId).has()) {
     // return;
     // }
     // txnOps.executeWithoutResult(st -> {

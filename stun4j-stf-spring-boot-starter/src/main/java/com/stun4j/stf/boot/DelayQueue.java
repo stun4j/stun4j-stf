@@ -22,6 +22,7 @@ import org.springframework.boot.context.properties.NestedConfigurationProperty;
 /**
  * Stf DelayQueue configuration
  * <p>
+ * 
  * @author Jay Meng
  */
 public class DelayQueue {

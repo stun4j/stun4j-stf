@@ -83,8 +83,10 @@ public class AppServiceWithMq {
   }
 
   public void sendNotification(String reqId) {
-    // if (mock.newError(this.getClass(), THROW_EX, LOG, "Notification of request#%s will be timed out...", reqId)
-    // .has()) {/*- Here we simply simulated multiple timeouts.You can clearly see the ladder of retry intervals. */
+    // if (mock.newError(this.getClass(), THROW_EX, LOG, "Notification of request#%s will be timed
+    // out...", reqId)
+    // .has()) {/*- Here we simply simulated multiple timeouts.You can clearly see the ladder of retry
+    // intervals. */
     // return;
     // }
     LOG.info("Notification of request#{} is sending...]", reqId);

@@ -20,29 +20,30 @@ import static com.stun4j.stf.boot.DefaultExecutor.RejectPolicy.BACK_PRESSURE;
 /**
  * Stf default executor configuration
  * <p>
+ * 
  * @author Jay Meng
  */
 public class DefaultExecutor {
 
   /**
-   * This is the maximum time that excess idle threads in the thread pool will wait for new tasks before
-   * terminating.<br>
+   * This is the maximum time that excess idle threads in the thread pool will wait for new tasks
+   * before terminating.<br>
    * 0: threads(might include core threads) always stay alive, <0: illegal
    * <p>
    * Default: 60
    */
   private int threadKeepAliveTimeSeconds = 60;
   /**
-   * The queue to use for holding tasks before they are executed.
-   * This queue will hold only the {@code Runnable}
+   * The queue to use for holding tasks before they are executed. This queue will hold only the
+   * {@code Runnable}
    * <p>
    * Default: 1024
    */
   private int taskQueueSize = 1024;
 
   /**
-   * If false, core threads stay alive even when idle. If true, core threads use keepAliveTime to time out
-   * waiting for work.
+   * If false, core threads stay alive even when idle. If true, core threads use keepAliveTime to time
+   * out waiting for work.
    * <p>
    * Default: true
    */
@@ -50,6 +51,7 @@ public class DefaultExecutor {
   /**
    * Default: back-pressure
    * <p>
+   * 
    * @see java.util.concurrent.ThreadPoolExecutor.AbortPolicy
    * @see java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy
    * @see com.stun4j.stf.core.utils.executor.PoolExecutors.DiscardPolicy

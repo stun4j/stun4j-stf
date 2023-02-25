@@ -45,8 +45,10 @@ public class AppServiceConsumer {
   @KafkaListener(groupId = "foo", topics = "bar")
   public void onMessage(Message<?> msg) {
     // String reqId = msg.getUserProperty("bizReqId");
-    // if (mock.newError(this.getClass(), RETURN, LOG, "Notification of request#%s will be timed out...", reqId)
-    // .has()) {/*- Here we simply simulated multiple timeouts.You can clearly see the ladder of retry intervals. */
+    // if (mock.newError(this.getClass(), RETURN, LOG, "Notification of request#%s will be timed
+    // out...", reqId)
+    // .has()) {/*- Here we simply simulated multiple timeouts.You can clearly see the ladder of retry
+    // intervals. */
     // return;
     // }
     LOG.info("Received message: {}", msg);

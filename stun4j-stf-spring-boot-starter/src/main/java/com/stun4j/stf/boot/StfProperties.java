@@ -25,6 +25,7 @@ import com.stun4j.stf.core.support.BaseVo;
 
 /**
  * Base class for configuration of Stf.
+ * 
  * @author Jay Meng
  */
 @ConfigurationProperties("stun4j.stf")
@@ -59,19 +60,16 @@ public class StfProperties extends BaseVo {
   /**
    * The full loading order of stf-flow configurations
    * <ul>
-   * <li>
-   * Note that if filename is not specified in this full-order-list, the file will also be excluded from loading,which
-   * may cause unexpected loading error.
-   * </li>
-   * <li>The configuration loaded first is parent, which can be overridden by the configuration loaded later.</li>
-   * <li>
-   * Default(comparison behavior): Use comparator that orders String objects(will pick configuration's filename from
-   * File or URL)
-   * as by compareToIgnoreCase. Note that the Comparator does not
-   * take locale into account, and will result in an unsatisfactory ordering for
-   * certain locales. The java.text package provides Collators to allow locale-sensitive ordering.
-   * </li>
+   * <li>Note that if filename is not specified in this full-order-list, the file will also be
+   * excluded from loading,which may cause unexpected loading error.</li>
+   * <li>The configuration loaded first is parent, which can be overridden by the configuration loaded
+   * later.</li>
+   * <li>Default(comparison behavior): Use comparator that orders String objects(will pick
+   * configuration's filename from File or URL) as by compareToIgnoreCase. Note that the Comparator
+   * does not take locale into account, and will result in an unsatisfactory ordering for certain
+   * locales. The java.text package provides Collators to allow locale-sensitive ordering.</li>
    * </ul>
+   * 
    * @see java.lang.String#CASE_INSENSITIVE_ORDER
    */
   private String[] confFullLoadOrder;

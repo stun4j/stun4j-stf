@@ -5,14 +5,15 @@ import static com.stun4j.stf.core.utils.Asserts.state;
 /**
  * Stf DataSource configuration
  * <p>
+ * 
  * @author Jay Meng
  */
 public class Datasource {
   private String beanName;
 
   /**
-   * Whether or not the dataSource is allowed to be automatically created. In general, the created dataSource is also
-   * registered with the container
+   * Whether or not the dataSource is allowed to be automatically created. In general, the created
+   * dataSource is also registered with the container
    * <p>
    * Default: false
    */

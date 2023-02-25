@@ -31,6 +31,7 @@ import com.stun4j.guid.boot.GuidAutoConfigure;
  * <p>
  * This automatically imports the stun4j-guid module first, so it is no need to use
  * {@link com.stun4j.guid.boot.EnableGuid} to activate the module.
+ * 
  * @author Jay Meng
  */
 @Target({ElementType.TYPE})
