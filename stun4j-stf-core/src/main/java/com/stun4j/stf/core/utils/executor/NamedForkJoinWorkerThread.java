@@ -28,6 +28,5 @@ public class NamedForkJoinWorkerThread extends ForkJoinWorkerThread {
   protected NamedForkJoinWorkerThread(ForkJoinPool pool) {
     super(pool);
   }
-  
-  
+
 }

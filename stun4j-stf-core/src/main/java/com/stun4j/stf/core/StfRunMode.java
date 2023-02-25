@@ -22,8 +22,8 @@ public enum StfRunMode {
   /** All Stf functionality is enabled */
   DEFAULT,
   /**
-   * Stf functionality is limited, typically, only write operations is supported, but does not participate in job
-   * detection, execution, etc.
+   * Stf functionality is limited, typically, only write operations is supported, but does not
+   * participate in job detection, execution, etc.
    */
   CLIENT;
 

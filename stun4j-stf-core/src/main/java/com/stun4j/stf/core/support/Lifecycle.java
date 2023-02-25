@@ -18,11 +18,11 @@ package com.stun4j.stf.core.support;
 /**
  * The life cycle abstraction
  * <p>
- * If you are not simply creating an object, but starting some 'heavy' resource or waiting or polling service, you
- * should consider implementing {@link #start()}.
- * <br>
- * If you provide a start implementation, you should provide {@link #shutdown()} equivalently (and implement stop as
- * elegantly as possible), but not vice versa.
+ * If you are not simply creating an object, but starting some 'heavy' resource or waiting or
+ * polling service, you should consider implementing {@link #start()}. <br>
+ * If you provide a start implementation, you should provide {@link #shutdown()} equivalently (and
+ * implement stop as elegantly as possible), but not vice versa.
+ * 
  * @author Jay Meng
  */
 public interface Lifecycle {

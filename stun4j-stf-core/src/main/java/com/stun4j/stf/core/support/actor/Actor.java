@@ -18,7 +18,9 @@ package com.stun4j.stf.core.support.actor;
 /**
  * Why does actor framework(e.g. akka,quasar etc.) do so much:)
  * <p>
- * There is no doubt that JDK will eventually solve the core problem that actors are trying to solve.
+ * There is no doubt that JDK will eventually solve the core problem that actors are trying to
+ * solve.
+ * 
  * @author Jay Meng
  */
 public interface Actor<T> extends Runnable {

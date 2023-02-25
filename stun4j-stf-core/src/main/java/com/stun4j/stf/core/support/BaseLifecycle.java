@@ -28,6 +28,7 @@ import com.stun4j.stf.core.utils.Exceptions;
  * <li>Ensure start or shutdown only once</li>
  * <li>Swallow any error during start or shutdown</li>
  * </ul>
+ * 
  * @author Jay Meng
  */
 public class BaseLifecycle implements Lifecycle {
@@ -44,7 +45,8 @@ public class BaseLifecycle implements Lifecycle {
       doStart();
     } catch (Throwable e) {
       LOG.error("An error occurred while starting, now tring to shut down", e);
-      // TODO mj:terminate current jvm in the very-beginning,instead of throwing error(support more strategy)
+      // TODO mj:terminate current jvm in the very-beginning,instead of throwing error(support more
+      // strategy)
       shutdown();
       Exceptions.sneakyThrow(e);
     }

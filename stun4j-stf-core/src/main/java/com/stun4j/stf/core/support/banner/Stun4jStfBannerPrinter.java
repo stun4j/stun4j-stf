@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 
 /**
  * Class used to print the application banner.
+ * 
  * @author Phillip Webb
  * @author Jay Meng
  *         <p>
@@ -60,7 +61,8 @@ public class Stun4jStfBannerPrinter {
   }
 
   /**
-   * Decorator that allows a {@link Banner} to be printed again without needing to specify the source class.
+   * Decorator that allows a {@link Banner} to be printed again without needing to specify the source
+   * class.
    */
   private static class PrintedBanner implements Banner {
 

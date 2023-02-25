@@ -46,12 +46,12 @@ public class StfDefaultSpringRegistry extends ConcurrentHashMap<Serializable, Ob
     } else if (bizKey instanceof Class<?>) {
       String[] beanNames = applicationContext.getBeanNamesForType((Class<?>)bizKey);
       /*
-       * This is a very strict check to ensure that a unique bean exists.
-       * If not,stf-flow will not run exactly as configured
+       * This is a very strict check to ensure that a unique bean exists. If not,stf-flow will not run
+       * exactly as configured
        */
       state(ArrayUtils.getLength(beanNames) == 1, lenientFormat(
           "Found multiple biz-obj with same class [class=%s, bean-names=%s]", bizKey, Arrays.toString(beanNames)));
-      return beanNames[0];//TODO mj:change this...
+      return beanNames[0];// TODO mj:change this...
     }
     return null;
   }

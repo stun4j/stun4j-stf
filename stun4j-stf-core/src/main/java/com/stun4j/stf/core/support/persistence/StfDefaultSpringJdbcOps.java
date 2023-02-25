@@ -43,8 +43,8 @@ public class StfDefaultSpringJdbcOps implements StfJdbcOps {
   @SuppressWarnings("unchecked")
   @Override
   /**
-   * @return the result Stream, containing stf objects, needing to be closed once fully processed (e.g. through a
-   *         try-with-resources clause)
+   * @return the result Stream, containing stf objects, needing to be closed once fully processed
+   *         (e.g. through a try-with-resources clause)
    */
   public <T> Stream<T> queryForStream(Enum<?> dsKey, String sql, Object[] args, StfJdbcRowMapper<T> rowMapper)
       throws DataAccessException {

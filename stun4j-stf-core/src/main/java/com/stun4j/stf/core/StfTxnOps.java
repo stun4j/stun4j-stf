@@ -35,18 +35,20 @@ import com.stun4j.stf.core.utils.Exceptions;
 /**
  * Stf's core transaction operation, which delegates to Spring's transaction operation
  * <ul>
- * <li>The 'out' parameter is an object that will be the outgoing parameter of the current method and the incoming
- * parameter of the downstream method.This is the typical, recommended way to make Stf work well</li>
- * <li>Be care of the case where you passing 'out' as {@code null} and it is generally accepted that the downstream
- * method does not need an input. In this case, do not pass {@code null} and instead use '#executeXXX' methods that have
- * no 'out' parameter</li>
- * <li>Note that the 'out' object is at risk of becoming dirty. Changes made to 'out' inside the closure of the
- * '#executeXXX' method will be persisted and correctly passed to downstream methods, while changes made to 'out'
- * outside the closure will become dirty, in which case the persistent data will not be consistent with the in-memory
- * version.</li>
- * <li>The better option is to use methods like '#executeWithFinalXXX' or '#executeWithNonFinalXXX', which minimize the
- * side effects of the problem above</li>
+ * <li>The 'out' parameter is an object that will be the outgoing parameter of the current method
+ * and the incoming parameter of the downstream method.This is the typical, recommended way to make
+ * Stf work well</li>
+ * <li>Be care of the case where you passing 'out' as {@code null} and it is generally accepted that
+ * the downstream method does not need an input. In this case, do not pass {@code null} and instead
+ * use '#executeXXX' methods that have no 'out' parameter</li>
+ * <li>Note that the 'out' object is at risk of becoming dirty. Changes made to 'out' inside the
+ * closure of the '#executeXXX' method will be persisted and correctly passed to downstream methods,
+ * while changes made to 'out' outside the closure will become dirty, in which case the persistent
+ * data will not be consistent with the in-memory version.</li>
+ * <li>The better option is to use methods like '#executeWithFinalXXX' or '#executeWithNonFinalXXX',
+ * which minimize the side effects of the problem above</li>
  * </ul>
+ * 
  * @author Jay Meng
  */
 public class StfTxnOps {
@@ -129,7 +131,8 @@ public class StfTxnOps {
 
   // High side-effect apis - - - - - - - - - - - - - - - - -->
 
-  // TODO mj:give a check on out shouldn't be null('callee has param' is a good start),null leads unknown
+  // TODO mj:give a check on out shouldn't be null('callee has param' is a good start),null leads
+  // unknown
   // error,currently
   public <T> T execute(T out, Function<StfTransactionStatus, T> action) {
     StackTraceElement[] callStacks = Thread.currentThread().getStackTrace();

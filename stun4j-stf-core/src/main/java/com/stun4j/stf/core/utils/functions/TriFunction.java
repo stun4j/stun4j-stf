@@ -20,6 +20,7 @@ package com.stun4j.stf.core.utils.functions;
 public interface TriFunction<T, U, V, R> {
   /**
    * Performs this operation on the given arguments.
+   * 
    * @param t the first input argument
    * @param u the second input argument
    * @param v the third input argument

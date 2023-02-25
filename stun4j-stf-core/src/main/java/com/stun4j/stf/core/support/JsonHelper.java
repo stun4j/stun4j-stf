@@ -62,7 +62,8 @@ public abstract class JsonHelper {
   }
 
   public static <T> T fromJson(Serializer serializer, String json, Class<T> type) {
-    if (json == null) return null;
+    if (json == null)
+      return null;
     return serializer.deserialize(json.getBytes(StandardCharsets.UTF_8), type);
   }
 }

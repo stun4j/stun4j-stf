@@ -30,7 +30,8 @@ public class JobLoader extends BaseJobLoader {
   @Override
   protected Stream<Stf> loadJobs(StfMetaGroup metaGrp, int loadSize) {
     int pageNo = StfClusterMembers.determineBlockToTakeOver();
-    // TODO mj:Downgrade solution,consider the underlying FJP: StfInternalExecutors#newWorkerOfJobLoading
+    // TODO mj:Downgrade solution,consider the underlying FJP:
+    // StfInternalExecutors#newWorkerOfJobLoading
     switch (metaGrp) {
       case CORE:
         return scanner.scanTimeoutCoreJobs(loadSize, pageNo);

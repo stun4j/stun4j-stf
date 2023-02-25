@@ -32,8 +32,9 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Miscellaneous {@code java.lang.Class} utility methods.
- * Mainly for internal use within the framework.
+ * Miscellaneous {@code java.lang.Class} utility methods. Mainly for internal use within the
+ * framework.
+ * 
  * @author Juergen Hoeller
  * @author Keith Donald
  * @author Rob Harrop
@@ -72,20 +73,20 @@ public abstract class ClassUtils {
   public static final String CLASS_FILE_SUFFIX = ".class";
 
   /**
-   * Map with primitive wrapper type as key and corresponding primitive
-   * type as value, for example: Integer.class -> int.class.
+   * Map with primitive wrapper type as key and corresponding primitive type as value, for example:
+   * Integer.class -> int.class.
    */
   private static final Map<Class<?>, Class<?>> primitiveWrapperTypeMap = new IdentityHashMap<>(9);
 
   /**
-   * Map with primitive type name as key and corresponding primitive
-   * type as value, for example: "int" -> "int.class".
+   * Map with primitive type name as key and corresponding primitive type as value, for example: "int"
+   * -> "int.class".
    */
   private static final Map<String, Class<?>> primitiveTypeNameMap = new HashMap<>(32);
 
   /**
-   * Map with common Java language class name as key and corresponding Class as value.
-   * Primarily for efficient deserialization of remote invocations.
+   * Map with common Java language class name as key and corresponding Class as value. Primarily for
+   * efficient deserialization of remote invocations.
    */
   private static final Map<String, Class<?>> commonClassCache = new HashMap<>(64);
 
@@ -132,16 +133,17 @@ public abstract class ClassUtils {
   }
 
   /**
-   * Replacement for {@code Class.forName()} that also returns Class instances
-   * for primitives (e.g. "int") and array class names (e.g. "String[]").
-   * Furthermore, it is also capable of resolving nested class names in Java source
-   * style (e.g. "java.lang.Thread.State" instead of "java.lang.Thread$State").
-   * @param name the name of the Class
-   * @param classLoader the class loader to use
-   *        (may be {@code null}, which indicates the default class loader)
+   * Replacement for {@code Class.forName()} that also returns Class instances for primitives (e.g.
+   * "int") and array class names (e.g. "String[]"). Furthermore, it is also capable of resolving
+   * nested class names in Java source style (e.g. "java.lang.Thread.State" instead of
+   * "java.lang.Thread$State").
+   * 
+   * @param name        the name of the Class
+   * @param classLoader the class loader to use (may be {@code null}, which indicates the default
+   *                    class loader)
    * @return a class instance for the supplied name
    * @throws ClassNotFoundException if the class was not found
-   * @throws LinkageError if the class file could not be loaded
+   * @throws LinkageError           if the class file could not be loaded
    * @see Class#forName(String, boolean, ClassLoader)
    */
   public static Class<?> forName(String name, ClassLoader classLoader)// @Nullable ClassLoader
@@ -200,22 +202,23 @@ public abstract class ClassUtils {
   }
 
   /**
-   * Resolve the given class name into a Class instance. Supports
-   * primitives (like "int") and array class names (like "String[]").
+   * Resolve the given class name into a Class instance. Supports primitives (like "int") and array
+   * class names (like "String[]").
    * <p>
-   * This is effectively equivalent to the {@code forName}
-   * method with the same arguments, with the only difference being
-   * the exceptions thrown in case of class loading failure.
-   * @param className the name of the Class
-   * @param classLoader the class loader to use
-   *        (may be {@code null}, which indicates the default class loader)
+   * This is effectively equivalent to the {@code forName} method with the same arguments, with the
+   * only difference being the exceptions thrown in case of class loading failure.
+   * 
+   * @param className   the name of the Class
+   * @param classLoader the class loader to use (may be {@code null}, which indicates the default
+   *                    class loader)
    * @return a class instance for the supplied name
-   * @throws IllegalArgumentException if the class name was not resolvable
-   *         (that is, the class could not be found or the class file could not be loaded)
-   * @throws IllegalStateException if the corresponding class is resolvable but
-   *         there was a readability mismatch in the inheritance hierarchy of the class
-   *         (typically a missing dependency declaration in a Jigsaw module definition
-   *         for a superclass or interface implemented by the class to be loaded here)
+   * @throws IllegalArgumentException if the class name was not resolvable (that is, the class could
+   *                                  not be found or the class file could not be loaded)
+   * @throws IllegalStateException    if the corresponding class is resolvable but there was a
+   *                                  readability mismatch in the inheritance hierarchy of the class
+   *                                  (typically a missing dependency declaration in a Jigsaw module
+   *                                  definition for a superclass or interface implemented by the
+   *                                  class to be loaded here)
    * @see #forName(String, ClassLoader)
    */
   public static Class<?> resolveClassName(String className, ClassLoader classLoader)// @Nullable
@@ -234,13 +237,12 @@ public abstract class ClassUtils {
   }
 
   /**
-   * Check if the given class represents a primitive (i.e. boolean, byte,
-   * char, short, int, long, float, or double), {@code void}, or a wrapper for
-   * those types (i.e. Boolean, Byte, Character, Short, Integer, Long, Float,
-   * Double, or Void).
+   * Check if the given class represents a primitive (i.e. boolean, byte, char, short, int, long,
+   * float, or double), {@code void}, or a wrapper for those types (i.e. Boolean, Byte, Character,
+   * Short, Integer, Long, Float, Double, or Void).
+   * 
    * @param clazz the class to check
-   * @return {@code true} if the given class represents a primitive, void, or
-   *         a wrapper class
+   * @return {@code true} if the given class represents a primitive, void, or a wrapper class
    */
   public static boolean isPrimitiveOrWrapper(Class<?> clazz) {
     Asserts.notNull(clazz, "Class must not be null");
@@ -248,9 +250,9 @@ public abstract class ClassUtils {
   }
 
   /**
-   * Check if the given class represents a primitive wrapper,
-   * i.e. Boolean, Byte, Character, Short, Integer, Long, Float, Double, or
-   * Void.
+   * Check if the given class represents a primitive wrapper, i.e. Boolean, Byte, Character, Short,
+   * Integer, Long, Float, Double, or Void.
+   * 
    * @param clazz the class to check
    * @return whether the given class is a primitive wrapper class
    */
@@ -260,15 +262,16 @@ public abstract class ClassUtils {
   }
 
   /**
-   * Resolve the given class name as primitive class, if appropriate,
-   * according to the JVM's naming rules for primitive classes.
+   * Resolve the given class name as primitive class, if appropriate, according to the JVM's naming
+   * rules for primitive classes.
    * <p>
-   * Also supports the JVM's internal class names for primitive arrays.
-   * Does <i>not</i> support the "[]" suffix notation for primitive arrays;
-   * this is only supported by {@link #forName(String, ClassLoader)}.
+   * Also supports the JVM's internal class names for primitive arrays. Does <i>not</i> support the
+   * "[]" suffix notation for primitive arrays; this is only supported by
+   * {@link #forName(String, ClassLoader)}.
+   * 
    * @param name the name of the potentially primitive class
-   * @return the primitive class, or {@code null} if the name does not denote
-   *         a primitive class or primitive array class
+   * @return the primitive class, or {@code null} if the name does not denote a primitive class or
+   *         primitive array class
    */
   // @Nullable
   public static Class<?> resolvePrimitiveClassName(String name) {// @Nullable
@@ -283,18 +286,19 @@ public abstract class ClassUtils {
   }
 
   /**
-   * Determine whether the {@link Class} identified by the supplied name is present
-   * and can be loaded. Will return {@code false} if either the class or
-   * one of its dependencies is not present or cannot be loaded.
-   * @param className the name of the class to check
-   * @param classLoader the class loader to use
-   *        (may be {@code null} which indicates the default class loader)
-   * @return whether the specified class is present (including all of its
-   *         superclasses and interfaces)
-   * @throws IllegalStateException if the corresponding class is resolvable but
-   *         there was a readability mismatch in the inheritance hierarchy of the class
-   *         (typically a missing dependency declaration in a Jigsaw module definition
-   *         for a superclass or interface implemented by the class to be checked here)
+   * Determine whether the {@link Class} identified by the supplied name is present and can be loaded.
+   * Will return {@code false} if either the class or one of its dependencies is not present or cannot
+   * be loaded.
+   * 
+   * @param className   the name of the class to check
+   * @param classLoader the class loader to use (may be {@code null} which indicates the default class
+   *                    loader)
+   * @return whether the specified class is present (including all of its superclasses and interfaces)
+   * @throws IllegalStateException if the corresponding class is resolvable but there was a
+   *                               readability mismatch in the inheritance hierarchy of the class
+   *                               (typically a missing dependency declaration in a Jigsaw module
+   *                               definition for a superclass or interface implemented by the class
+   *                               to be checked here)
    */
   public static boolean isPresent(String className, ClassLoader classLoader) {// @Nullable ClassLoader
     try {
@@ -310,17 +314,16 @@ public abstract class ClassUtils {
   }
 
   /**
-   * Return the default ClassLoader to use: typically the thread context
-   * ClassLoader, if available; the ClassLoader that loaded the ClassUtils
-   * class will be used as fallback.
+   * Return the default ClassLoader to use: typically the thread context ClassLoader, if available;
+   * the ClassLoader that loaded the ClassUtils class will be used as fallback.
    * <p>
-   * Call this method if you intend to use the thread context ClassLoader
-   * in a scenario where you clearly prefer a non-null ClassLoader reference:
-   * for example, for class path resource loading (but not necessarily for
-   * {@code Class.forName}, which accepts a {@code null} ClassLoader
+   * Call this method if you intend to use the thread context ClassLoader in a scenario where you
+   * clearly prefer a non-null ClassLoader reference: for example, for class path resource loading
+   * (but not necessarily for {@code Class.forName}, which accepts a {@code null} ClassLoader
    * reference as well).
-   * @return the default ClassLoader (only {@code null} if even the system
-   *         ClassLoader isn't accessible)
+   * 
+   * @return the default ClassLoader (only {@code null} if even the system ClassLoader isn't
+   *         accessible)
    * @see Thread#getContextClassLoader()
    * @see ClassLoader#getSystemClassLoader()
    */

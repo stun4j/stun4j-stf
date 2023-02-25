@@ -26,6 +26,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Actor mailbox implementation
+ * 
  * @author Jay Meng
  */
 public class Mailbox<T> {
@@ -41,7 +42,8 @@ public class Mailbox<T> {
   private int availableCnt;
 
   Mailbox<T> deliver(T msg) throws InterruptedException {
-    if (msg == null) return this;
+    if (msg == null)
+      return this;
     lock.lockInterruptibly();
     try {
       while (availableCnt == fixedLength) {

@@ -26,6 +26,7 @@ import com.stun4j.stf.core.utils.CollectionUtils;
 
 /**
  * Do strong type checking on stf-action-methods
+ * 
  * @author Jay Meng
  */
 public class ActionMethodChecker implements Checker<String> {

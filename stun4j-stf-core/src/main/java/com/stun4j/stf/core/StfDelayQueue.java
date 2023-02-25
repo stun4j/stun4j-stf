@@ -35,8 +35,9 @@ import org.slf4j.LoggerFactory;
 import com.stun4j.stf.core.build.ActionMethodChecker;
 
 /**
- * This is a convenience class that simply encapsulates the internal capabilities of Stf, hence the so-called DelayQueue
- * functionality.
+ * This is a convenience class that simply encapsulates the internal capabilities of Stf, hence the
+ * so-called DelayQueue functionality.
+ * 
  * @author Jay Meng
  */
 public final class StfDelayQueue {

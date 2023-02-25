@@ -29,7 +29,9 @@ import org.apache.commons.lang3.tuple.Pair;
 import com.stun4j.stf.core.support.CompressAlgorithm;
 
 /**
- * A 'call' carries enough meta-data of an action/cmd,which drives state move-forward,could be a caller or a callee
+ * A 'call' carries enough meta-data of an action/cmd,which drives state move-forward,could be a
+ * caller or a callee
+ * 
  * @author Jay Meng
  */
 public class StfCall {

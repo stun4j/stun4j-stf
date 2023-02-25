@@ -38,8 +38,9 @@ import com.stun4j.stf.core.support.banner.Banner.Mode;
 import com.stun4j.stf.core.support.banner.Stun4jStfBannerPrinter;
 
 /**
- * The core mediator with dozens of convenient static methods,which is responsible for interacting with core components
- * such as stf-registry, stf-core-ops, threadlocal-memo and so on.
+ * The core mediator with dozens of convenient static methods,which is responsible for interacting
+ * with core components such as stf-registry, stf-core-ops, threadlocal-memo and so on.
+ * 
  * @author Jay Meng
  */
 public final class StfContext {
@@ -104,6 +105,7 @@ public final class StfContext {
   static String getBizObjId(Class<?> bizClass) {
     return (String)_bizReg.getObj(bizClass);
   }
+
   static void markLastCommitted() {
     LAST_COMMITTED.set(true);
   }

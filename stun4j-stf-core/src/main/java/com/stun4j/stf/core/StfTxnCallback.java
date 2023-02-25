@@ -38,12 +38,14 @@ import com.stun4j.stf.core.utils.Exceptions;
 /**
  * Stf's core transaction enhancement, which delegates to Spring's transaction operation
  * <ul>
- * <li>The 'out' parameter is an object that will be the outgoing parameter of the current method and the incoming
- * parameter of the downstream method.This is the typical, recommended way to make Stf work well</li>
- * <li>Be care of the case where you passing 'out' as {@code null} and it is generally accepted that the downstream
- * method does not need an input. In this case, do not pass {@code null} and instead use '#execute' or
- * '#executeWithoutResult' methods that have no 'out' parameter</li>
+ * <li>The 'out' parameter is an object that will be the outgoing parameter of the current method
+ * and the incoming parameter of the downstream method.This is the typical, recommended way to make
+ * Stf work well</li>
+ * <li>Be care of the case where you passing 'out' as {@code null} and it is generally accepted that
+ * the downstream method does not need an input. In this case, do not pass {@code null} and instead
+ * use '#execute' or '#executeWithoutResult' methods that have no 'out' parameter</li>
  * </ul>
+ * 
  * @author Jay Meng
  */
 @SuppressWarnings("deprecation")
@@ -91,7 +93,8 @@ public class StfTxnCallback<T> implements InvocationHandler {
           // This way to support 'nested' transaction(Can be effectively distinguished from single
           // Transaction).Also this is the part of the 'Consistency first' strategy->
           // if (TransactionResourceManager.getResourceMap().size() > 1) {
-          // // This approach gives not the strictest transactional guarantees(in Stf manner) but higher performance.
+          // // This approach gives not the strictest transactional guarantees(in Stf manner) but higher
+          // performance.
           // doCommitLastDone(true);
           // }
           // <-
@@ -110,7 +113,8 @@ public class StfTxnCallback<T> implements InvocationHandler {
             }
           }
 
-          // Support 'nested' transaction,meanwhile,try continue processing last-committed transaction,for last stfs to
+          // Support 'nested' transaction,meanwhile,try continue processing last-committed transaction,for
+          // last stfs to
           // be confirmed if any
           String callerObjId = null;
           try {
@@ -148,9 +152,9 @@ public class StfTxnCallback<T> implements InvocationHandler {
           }
 
           /*
-           * Assuming this is the last time call StfContext#laStfId,so this is the right time to remove TTL,for the
-           * purpose preventing the resource leak.
-           * Store 'laStfId' here,that's the way to support normal single transaction(not the nested transaction).
+           * Assuming this is the last time call StfContext#laStfId,so this is the right time to remove
+           * TTL,for the purpose preventing the resource leak. Store 'laStfId' here,that's the way to support
+           * normal single transaction(not the nested transaction).
            */// ->
           laStfId = StfContext.laStfId();
           StfContext.removeTTL();

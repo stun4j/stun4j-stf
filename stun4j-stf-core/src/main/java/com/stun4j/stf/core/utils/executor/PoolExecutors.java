@@ -36,6 +36,7 @@ import com.stun4j.stf.core.utils.ThreadPoolUtils;
 
 /**
  * Help class to create (bounded)thread pools uniformly
+ * 
  * @author Jay Meng
  */
 public final class PoolExecutors {
@@ -50,8 +51,7 @@ public final class PoolExecutors {
   }
 
   public static ExecutorService defaultIoPrefer(String prefix) {
-    return newIoPrefer(new LinkedBlockingQueue<>(1024), NamedThreadFactory.of(prefix), 60, true,
-        BACK_PRESSURE_POLICY);
+    return newIoPrefer(new LinkedBlockingQueue<>(1024), NamedThreadFactory.of(prefix), 60, true, BACK_PRESSURE_POLICY);
   }
 
   public static ExecutorService defaultWorkStealingPool(String prefix, boolean daemon) {
@@ -109,8 +109,8 @@ public final class PoolExecutors {
   }
 
   /**
-   * A handler for rejected tasks that silently discards the
-   * rejected task.
+   * A handler for rejected tasks that silently discards the rejected task.
+   * 
    * @author Doug Lea
    * @author Jay Meng
    *         <p>
@@ -125,6 +125,7 @@ public final class PoolExecutors {
 
     /**
      * Does nothing, which has the effect of discarding task r.
+     * 
      * @param r the runnable task requested to be executed
      * @param e the executor attempting to execute this task
      */
@@ -135,9 +136,9 @@ public final class PoolExecutors {
   }
 
   /**
-   * A handler for rejected tasks that discards the oldest unhandled
-   * request and then retries {@code execute}, unless the executor
-   * is shut down, in which case the task is discarded.
+   * A handler for rejected tasks that discards the oldest unhandled request and then retries
+   * {@code execute}, unless the executor is shut down, in which case the task is discarded.
+   * 
    * @author Doug Lea
    * @author Jay Meng
    *         <ul>
@@ -153,10 +154,10 @@ public final class PoolExecutors {
     }
 
     /**
-     * Obtains and ignores the next task that the executor
-     * would otherwise execute, if one is immediately available,
-     * and then retries execution of task r, unless the executor
-     * is shut down, in which case task r is instead discarded.
+     * Obtains and ignores the next task that the executor would otherwise execute, if one is
+     * immediately available, and then retries execution of task r, unless the executor is shut down, in
+     * which case task r is instead discarded.
+     * 
      * @param r the runnable task requested to be executed
      * @param e the executor attempting to execute this task
      */
@@ -166,7 +167,8 @@ public final class PoolExecutors {
 
         logOnSilentDrop(e);
 
-        // mj:I think this is a bug, consider using a synchronous queue without any queued elements, which triggers
+        // mj:I think this is a bug, consider using a synchronous queue without any queued elements, which
+        // triggers
         // stack overflow, so simply add codes below to avoid it->
         if (dropped == null) {
           return;

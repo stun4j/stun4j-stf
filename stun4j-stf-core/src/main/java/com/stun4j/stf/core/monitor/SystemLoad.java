@@ -77,7 +77,8 @@ public final class SystemLoad extends BaseLifecycle {
         Utils.sleepSeconds(1);
 
         double load = os.getSystemLoadAverage();
-        if (load < 0) continue;
+        if (load < 0)
+          continue;
         lastWindowSecondsTotal += load;
         if (++elapsedSeconds == TIME_WINDOW_SECONDS) {
           lastWindowSecondsAvg = lastWindowSecondsTotal / TIME_WINDOW_SECONDS;

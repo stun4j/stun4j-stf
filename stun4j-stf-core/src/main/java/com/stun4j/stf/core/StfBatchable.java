@@ -19,6 +19,7 @@ import java.util.List;
 
 /**
  * The abstraction of Stf's batch capabilities.
+ * 
  * @author Jay Meng
  */
 public interface StfBatchable {

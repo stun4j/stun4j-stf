@@ -44,6 +44,7 @@ import com.stun4j.stf.core.support.event.StfEventBus;
 
 /**
  * The jdbc implementation of {@link BaseStfCore}
+ * 
  * @author Jay Meng
  */
 public class StfCoreJdbc extends BaseStfCore implements JdbcAware {

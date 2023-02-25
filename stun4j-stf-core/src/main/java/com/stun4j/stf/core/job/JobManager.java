@@ -45,11 +45,12 @@ import com.stun4j.stf.core.utils.Utils;
  * The core coordinator of the stf-job microkernel
  * <ul>
  * <li>In cluster deployment, only one active running instance is maintained for each stf-job</li>
- * <li>Try the best to prevent resource competition,OOM and other kinda problems,even when we have a lot of jobs to
- * handle</li>
+ * <li>Try the best to prevent resource competition,OOM and other kinda problems,even when we have a
+ * lot of jobs to handle</li>
  * <li>An intelligent, adaptive job handling mechanism is built-in</li>
  * <li>Graceful shutdown is supported</li>
  * </ul>
+ * 
  * @author Jay Meng
  */
 @SuppressWarnings("restriction")

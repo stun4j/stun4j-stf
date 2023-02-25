@@ -26,6 +26,7 @@ import com.stun4j.stf.core.support.BaseVo;
 
 /**
  * The abstraction of Stf's action chain
+ * 
  * @author Jay Meng
  */
 public class Chain<ID> extends BaseVo {
@@ -78,8 +79,9 @@ public class Chain<ID> extends BaseVo {
   }
 
   /**
-   * A node representation in this chain, each node may have set of incoming-nodes and outgoing-nodes, a node is
-   * represented by an unique id
+   * A node representation in this chain, each node may have set of incoming-nodes and outgoing-nodes,
+   * a node is represented by an unique id
+   * 
    * @author Jay Meng
    */
   static class Node<ID> extends BaseEntity<ID> {

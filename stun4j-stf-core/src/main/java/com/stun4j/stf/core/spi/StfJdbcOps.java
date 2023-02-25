@@ -24,6 +24,7 @@ import javax.sql.DataSource;
 
 /**
  * The SPI interface connects Stf to user-side jdbc operations
+ * 
  * @author Jay Meng
  */
 public interface StfJdbcOps {
@@ -40,8 +41,8 @@ public interface StfJdbcOps {
   interface StfJdbcRowMapper<T> {
     T mapRow(ResultSet rs, int rowNum) throws SQLException;
   }
-  
+
   DataSource getDataSource(Enum<?> dsKey);
-  
+
   Stream<Enum<?>> getAllDataSourceKeys();
 }

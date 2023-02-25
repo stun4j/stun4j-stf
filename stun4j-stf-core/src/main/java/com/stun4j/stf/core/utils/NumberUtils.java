@@ -21,13 +21,20 @@ import java.math.BigInteger;
 public abstract class NumberUtils {
 
   public static boolean isCreatable(final Class<?> targetClass) {
-    if (Byte.class == targetClass || byte.class == targetClass) return true;
-    if (Short.class == targetClass || short.class == targetClass) return true;
-    if (Integer.class == targetClass || int.class == targetClass) return true;
-    if (Long.class == targetClass || long.class == targetClass) return true;
-    if (Float.class == targetClass || float.class == targetClass) return true;
-    if (Double.class == targetClass || double.class == targetClass) return true;
-    if (BigInteger.class == targetClass) return true;
+    if (Byte.class == targetClass || byte.class == targetClass)
+      return true;
+    if (Short.class == targetClass || short.class == targetClass)
+      return true;
+    if (Integer.class == targetClass || int.class == targetClass)
+      return true;
+    if (Long.class == targetClass || long.class == targetClass)
+      return true;
+    if (Float.class == targetClass || float.class == targetClass)
+      return true;
+    if (Double.class == targetClass || double.class == targetClass)
+      return true;
+    if (BigInteger.class == targetClass)
+      return true;
     if (BigDecimal.class == targetClass || Number.class == targetClass) {
       return true;
     }
@@ -37,18 +44,19 @@ public abstract class NumberUtils {
 
   // all the following code comes from spring 5.3.16
   /**
-   * Parse the given {@code text} into a {@link Number} instance of the given
-   * target class, using the corresponding {@code decode} / {@code valueOf} method.
+   * Parse the given {@code text} into a {@link Number} instance of the given target class, using the
+   * corresponding {@code decode} / {@code valueOf} method.
    * <p>
-   * Trims all whitespace (leading, trailing, and in between characters) from
-   * the input {@code String} before attempting to parse the number.
+   * Trims all whitespace (leading, trailing, and in between characters) from the input {@code String}
+   * before attempting to parse the number.
    * <p>
    * Supports numbers in hex format (with leading "0x", "0X", or "#") as well.
-   * @param text the text to convert
+   * 
+   * @param text        the text to convert
    * @param targetClass the target class to parse into
    * @return the parsed number
-   * @throws IllegalArgumentException if the target class is not supported
-   *         (i.e. not a standard Number subclass as included in the JDK)
+   * @throws IllegalArgumentException if the target class is not supported (i.e. not a standard Number
+   *                                  subclass as included in the JDK)
    * @see Byte#decode
    * @see Short#decode
    * @see Integer#decode
@@ -87,9 +95,8 @@ public abstract class NumberUtils {
   }
 
   /**
-   * Determine whether the given {@code value} String indicates a hex number,
-   * i.e. needs to be passed into {@code Integer.decode} instead of
-   * {@code Integer.valueOf}, etc.
+   * Determine whether the given {@code value} String indicates a hex number, i.e. needs to be passed
+   * into {@code Integer.decode} instead of {@code Integer.valueOf}, etc.
    */
   private static boolean isHexNumber(String value) {
     int index = (value.startsWith("-") ? 1 : 0);
@@ -100,6 +107,7 @@ public abstract class NumberUtils {
    * Decode a {@link java.math.BigInteger} from the supplied {@link String} value.
    * <p>
    * Supports decimal, hex, and octal notation.
+   * 
    * @see BigInteger#BigInteger(String, int)
    */
   private static BigInteger decodeBigInteger(String value) {

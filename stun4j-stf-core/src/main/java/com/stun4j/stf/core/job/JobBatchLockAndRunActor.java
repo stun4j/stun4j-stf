@@ -78,7 +78,8 @@ class JobBatchLockAndRunActor extends BaseActor<StfReceivedEvent> {
   private int determineHandleBatchSize() {
     // int availableThreadNum = runners.getAvailablePoolSize(jobGrp);
     // int enlargedThreadNum = availableThreadNum * batchMultiplyingFactor;
-    // int loop = enlargedThreadNum % batchSize == 0 ? enlargedThreadNum / batchSize : enlargedThreadNum / batchSize +
+    // int loop = enlargedThreadNum % batchSize == 0 ? enlargedThreadNum / batchSize : enlargedThreadNum
+    // / batchSize +
     // 1;
     // if (LOG.isDebugEnabled()) {
     // LOG.debug("[takeJobsAndRun] Loop:{} [availableThread={}, normalBatchSize={}, jobGrp={}]", loop,

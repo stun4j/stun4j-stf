@@ -24,6 +24,7 @@ import com.stun4j.stf.core.support.ansi.AnsiStyle;
 
 /**
  * Default Banner implementation which writes the 'Stf' banner.
+ * 
  * @author Phillip Webb
  * @author Jay Meng
  *         <p>

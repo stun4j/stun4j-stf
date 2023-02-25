@@ -17,6 +17,7 @@ package com.stun4j.stf.core.build;
 
 /**
  * To validate the chain
+ * 
  * @author Jay Meng
  */
 public interface Checker<N> {

@@ -85,7 +85,8 @@ public final class JvmCpu extends BaseLifecycle {
       return Pair.of(0f, 0f);
     }
     long cpuTimeDelta = processCpuTime - lastProcessCpuTime;
-    // double cpuRate = cpuTimeDelta * 100.0 / 1000000 / processorCnt / upTimeDelta;//another way saying the
+    // double cpuRate = cpuTimeDelta * 100.0 / 1000000 / processorCnt / upTimeDelta;//another way saying
+    // the
     // cpu-rate(multi-core)
     float cpuRate = cpuTimeDelta / (upTimeDelta * 10000f);
 

@@ -24,6 +24,7 @@ import com.stun4j.stf.core.support.event.StfDoneEvent;
 
 /**
  * An ad-hoc actor used to batch commit the results of stf-jobs.
+ * 
  * @author Jay Meng
  */
 class JobMarkActor extends BaseJobBatchMarkActor {

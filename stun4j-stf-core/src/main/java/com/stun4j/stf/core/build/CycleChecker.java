@@ -27,6 +27,7 @@ import com.stun4j.stf.core.support.NullValue;
 
 /**
  * Do action-chain cycle check
+ * 
  * @author Jay Meng
  */
 public class CycleChecker<ID> implements Checker<ID> {

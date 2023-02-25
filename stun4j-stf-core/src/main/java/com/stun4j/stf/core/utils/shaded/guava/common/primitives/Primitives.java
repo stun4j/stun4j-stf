@@ -25,6 +25,7 @@ import com.stun4j.stf.core.utils.Asserts;
 /**
  * Contains static utility methods pertaining to primitive types and their corresponding wrapper
  * types.
+ * 
  * @author Kevin Bourrillion
  * @author Jay Meng
  *         <p>
@@ -83,8 +84,9 @@ public final class Primitives {
 
   /**
    * Returns an immutable set of all nine primitive types (including {@code void}). Note that a
-   * simpler way to test whether a {@code Class} instance is a member of this set is to call {@link
-   * Class#isPrimitive}.
+   * simpler way to test whether a {@code Class} instance is a member of this set is to call
+   * {@link Class#isPrimitive}.
+   * 
    * @since 3.0
    */
   public static Set<Class<?>> allPrimitiveTypes() {
@@ -93,6 +95,7 @@ public final class Primitives {
 
   /**
    * Returns an immutable set of all nine primitive-wrapper types (including {@link Void}).
+   * 
    * @since 3.0
    */
   public static Set<Class<?>> allWrapperTypes() {
@@ -100,8 +103,9 @@ public final class Primitives {
   }
 
   /**
-   * Returns {@code true} if {@code type} is one of the nine primitive-wrapper types, such as {@link
-   * Integer}.
+   * Returns {@code true} if {@code type} is one of the nine primitive-wrapper types, such as
+   * {@link Integer}.
+   * 
    * @see Class#isPrimitive
    */
   public static boolean isWrapperType(Class<?> type) {

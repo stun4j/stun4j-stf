@@ -28,8 +28,9 @@ import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 /**
- * Enhance the {@link java.util.concurrent.ExecutorService} to gain the ability to track lineage relationships between
- * threads
+ * Enhance the {@link java.util.concurrent.ExecutorService} to gain the ability to track lineage
+ * relationships between threads
+ * 
  * @author Jay Meng
  */
 public class StfExecutorService implements ExecutorService {

@@ -57,7 +57,9 @@ import com.stun4j.stf.core.utils.ClassUtils;
 import com.stun4j.stf.core.utils.shaded.org.springframework.core.KotlinDetector;
 
 /**
- * Generic Jackson 2-based {@link Serializer} that maps {@link Object objects} to JSON using dynamic typing.
+ * Generic Jackson 2-based {@link Serializer} that maps {@link Object objects} to JSON using dynamic
+ * typing.
+ * 
  * @author Christoph Strobl
  * @author Mark Paluch
  * @author Mao Shuai
@@ -65,8 +67,8 @@ import com.stun4j.stf.core.utils.shaded.org.springframework.core.KotlinDetector;
  *         <p>
  *         From spring-data-redis:2.7.8,changes listed below
  *         <ul>
- *         <li>Disable all Spring dependency, disable @Nullable, use Asserts#notNull/shaded ClassUtils/commons-lang3
- *         instead</li>
+ *         <li>Disable all Spring dependency, disable @Nullable, use Asserts#notNull/shaded
+ *         ClassUtils/commons-lang3 instead</li>
  *         <li>Use Serializer instead of RedisSerializer</li>
  *         <li>Change {@code serialVersionUID}</li>
  *         <li>Enhance Serialization/Deserialization Feature</li>
@@ -77,18 +79,22 @@ public class GenericJackson2JsonSerializer implements Serializer {
   private final ObjectMapper mapper;
 
   /**
-   * Creates {@link GenericJackson2JsonSerializer} and configures {@link ObjectMapper} for default typing.
+   * Creates {@link GenericJackson2JsonSerializer} and configures {@link ObjectMapper} for default
+   * typing.
    */
   public GenericJackson2JsonSerializer() {
     this((String)null);
   }
 
   /**
-   * Creates {@link GenericJackson2JsonSerializer} and configures {@link ObjectMapper} for default typing using the
-   * given {@literal name}. In case of an {@literal empty} or {@literal null} String the default
-   * {@link JsonTypeInfo.Id#CLASS} will be used.
-   * @param classPropertyTypeName Name of the JSON property holding type information. Can be {@literal null}.
-   * @see ObjectMapper#activateDefaultTypingAsProperty(PolymorphicTypeValidator, DefaultTyping, String)
+   * Creates {@link GenericJackson2JsonSerializer} and configures {@link ObjectMapper} for default
+   * typing using the given {@literal name}. In case of an {@literal empty} or {@literal null} String
+   * the default {@link JsonTypeInfo.Id#CLASS} will be used.
+   * 
+   * @param classPropertyTypeName Name of the JSON property holding type information. Can be
+   *                              {@literal null}.
+   * @see ObjectMapper#activateDefaultTypingAsProperty(PolymorphicTypeValidator, DefaultTyping,
+   *      String)
    * @see ObjectMapper#activateDefaultTyping(PolymorphicTypeValidator, DefaultTyping, As)
    */
   public GenericJackson2JsonSerializer(String classPropertyTypeName) {
@@ -106,16 +112,19 @@ public class GenericJackson2JsonSerializer implements Serializer {
         .build());
     //@formatter:on
 
-    // simply setting {@code mapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)} does not help here since we need
+    // simply setting {@code mapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)} does not help
+    // here since we need
     // the type hint embedded for deserialization using the default typing feature.
     registerNullValueSerializer(mapper, classPropertyTypeName);
 
     // mj:upgrade from 2.6.4:modify->
     // if (StringUtils.isNotBlank(classPropertyTypeName)) {
-    // mapper.activateDefaultTypingAsProperty(mapper.getPolymorphicTypeValidator(), DefaultTyping.NON_FINAL,
+    // mapper.activateDefaultTypingAsProperty(mapper.getPolymorphicTypeValidator(),
+    // DefaultTyping.NON_FINAL,
     // classPropertyTypeName);
     // } else {
-    // mapper.activateDefaultTyping(mapper.getPolymorphicTypeValidator(), DefaultTyping.NON_FINAL, As.PROPERTY);
+    // mapper.activateDefaultTyping(mapper.getPolymorphicTypeValidator(), DefaultTyping.NON_FINAL,
+    // As.PROPERTY);
     // }
     StdTypeResolverBuilder typer = new TypeResolverBuilder(DefaultTyping.EVERYTHING,
         mapper.getPolymorphicTypeValidator());
@@ -134,9 +143,10 @@ public class GenericJackson2JsonSerializer implements Serializer {
   }
 
   /**
-   * Setting a custom-configured {@link ObjectMapper} is one way to take further control of the JSON serialization
-   * process. For example, an extended {@link SerializerFactory} can be configured that provides custom serializers for
-   * specific types.
+   * Setting a custom-configured {@link ObjectMapper} is one way to take further control of the JSON
+   * serialization process. For example, an extended {@link SerializerFactory} can be configured that
+   * provides custom serializers for specific types.
+   * 
    * @param mapper can't be {@literal null}.
    */
   public GenericJackson2JsonSerializer(ObjectMapper mapper) {
@@ -147,12 +157,15 @@ public class GenericJackson2JsonSerializer implements Serializer {
    * Register {@link NullValueSerializer} in the given {@link ObjectMapper} with an optional
    * {@code classPropertyTypeName}. This method should be called by code that customizes
    * {@link GenericJackson2JsonSerializer} by providing an external {@link ObjectMapper}.
-   * @param objectMapper the object mapper to customize.
-   * @param classPropertyTypeName name of the type property. Defaults to {@code @class} if {@literal null}/empty.
+   * 
+   * @param objectMapper          the object mapper to customize.
+   * @param classPropertyTypeName name of the type property. Defaults to {@code @class} if
+   *                              {@literal null}/empty.
    * @since 2.2
    */
   public static void registerNullValueSerializer(ObjectMapper objectMapper, String classPropertyTypeName) {
-    // simply setting {@code mapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)} does not help here since we need
+    // simply setting {@code mapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)} does not help
+    // here since we need
     // the type hint embedded for deserialization using the default typing feature.
     objectMapper.registerModule(new SimpleModule().addSerializer(new NullValueSerializer(classPropertyTypeName)));
     // TODO mj:check FAIL_ON_EMPTY_BEANS&NullValueSerializer
@@ -160,6 +173,7 @@ public class GenericJackson2JsonSerializer implements Serializer {
 
   /*
    * (non-Javadoc)
+   * 
    * @see org.springframework.data.redis.serializer.RedisSerializer#serialize(java.lang.Object)
    */
   @Override
@@ -177,6 +191,7 @@ public class GenericJackson2JsonSerializer implements Serializer {
 
   /*
    * (non-Javadoc)
+   * 
    * @see org.springframework.data.redis.serializer.RedisSerializer#deserialize(byte[])
    */
   @Override
@@ -186,7 +201,7 @@ public class GenericJackson2JsonSerializer implements Serializer {
 
   /**
    * @param source can be {@literal null}.
-   * @param type can't be {@literal null}.
+   * @param type   can't be {@literal null}.
    * @return {@literal null} for empty source.
    * @throws SerializationException
    */
@@ -206,8 +221,9 @@ public class GenericJackson2JsonSerializer implements Serializer {
   }
 
   /**
-   * {@link StdSerializer} adding class information required by default typing. This allows de-/serialization of
-   * {@link NullValue}.
+   * {@link StdSerializer} adding class information required by default typing. This allows
+   * de-/serialization of {@link NullValue}.
+   * 
    * @author Christoph Strobl
    * @since 1.8
    */
@@ -225,6 +241,7 @@ public class GenericJackson2JsonSerializer implements Serializer {
 
     /*
      * (non-Javadoc)
+     * 
      * @see com.fasterxml.jackson.databind.ser.std.StdSerializer#serialize(java.lang.Object,
      * com.fasterxml.jackson.core.JsonGenerator, com.fasterxml.jackson.databind.SerializerProvider)
      */
@@ -246,9 +263,10 @@ public class GenericJackson2JsonSerializer implements Serializer {
 
   // mj:upgrade from 2.6.4:add->
   /**
-   * Custom {@link StdTypeResolverBuilder} that considers typing for non-primitive types. Primitives, their wrappers and
-   * primitive arrays do not require type hints. The default {@code DefaultTyping#EVERYTHING} typing does not satisfy
-   * those requirements.
+   * Custom {@link StdTypeResolverBuilder} that considers typing for non-primitive types. Primitives,
+   * their wrappers and primitive arrays do not require type hints. The default
+   * {@code DefaultTyping#EVERYTHING} typing does not satisfy those requirements.
+   * 
    * @author Mark Paluch
    * @since 2.7.2
    */
@@ -265,9 +283,10 @@ public class GenericJackson2JsonSerializer implements Serializer {
     }
 
     /**
-     * Method called to check if the default type handler should be used for given type. Note: "natural types" (String,
-     * Boolean, Integer, Double) will never use typing; that is both due to them being concrete and final, and since
-     * actual serializers and deserializers will also ignore any attempts to enforce typing.
+     * Method called to check if the default type handler should be used for given type. Note: "natural
+     * types" (String, Boolean, Integer, Double) will never use typing; that is both due to them being
+     * concrete and final, and since actual serializers and deserializers will also ignore any attempts
+     * to enforce typing.
      */
     public boolean useForType(JavaType t) {
       if (t.isJavaLangObject()) {

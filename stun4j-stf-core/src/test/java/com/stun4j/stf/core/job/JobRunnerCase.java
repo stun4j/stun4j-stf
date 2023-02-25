@@ -167,10 +167,10 @@ public abstract class JobRunnerCase extends BaseContainerCase<JobRunner> {
     sql = "select * from " + this.tblName + " where id = ?";
     Stream<Stf> stfs = jdbcOps.queryForStream(super.dftDsKey(), sql, new Object[]{stfId}, STF_ROW_MAPPER);
     Stf transAndTriggeredJob = stfs.findFirst().get();
-    assert State.I == State
-        .valueOf(transAndTriggeredJob.getSt()) : "transferred delay-job(became a stf)'s init-status should be 'I";
-    assert 0 == transAndTriggeredJob
-        .getRetryTimes() : "normal triggered delay-job(became a stf)'s retry-times should be 0";
+    assert State.I == State.valueOf(transAndTriggeredJob.getSt())
+        : "transferred delay-job(became a stf)'s init-status should be 'I";
+    assert 0 == transAndTriggeredJob.getRetryTimes()
+        : "normal triggered delay-job(became a stf)'s retry-times should be 0";
     // key timeline assert
     long transferredAt = transAndTriggeredJob.getCtAt();
     assert delayJobLockedAt < transferredAt : "delayJobLockedAt < transferredAt(the corresponding stf's ctAt)";

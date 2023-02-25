@@ -17,6 +17,7 @@ package com.stun4j.stf.core.build;
 
 /**
  * Syntax elements of the stf-flow configuration file
+ * 
  * @author Jay Meng
  */
 public enum BuildingBlock {

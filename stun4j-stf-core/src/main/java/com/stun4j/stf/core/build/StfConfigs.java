@@ -43,10 +43,13 @@ import com.stun4j.stf.core.utils.CollectionUtils;
 /**
  * The aggregation of multiple stf-configs
  * <ul>
- * <li>This will be the core stf-actions register, which will guide all the action-forwards of user (biz-)system</li>
- * <li>More strong type checkings are performed on stf-action-methods,which will ensure their existence</li>
+ * <li>This will be the core stf-actions register, which will guide all the action-forwards of user
+ * (biz-)system</li>
+ * <li>More strong type checkings are performed on stf-action-methods,which will ensure their
+ * existence</li>
  * <li>In Stf,the 'action-forking' is not supported</li>
  * <ul>
+ * 
  * @author Jay Meng
  */
 public class StfConfigs {

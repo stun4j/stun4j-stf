@@ -22,6 +22,7 @@ import com.stun4j.stf.core.support.BaseVo;
 
 /**
  * Sometimes we need id value carry with the identity information
+ * 
  * @author Jay Meng
  */
 public class StfId extends BaseVo {

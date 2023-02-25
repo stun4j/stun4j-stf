@@ -20,7 +20,9 @@ import static com.stun4j.stf.core.StfConsts.NOT_INITIALIZED_THROW;
 import java.io.Serializable;
 
 /**
- * The SPI interface connects Stf to user-side services, systems, or containers(e.g. Spring,Guava) etc.
+ * The SPI interface connects Stf to user-side services, systems, or containers(e.g. Spring,Guava)
+ * etc.
+ * 
  * @author Jay Meng
  */
 public interface StfRegistry {
@@ -31,8 +33,8 @@ public interface StfRegistry {
   void putObj(String bizObjId, Object bizObj, Class<?> specifiedBizObjClz);
 
   /**
-   * Suitable for scenario using 'Spring'-like container (compare to {@link #putObj(String, Object)} ,you just need to
-   * register biz-obj-class to make it work)
+   * Suitable for scenario using 'Spring'-like container (compare to {@link #putObj(String, Object)}
+   * ,you just need to register biz-obj-class to make it work)
    */
   default void putObjClass(String bizObjId, Class<?> specifiedBizObjClz) {
     putObj(bizObjId, null, specifiedBizObjClz);

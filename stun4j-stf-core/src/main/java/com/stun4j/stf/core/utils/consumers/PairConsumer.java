@@ -21,6 +21,7 @@ public interface PairConsumer<T, U> extends BaseConsumer<T> {
 
   /**
    * Performs this operation on the given arguments.
+   * 
    * @param t the first input argument
    * @param u the second input argument
    */

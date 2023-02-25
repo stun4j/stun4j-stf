@@ -37,9 +37,11 @@ import com.stun4j.stf.core.utils.Exceptions;
  * <ul>
  * <li>Forward only,that's part of how the 'Stf' got its name</li>
  * <li>This is a very simple anemic entity object,it will be persist in DB</li>
- * <li>The {@link #body} carries the core state(to be transited),which now is a flat json string.Though this is designed
- * to accommodate any business scenario,but large-state is always not recommended</li>
+ * <li>The {@link #body} carries the core state(to be transited),which now is a flat json
+ * string.Though this is designed to accommodate any business scenario,but large-state is always not
+ * recommended</li>
  * </ul>
+ * 
  * @author Jay Meng
  */
 public class Stf extends BaseEntity<Long> implements Cloneable {

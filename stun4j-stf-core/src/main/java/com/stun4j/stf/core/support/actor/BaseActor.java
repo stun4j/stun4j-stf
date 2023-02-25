@@ -28,6 +28,7 @@ import com.stun4j.stf.core.utils.executor.NamedThreadFactory;
 
 /**
  * Base class for actor implementation
+ * 
  * @author Jay Meng
  */
 public abstract class BaseActor<T> extends BaseLifecycle implements Actor<T> {

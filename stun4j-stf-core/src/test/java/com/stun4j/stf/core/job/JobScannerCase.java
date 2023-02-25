@@ -87,8 +87,8 @@ public abstract class JobScannerCase extends BaseContainerCase<JobScanner> {
     try {
       stfs = biz.scanTimeoutCoreJobs(1);
       Stf[] stfArr = stfs.toArray(Stf[]::new);
-      assert stfArr.length == 1
-          && st.name().equals(stfArr[0].getSt()) : "should find 1 timeout job when timeout just happened";
+      assert stfArr.length == 1 && st.name().equals(stfArr[0].getSt())
+          : "should find 1 timeout job when timeout just happened";
     } finally {
       if (stfs != null) {
         stfs.close();

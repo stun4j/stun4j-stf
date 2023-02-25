@@ -117,7 +117,8 @@ class JobQueue {
 
   private Stf doPollFirst() {
     Stf job = list.pollFirst();
-    if (job == null) return null;
+    if (job == null)
+      return null;
     jobsUpAts.remove(job.getId());
     return job;
   }

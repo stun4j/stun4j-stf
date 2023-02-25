@@ -20,6 +20,7 @@ import org.springframework.transaction.TransactionStatus;
 
 /**
  * To use {@link #commitLastDone()} for convenience and relative safety
+ * 
  * @author Jay Meng
  */
 public class StfTransactionStatus implements TransactionStatus {

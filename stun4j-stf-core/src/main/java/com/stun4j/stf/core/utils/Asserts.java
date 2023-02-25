@@ -24,15 +24,18 @@ import org.slf4j.Logger;
 /** @author Jay Meng */
 public abstract class Asserts {
   public static <T> void notNull(T obj) {
-    if (obj == null) throw new IllegalArgumentException();
+    if (obj == null)
+      throw new IllegalArgumentException();
   }
 
   public static <T> void notNull(T obj, String errorMsg) {
-    if (obj == null) throw new IllegalArgumentException(errorMsg);
+    if (obj == null)
+      throw new IllegalArgumentException(errorMsg);
   }
 
   public static <T> void notNull(T obj, Supplier<String> errorMsg) {
-    if (obj == null) throw new IllegalArgumentException(errorMsg.get());
+    if (obj == null)
+      throw new IllegalArgumentException(errorMsg.get());
   }
 
   public static <T> void notNull(T obj, String errorMsgTemplate, Object... errorMsgArgs) {

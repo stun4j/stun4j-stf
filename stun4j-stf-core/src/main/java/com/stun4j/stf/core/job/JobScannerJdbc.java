@@ -60,6 +60,7 @@ import com.stun4j.stf.core.support.JdbcAware;
  * <li>All the concerned stf-jobs will be scanned for specific subsequent processing.</li>
  * <li>MySQL,Oracle,PostgreSQL are supported out of the box.</li>
  * </ul>
+ * 
  * @author Jay Meng
  */
 public class JobScannerJdbc implements JobScanner, JdbcAware {

@@ -23,6 +23,7 @@ import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * Stf's core operations,which basically covers the whole life cycle of Stf
+ * 
  * @author JayMeng
  */
 public interface StfCore extends StfBatchable {

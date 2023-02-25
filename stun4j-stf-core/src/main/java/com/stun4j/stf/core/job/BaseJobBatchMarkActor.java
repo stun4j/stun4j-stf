@@ -24,6 +24,7 @@ import com.stun4j.stf.core.support.actor.BaseActor;
 
 /**
  * Base class helps job batch commit
+ * 
  * @author Jay Meng
  */
 abstract class BaseJobBatchMarkActor extends BaseActor<Long> {

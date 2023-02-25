@@ -47,6 +47,7 @@ import com.stun4j.stf.core.utils.consumers.TriConsumer;
 
 /**
  * Base class for the core operations of Stf.
+ * 
  * @author JayMeng
  */
 abstract class BaseStfCore implements StfCore, StfDelayQueueCore {
@@ -87,7 +88,8 @@ abstract class BaseStfCore implements StfCore, StfDelayQueueCore {
       Stf job = (Stf)arg[0];
       int dynaTimeoutSecs = (Integer)arg[1];
       jobs.add(job);
-      // a shallow clone to reduce side-effect modifying preBatchArgs,also for grabbing 'dynaTimeoutSecs' again
+      // a shallow clone to reduce side-effect modifying preBatchArgs,also for grabbing 'dynaTimeoutSecs'
+      // again
       arg = arg.clone();
       arg[0] = lockedAt + dynaTimeoutSecs * 1000;
       arg[1] = lockedAt;

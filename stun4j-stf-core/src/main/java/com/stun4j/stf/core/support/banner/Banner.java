@@ -19,6 +19,7 @@ import java.io.PrintStream;
 
 /**
  * Interface class for writing a banner programmatically.
+ * 
  * @author Phillip Webb
  * @author Michael Stummvoll
  * @author Jeremy Rickard
@@ -32,6 +33,7 @@ public interface Banner {
 
   /**
    * Print the banner to the specified print stream.
+   * 
    * @param out the output print stream
    */
   void printBanner(PrintStream out);

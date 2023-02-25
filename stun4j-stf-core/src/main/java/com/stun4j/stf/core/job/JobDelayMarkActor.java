@@ -24,6 +24,7 @@ import com.stun4j.stf.core.support.event.StfDelayTriggeredEvent;
 
 /**
  * An ad-hoc actor used to batch commit the results of stf-delay-jobs.
+ * 
  * @author Jay Meng
  */
 class JobDelayMarkActor extends BaseJobBatchMarkActor {

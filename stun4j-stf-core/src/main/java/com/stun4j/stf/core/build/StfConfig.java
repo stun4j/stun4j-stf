@@ -56,8 +56,9 @@ import com.typesafe.config.ConfigValue;
 /**
  * The parser of single stf-flow configuration
  * <p>
- * Strong type checking is performed and the stf-config object is obtained for subsequent processing.
- * The stf-config object contains valid stf-actions and stf-action-forwards
+ * Strong type checking is performed and the stf-config object is obtained for subsequent
+ * processing. The stf-config object contains valid stf-actions and stf-action-forwards
+ * 
  * @author Jay Meng
  */
 public class StfConfig {
@@ -235,8 +236,8 @@ public class StfConfig {
                 msg = "The timeout-seconds of action[%s] must be greater than 0, the wrong value is '%s'", action,
                 timeoutStr);
             argument(timeoutSecs <= 8388607,
-                msg = "The timeout-seconds of action[%s] must be less than or equal to 8388607, the wrong value is '%s'", action,
-                timeoutStr);
+                msg = "The timeout-seconds of action[%s] must be less than or equal to 8388607, the wrong value is '%s'",
+                action, timeoutStr);
           } catch (Exception e) {
             throw new RuntimeException(lenientFormat(msg, action, timeoutStr), e);
           }

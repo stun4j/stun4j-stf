@@ -26,15 +26,15 @@ import java.util.jar.Attributes.Name;
 import java.util.jar.JarFile;
 
 /**
- * Class that exposes the Stun4j Stf version. Fetches the
- * {@link Name#IMPLEMENTATION_VERSION Implementation-Version} manifest attribute from the
- * jar file via {@link Package#getImplementationVersion()}, falling back to locating the
- * jar file that contains this class and reading the {@code Implementation-Version}
- * attribute from its manifest.
+ * Class that exposes the Stun4j Stf version. Fetches the {@link Name#IMPLEMENTATION_VERSION
+ * Implementation-Version} manifest attribute from the jar file via
+ * {@link Package#getImplementationVersion()}, falling back to locating the jar file that contains
+ * this class and reading the {@code Implementation-Version} attribute from its manifest.
  * <p>
- * This class might not be able to determine the Stun4j Stf version in all environments.
- * Consider using a reflection-based check instead: For example, checking for the presence
- * of a specific Stun4j Stf method that you intend to call.
+ * This class might not be able to determine the Stun4j Stf version in all environments. Consider
+ * using a reflection-based check instead: For example, checking for the presence of a specific
+ * Stun4j Stf method that you intend to call.
+ * 
  * @author Drummond Dawson
  * @author Hendrig Sellik
  * @author Andy Wilkinson
@@ -49,8 +49,9 @@ public final class Stun4jStfVersion {
   }
 
   /**
-   * Return the full version string of the present Stun4j Stf codebase, or {@code null}
-   * if it cannot be determined.
+   * Return the full version string of the present Stun4j Stf codebase, or {@code null} if it cannot
+   * be determined.
+   * 
    * @return the version of Stun4j Stf or {@code null}
    * @see Package#getImplementationVersion()
    */

@@ -54,7 +54,7 @@ public class SchemaFileHelper {
           FileChannel fchTo = fileTo.getChannel()) {
         String line = br.readLine();
         do {
-          //core tbl->
+          // core tbl->
           if (line.startsWith("create table stn_stf (")) {
             line = line.replaceFirst("stn_stf", TBL_NAME);
           }
@@ -62,8 +62,8 @@ public class SchemaFileHelper {
               && (line.indexOf("on stn_stf ") != -1 || line.indexOf("on stn_stf(") != -1)) {
             line = line.replaceAll("stn_stf", TBL_NAME);
           }
-          //<-
-          //delay tbl->
+          // <-
+          // delay tbl->
           if (line.startsWith("create table stn_stf_delay (")) {
             line = line.replaceFirst("stn_stf_delay", DELAY_TBL_NAME);
           }
@@ -71,7 +71,7 @@ public class SchemaFileHelper {
               && (line.indexOf("on stn_stf_delay ") != -1 || line.indexOf("on stn_stf_delay(") != -1)) {
             line = line.replaceAll("stn_stf_delay", DELAY_TBL_NAME);
           }
-          //<-
+          // <-
           fchTo.write(ByteBuffer.wrap(line.getBytes()));
         } while ((line = br.readLine()) != null);
         return Triple.of(TBL_NAME, SCHEMA_FILE_WITH_TBL_NAME_CHANGED, roundId);
@@ -83,7 +83,8 @@ public class SchemaFileHelper {
   }
 
   public static void cleanup(File schemaFileWithTblNameChanged) {
-    if (schemaFileWithTblNameChanged == null) return;
+    if (schemaFileWithTblNameChanged == null)
+      return;
     try {
       schemaFileWithTblNameChanged.delete();
     } catch (Exception e) {

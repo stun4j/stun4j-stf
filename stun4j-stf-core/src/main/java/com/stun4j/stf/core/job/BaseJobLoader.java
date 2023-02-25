@@ -38,6 +38,7 @@ import com.stun4j.stf.core.utils.Exceptions;
 
 /**
  * Base class for loading stf-jobs into queue to speed up their retrieval
+ * 
  * @author Jay Meng
  */
 public abstract class BaseJobLoader extends BaseLifecycle {
@@ -104,8 +105,8 @@ public abstract class BaseJobLoader extends BaseLifecycle {
   }
 
   /**
-   * @return the result Stream, containing stf objects, needing to be closed once fully processed (e.g. through a
-   *         try-with-resources clause)
+   * @return the result Stream, containing stf objects, needing to be closed once fully processed
+   *         (e.g. through a try-with-resources clause)
    */
   protected abstract Stream<Stf> loadJobs(StfMetaGroup metaGrp, int loadSize);
 

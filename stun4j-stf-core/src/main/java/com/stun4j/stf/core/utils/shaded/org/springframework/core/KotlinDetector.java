@@ -7,6 +7,7 @@ import com.stun4j.stf.core.utils.ClassUtils;
 
 /**
  * A common delegate for detecting Kotlin's presence and for identifying Kotlin types.
+ * 
  * @author Juergen Hoeller
  * @author Sebastien Deleuze
  * @author Jay Meng
@@ -47,6 +48,7 @@ public abstract class KotlinDetector {
 
   /**
    * Determine whether Kotlin reflection is present.
+   * 
    * @since 5.1
    */
   public static boolean isKotlinReflectPresent() {
@@ -54,8 +56,7 @@ public abstract class KotlinDetector {
   }
 
   /**
-   * Determine whether the given {@code Class} is a Kotlin type
-   * (with Kotlin metadata present on it).
+   * Determine whether the given {@code Class} is a Kotlin type (with Kotlin metadata present on it).
    */
   public static boolean isKotlinType(Class<?> clazz) {
     return (kotlinMetadata != null && clazz.getDeclaredAnnotation(kotlinMetadata) != null);
@@ -63,6 +64,7 @@ public abstract class KotlinDetector {
 
   /**
    * Return {@code true} if the method is a suspending function.
+   * 
    * @since 5.3
    */
   public static boolean isSuspendingFunction(Method method) {

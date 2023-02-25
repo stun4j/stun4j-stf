@@ -19,6 +19,7 @@ package com.stun4j.stf.core;
  * A thin context for directly committing Stf
  * <p>
  * For example, it is typically used by MQ-consumers, remote service providers, and so on.
+ * 
  * @author Jay Meng
  */
 public final class StfThinContext {
