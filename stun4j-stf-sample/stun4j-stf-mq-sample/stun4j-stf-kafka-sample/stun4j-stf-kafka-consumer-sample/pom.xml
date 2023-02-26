@@ -7,7 +7,7 @@
     <version>${revision}</version>
   </parent>
   <artifactId>stun4j-stf-kafka-consumer-sample</artifactId>
-  <name>Stun4j Stf Kafka Consumer Sample</name>
+  <name>Stun4J Stf Kafka Consumer Sample</name>
 
   <dependencies>
     <!-- core -->

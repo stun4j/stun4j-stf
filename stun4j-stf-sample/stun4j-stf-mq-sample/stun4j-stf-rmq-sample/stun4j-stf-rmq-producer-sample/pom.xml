@@ -8,7 +8,7 @@
   </parent>
   <groupId>com.stun4j.boot</groupId>
   <artifactId>stun4j-stf-rmq-producer-sample</artifactId>
-  <name>Stun4j Stf RocketMQ Producer Sample</name>
+  <name>Stun4J Stf RocketMQ Producer Sample</name>
 
   <dependencies>
     <!-- module -->

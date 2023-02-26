@@ -7,7 +7,7 @@
     <version>${revision}</version>
   </parent>
   <artifactId>stun4j-stf-kafka-producer-sample</artifactId>
-  <name>Stun4j Stf Kafka Producer Sample</name>
+  <name>Stun4J Stf Kafka Producer Sample</name>
 
   <dependencies>
     <!-- module -->

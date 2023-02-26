@@ -8,7 +8,7 @@
   </parent>
   <groupId>com.stun4j.boot</groupId>
   <artifactId>stun4j-stf-rmq-consumer-sample</artifactId>
-  <name>Stun4j Stf RocketMQ Consumer Sample</name>
+  <name>Stun4J Stf RocketMQ Consumer Sample</name>
 
   <dependencies>
     <!-- core -->
