@@ -7,7 +7,7 @@
     <version>${revision}</version>
   </parent>
   <artifactId>stun4j-stf-core</artifactId>
-  <name>Stun4j Stf Core</name>
+  <name>Stun4J Stf Core</name>
 
   <description>Flexible transaction framework, orchestration mechanism, delay queue, adaptive batch processing, async task chain with lineage, compensatory workflow, distributed, high performance, easy to use</description>
   <url>https://github.com/stun4j/stun4j-stf</url>

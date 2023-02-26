@@ -7,7 +7,7 @@
     <version>${revision}</version>
   </parent>
   <artifactId>stun4j-stf-sample</artifactId>
-  <name>Stun4j Stf Sample</name>
+  <name>Stun4J Stf Sample</name>
   <packaging>pom</packaging>
   <modules>
     <module>stun4j-stf-sample-domain</module>

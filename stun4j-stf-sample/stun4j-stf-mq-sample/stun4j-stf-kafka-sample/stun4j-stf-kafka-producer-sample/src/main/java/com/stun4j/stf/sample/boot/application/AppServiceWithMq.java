@@ -90,8 +90,8 @@ public class AppServiceWithMq {
     // return;
     // }
     LOG.info("Notification of request#{} is sending...]", reqId);
-    Message<?> msg = StfMessageBuilder.withPayload("Hi-" + reqId).setHeader(KafkaHeaders.TOPIC, "bar")
-        .setHeader("bizReqId", reqId).build();
+    Message<?> msg = StfMessageBuilder.withPayload("Hi-" + reqId).setHeader(KafkaHeaders.GROUP_ID, "foo")
+        .setHeader(KafkaHeaders.TOPIC, "bar").setHeader("bizReqId", reqId).build();
     mqOps.send(msg);
   }
 
